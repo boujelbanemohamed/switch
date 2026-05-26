@@ -59,7 +59,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.solab</groupId>
+            <groupId>net.sf.j8583</groupId>
             <artifactId>j8583</artifactId>
             <version>${j8583.version}</version>
         </dependency>
@@ -122,6 +122,18 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                     </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
         </plugins>

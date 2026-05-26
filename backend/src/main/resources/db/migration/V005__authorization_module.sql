@@ -17,7 +17,7 @@ CREATE TABLE auth_rules (
     card_type VARCHAR(20),
     card_brand VARCHAR(20),
     merchant_category VARCHAR(4),
-    country_code CHAR(2),
+    country_code VARCHAR(2),
     time_start TIME,
     time_end TIME,
     day_of_week VARCHAR(20),
@@ -38,7 +38,7 @@ CREATE TABLE auth_decisions (
     merchant_id VARCHAR(15),
     terminal_id VARCHAR(8),
     amount NUMERIC(18,3) NOT NULL,
-    currency_code CHAR(3) NOT NULL,
+    currency_code VARCHAR(3) NOT NULL,
     mti VARCHAR(4),
     stan VARCHAR(12),
     rrn VARCHAR(12),
@@ -58,7 +58,8 @@ CREATE TABLE auth_decisions (
     limit_used NUMERIC(18,3),
     limit_max NUMERIC(18,3),
     requested_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    decided_at TIMESTAMP WITH TIME ZONE
+    decided_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 -- Card limits (daily/weekly/monthly tracking)
@@ -72,7 +73,7 @@ CREATE TABLE card_limits_usage (
     used_amount NUMERIC(18,3) NOT NULL DEFAULT 0,
     count_used INTEGER DEFAULT 0,
     count_max INTEGER,
-    currency_code CHAR(3) NOT NULL DEFAULT 'TND',
+    currency_code VARCHAR(3) NOT NULL DEFAULT 'TND',
     reset_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     UNIQUE(card_id, limit_type, period_start)

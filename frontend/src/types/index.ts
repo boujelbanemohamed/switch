@@ -62,3 +62,245 @@ export interface BinTable {
   currencyCode?: string;
   isActive: boolean;
 }
+
+// Issuing
+export interface Cardholder {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  status: string;
+  kycLevel: number;
+  dateOfBirth?: string;
+  nationality?: string;
+  createdAt: string;
+}
+
+export interface Card {
+  id: string;
+  cardholderId: string;
+  panSuffix: string;
+  cardBrand: string;
+  cardType: string;
+  status: string;
+  dailyLimit: number;
+  weeklyLimit: number;
+  monthlyLimit: number;
+  singleTxnLimit: number;
+  createdAt: string;
+  expiresAt?: string;
+}
+
+export interface WalletToken {
+  id: string;
+  cardId: string;
+  token: string;
+  walletProvider: string;
+  deviceId?: string;
+  status: string;
+  createdAt: string;
+}
+
+// Acquiring
+export interface Merchant {
+  id: string;
+  code: string;
+  name: string;
+  categoryCode?: string;
+  status: string;
+  countryCode?: string;
+  currencyCode?: string;
+  mdrPlan?: MdrPlan;
+  createdAt: string;
+}
+
+export interface MdrPlan {
+  id: string;
+  name: string;
+  rate: number;
+  fixedFee: number;
+  currencyCode: string;
+}
+
+export interface Terminal {
+  id: string;
+  terminalId: string;
+  merchantId: string;
+  type?: string;
+  status: string;
+  location?: string;
+  createdAt: string;
+}
+
+export interface MerchantSettlement {
+  id: string;
+  merchantId: string;
+  settlementDate: string;
+  totalAmount: number;
+  totalFee: number;
+  netAmount: number;
+  currencyCode: string;
+  status: string;
+  paymentRef?: string;
+}
+
+// Authorization
+export interface AuthRule {
+  id: string;
+  name: string;
+  ruleType: string;
+  parameters: string;
+  priority: number;
+  status: string;
+  successCount: number;
+  failureCount: number;
+}
+
+export interface AuthDecision {
+  id: string;
+  cardId: string;
+  transactionId: string;
+  decision: string;
+  reason?: string;
+  responseCode: string;
+  timestamp: string;
+}
+
+// Fraud
+export interface FraudRule {
+  id: string;
+  name: string;
+  ruleType: string;
+  parameters: string;
+  priority: number;
+  status: string;
+  alertThreshold: number;
+}
+
+export interface FraudAlert {
+  id: string;
+  cardId: string;
+  transactionId: string;
+  ruleName: string;
+  score: number;
+  status: string;
+  decision?: string;
+  description?: string;
+  createdAt: string;
+}
+
+// Clearing
+export interface ClearingRecord {
+  id: string;
+  transactionId: string;
+  participantId: string;
+  amount: number;
+  fee: number;
+  netAmount: number;
+  currencyCode: string;
+  status: string;
+  clearingDate: string;
+  disputeReason?: string;
+}
+
+export interface NettingRecord {
+  id: string;
+  participantId: string;
+  grossDebit: number;
+  grossCredit: number;
+  netAmount: number;
+  currencyCode: string;
+  status: string;
+  settlementRef?: string;
+}
+
+// Backoffice
+export interface AuditLog {
+  id: string;
+  userId?: string;
+  action: string;
+  resourceType: string;
+  resourceId: string;
+  details?: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface Report {
+  id: string;
+  type: string;
+  name: string;
+  parameters: string;
+  status: string;
+  resultSummary?: string;
+  createdAt: string;
+}
+
+export interface MonitoringEvent {
+  id: number;
+  eventType: string;
+  severity: string;
+  source: string;
+  message: string;
+  metricValue?: number;
+  threshold?: number;
+  acknowledged: boolean;
+  acknowledgedBy?: string;
+  createdAt: string;
+}
+
+// E-commerce
+export interface AcsAuthentication {
+  id: string;
+  transactionId: string;
+  cardId?: string;
+  merchantName?: string;
+  amount: number;
+  currencyCode: string;
+  status: string;
+  authenticationValue?: string;
+  eci?: string;
+  threeDsVersion: string;
+  createdAt: string;
+}
+
+export interface AcsChallenge {
+  id: string;
+  authenticationId: string;
+  challengeType: string;
+  status: string;
+  attempts: number;
+  maxAttempts: number;
+  expiresAt: string;
+  verifiedAt?: string;
+  createdAt: string;
+}
+
+export interface EpgTransaction {
+  id: string;
+  merchantId: string;
+  merchantTransactionId: string;
+  amount: number;
+  currencyCode: string;
+  status: string;
+  threeDsRequired: boolean;
+  threeDsStatus?: string;
+  cavv?: string;
+  eci?: string;
+  errorCode?: string;
+  createdAt: string;
+}
+
+export interface ThreeDsSession {
+  id: string;
+  transactionId: string;
+  threeDsVersion: string;
+  status: string;
+  authenticationValue?: string;
+  eci?: string;
+  acsUrl?: string;
+  acsTransId?: string;
+  dsTransId?: string;
+  createdAt: string;
+}

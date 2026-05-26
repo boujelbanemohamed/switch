@@ -6,7 +6,6 @@ VALUES
     (uuid_generate_v4(), 'SWITCH_MAIN', 'Main Switch', 'SWITCH', 'ACTIVE', NULL, NULL, ARRAY['ISO8583','ISO20022'], '{"type":"central"}'),
     (uuid_generate_v4(), 'PROC_EU', 'European Processor', 'PROCESSOR', 'ACTIVE', 'https://api.processor-eu.com/switch', 'HTTP', ARRAY['ISO20022'], '{"region":"EU"}'),
     (uuid_generate_v4(), 'BANK_C', 'Bank C - International', 'ISSUER', 'ACTIVE', 'bank-c.internal:8003', 'TCP', ARRAY['ISO8583','ISO20022'], '{"country":"FR","routing_bic":"BANKCFR01"}');
-ON CONFLICT DO NOTHING;
 
 -- Seed BIN tables
 DO $$

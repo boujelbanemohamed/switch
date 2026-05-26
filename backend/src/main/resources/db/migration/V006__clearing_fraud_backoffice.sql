@@ -12,7 +12,7 @@ CREATE TABLE clearing_records (
     issuing_participant_id UUID REFERENCES participants(id),
     pan_hash VARCHAR(64),
     amount NUMERIC(18,3) NOT NULL,
-    currency_code CHAR(3) NOT NULL,
+    currency_code VARCHAR(3) NOT NULL,
     interchange_amount NUMERIC(18,3) DEFAULT 0,
     fee_amount NUMERIC(18,3) DEFAULT 0,
     net_amount NUMERIC(18,3) DEFAULT 0,
@@ -34,7 +34,7 @@ CREATE TABLE netting_records (
     total_sent NUMERIC(18,3) NOT NULL DEFAULT 0,
     total_received NUMERIC(18,3) NOT NULL DEFAULT 0,
     net_amount NUMERIC(18,3) NOT NULL DEFAULT 0,
-    currency_code CHAR(3) NOT NULL,
+    currency_code VARCHAR(3) NOT NULL,
     transaction_count INTEGER DEFAULT 0,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN (
         'PENDING', 'CONFIRMED', 'SETTLED', 'DISPUTED'

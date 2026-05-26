@@ -55,7 +55,7 @@ CREATE TABLE transactions (
     protocol VARCHAR(10) NOT NULL CHECK (protocol IN ('ISO8583', 'ISO20022')),
     stan VARCHAR(12),
     rrn VARCHAR(12),
-    pan VARCHAR(19) ENCRYPTED,
+    pan VARCHAR(19),
     pan_hash VARCHAR(64) NOT NULL,
     amount NUMERIC(18, 3),
     currency_code VARCHAR(3),
@@ -95,7 +95,7 @@ CREATE TABLE transaction_audit (
 CREATE TABLE message_templates (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
-    mti VARCHAR(4) NOT NULL,
+    mti VARCHAR(20) NOT NULL,
     protocol VARCHAR(10) NOT NULL CHECK (protocol IN ('ISO8583', 'ISO20022')),
     fields_definition JSONB NOT NULL DEFAULT '{}',
     description TEXT,

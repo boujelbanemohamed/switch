@@ -7,3 +7,4 @@ target/
 .idea/
 *.iml
 .vscode/
+frontend/test-results/

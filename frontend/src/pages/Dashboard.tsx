@@ -19,7 +19,7 @@ export function Dashboard() {
   }, []);
 
   if (loading) return <div style={{ opacity: 0.5 }}>{t('common.loading')}</div>;
-  if (!stats) return <div style={{ color: 'var(--danger)' }}>Failed to load stats</div>;
+  if (!stats) return <div style={{ color: 'var(--danger)' }}>{t('dashboard.failedToLoadStats')}</div>;
 
   const statusData = Object.entries(stats.totalByStatus || {}).map(([name, value]) => ({
     name, value,
@@ -42,12 +42,12 @@ export function Dashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         <StatCard title={t('dashboard.totalTransactions')} value={stats.totalLastHour.toLocaleString()} />
         <StatCard title={t('dashboard.activeParticipants')} value={stats.totalLast24h.toLocaleString()} />
-        <StatCard title="Avg Processing" value={`${Math.round(stats.avgProcessingTimeMs)}ms`} />
+        <StatCard title={t('dashboard.avgProcessing')} value={`${Math.round(stats.avgProcessingTimeMs)}${t('dashboard.ms')}`} />
         <StatCard title={t('dashboard.successRate')} value={
           stats.statusBreakdown?.COMPLETED
             ? `${Math.round((stats.statusBreakdown.COMPLETED / Math.max(1,
                 Object.values(stats.statusBreakdown).reduce((a, b) => a + b, 0))) * 100)}%`
-            : 'N/A'
+            : t('common.na')
         } />
       </div>
 

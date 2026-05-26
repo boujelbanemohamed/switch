@@ -45,7 +45,7 @@ export function Fraud() {
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
                 <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('fraud.rule')}</th>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Transaction</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('fraud.transaction')}</th>
                 <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('fraud.score')}</th>
                 <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('fraud.status')}</th>
                 <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('fraud.decision')}</th>
@@ -75,7 +75,7 @@ export function Fraud() {
                       {a.status}
                     </span>
                   </td>
-                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>{a.decision || '-'}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>{a.decision || t('fraud.decision')}</td>
                 </tr>
               ))}
               {alerts.length === 0 && (

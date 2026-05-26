@@ -36,7 +36,7 @@ export function Transactions() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
-                {['Transaction ID', 'Type', 'Protocol', 'Amount', 'Currency', 'Status', 'Response', 'Time'].map(h => (
+                {[t('transactions.txnId'), t('transactions.type'), t('transactions.protocol'), t('transactions.amount'), t('transactions.currency'), t('transactions.status'), t('transactions.response'), t('transactions.time')].map(h => (
                   <th key={h} style={{ padding: '12px 16px', fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600 }}>
                     {h}
                   </th>
@@ -61,7 +61,7 @@ export function Transactions() {
                       fontSize: 12,
                       fontWeight: 600,
                     }}>
-                      {tx.messageType || 'N/A'}
+                      {tx.messageType || t('transactions.na')}
                     </span>
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: 13 }}>
@@ -89,7 +89,7 @@ export function Transactions() {
                     {tx.responseCode || '-'}
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--text-secondary)' }}>
-                    {tx.processingTimeMs ? `${tx.processingTimeMs}ms` : '-'}
+                    {tx.processingTimeMs ? `${tx.processingTimeMs}${t('transactions.ms')}` : '-'}
                   </td>
                 </tr>
               ))}

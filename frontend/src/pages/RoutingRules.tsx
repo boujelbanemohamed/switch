@@ -17,7 +17,7 @@ export function RoutingRules() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('switching.title')}</h2>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('switching.routingRules')}</h2>
 
       {loading ? (
         <div style={{ opacity: 0.5 }}>{t('common.loading')}</div>
@@ -26,7 +26,7 @@ export function RoutingRules() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
-                {['Name', 'Priority', 'Source', 'Destination', 'Protocol', 'Message Type', 'Status'].map(h => (
+                {[t('switching.name'), t('switching.priority'), t('switching.source'), t('switching.destination'), t('switching.protocol'), t('switching.messageType'), t('switching.status')].map(h => (
                   <th key={h} style={{ padding: '12px 16px', fontSize: 12, color: 'var(--text-secondary)', fontWeight: 600 }}>
                     {h}
                   </th>
@@ -51,14 +51,14 @@ export function RoutingRules() {
                     </span>
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: 13 }}>
-                    {rule.sourceParticipant?.code || <span style={{ color: 'var(--text-secondary)' }}>ANY</span>}
+                    {rule.sourceParticipant?.code || <span style={{ color: 'var(--text-secondary)' }}>{t('switching.any')}</span>}
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: 13 }}>
                     {rule.destinationParticipant?.code}
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: 13 }}>{rule.protocol}</td>
                   <td style={{ padding: '12px 16px', fontSize: 13 }}>
-                    {rule.messageType || <span style={{ color: 'var(--text-secondary)' }}>ALL</span>}
+                    {rule.messageType || <span style={{ color: 'var(--text-secondary)' }}>{t('switching.all')}</span>}
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <span style={{

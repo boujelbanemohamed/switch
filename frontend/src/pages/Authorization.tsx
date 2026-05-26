@@ -28,7 +28,7 @@ export function Authorization() {
           rules.length > 0
             ? `${Math.round((rules.reduce((s, r) => s + r.successCount, 0) / Math.max(1,
                 rules.reduce((s, r) => s + r.successCount + r.failureCount, 0))) * 100)}%`
-            : 'N/A'
+            : t('authorization.na')
         } />
         <StatCard title={t('authorization.totalDecisions')} value={rules.reduce((s, r) => s + r.successCount + r.failureCount, 0).toLocaleString()} />
       </div>

@@ -58,20 +58,20 @@ export function BinTables() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 13 }}>
                 <div>
-                  <span style={{ color: 'var(--text-secondary)' }}>Length: </span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{t('binTables.length')}: </span>
                   {bt.binLength}
                 </div>
                 <div>
-                  <span style={{ color: 'var(--text-secondary)' }}>Type: </span>
-                  {bt.cardType || '-'}
+                  <span style={{ color: 'var(--text-secondary)' }}>{t('binTables.type')}: </span>
+                  {bt.cardType || t('binTables.na')}
                 </div>
                 <div>
-                  <span style={{ color: 'var(--text-secondary)' }}>Country: </span>
-                  {bt.countryCode || '-'}
+                  <span style={{ color: 'var(--text-secondary)' }}>{t('binTables.country')}: </span>
+                  {bt.countryCode || t('binTables.na')}
                 </div>
                 <div>
-                  <span style={{ color: 'var(--text-secondary)' }}>Currency: </span>
-                  {bt.currencyCode || '-'}
+                  <span style={{ color: 'var(--text-secondary)' }}>{t('binTables.currency')}: </span>
+                  {bt.currencyCode || t('binTables.na')}
                 </div>
               </div>
 

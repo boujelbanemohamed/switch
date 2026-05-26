@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -12,6 +12,10 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { t, i18n } = useTranslation();
+
+  useEffect(() => {
+    document.title = t('app.title');
+  }, [t]);
 
   const mainNavItems = [
     { to: '/', icon: LayoutDashboard, label: t('nav.dashboard') },

@@ -44,7 +44,7 @@ export function Backoffice() {
           padding: 16, marginBottom: 24,
         }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: '#ef4444', marginBottom: 8 }}>
-            {criticalAlerts.length} Critical Alert(s) - Action Required
+            {criticalAlerts.length} {t('backoffice.criticalAlertMsg')}
           </h3>
           {criticalAlerts.map(a => (
             <p key={a.id} style={{ fontSize: 13, marginBottom: 4 }}>
@@ -61,10 +61,10 @@ export function Backoffice() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
-                  <th style={{ padding: '6px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>Action</th>
-                  <th style={{ padding: '6px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>Resource</th>
-                  <th style={{ padding: '6px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>Status</th>
-                  <th style={{ padding: '6px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>Time</th>
+                  <th style={{ padding: '6px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('backoffice.action')}</th>
+                  <th style={{ padding: '6px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('backoffice.resource')}</th>
+                  <th style={{ padding: '6px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('backoffice.status')}</th>
+                  <th style={{ padding: '6px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('backoffice.time')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -104,10 +104,10 @@ export function Backoffice() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
-                  <th style={{ padding: '6px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>Type</th>
-                  <th style={{ padding: '6px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>Severity</th>
-                  <th style={{ padding: '6px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>Message</th>
-                  <th style={{ padding: '6px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>Ack</th>
+                  <th style={{ padding: '6px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('backoffice.type')}</th>
+                  <th style={{ padding: '6px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('backoffice.severity')}</th>
+                  <th style={{ padding: '6px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('backoffice.message')}</th>
+                  <th style={{ padding: '6px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('backoffice.ack')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -126,8 +126,8 @@ export function Backoffice() {
                     <td style={{ padding: '6px 10px', color: 'var(--text-secondary)' }}>{e.message}</td>
                     <td style={{ padding: '6px 10px' }}>
                       {e.acknowledged
-                        ? <span style={{ color: '#22c55e', fontSize: 12 }}>Yes</span>
-                        : <span style={{ color: '#eab308', fontSize: 12 }}>No</span>
+                        ? <span style={{ color: '#22c55e', fontSize: 12 }}>{t('backoffice.yes')}</span>
+                        : <span style={{ color: '#eab308', fontSize: 12 }}>{t('backoffice.no')}</span>
                       }
                     </td>
                   </tr>

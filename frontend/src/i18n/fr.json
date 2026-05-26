@@ -25,7 +25,10 @@
     "activeParticipants": "Participants Actifs",
     "pendingAlerts": "Alertes en Attente",
     "statusDistribution": "Répartition par Statut",
-    "last24h": "Dernières 24h"
+    "last24h": "Dernières 24h",
+    "avgProcessing": "Traitement Moyen",
+    "failedToLoadStats": "Échec du chargement des statistiques",
+    "ms": "ms"
   },
   "issuing": {
     "title": "Émission",
@@ -66,7 +69,8 @@
     "status": "Statut",
     "success": "Succès",
     "failures": "Échecs",
-    "noRules": "Aucune règle trouvée"
+    "noRules": "Aucune règle trouvée",
+    "na": "N/D"
   },
   "fraud": {
     "title": "Détection de Fraude",
@@ -76,6 +80,7 @@
     "highScore": "Score Élevé",
     "alerts": "Alertes de Fraude",
     "rule": "Règle",
+    "transaction": "Transaction",
     "score": "Score",
     "status": "Statut",
     "decision": "Décision",
@@ -92,7 +97,12 @@
     "amount": "Montant",
     "fee": "Frais",
     "status": "Statut",
-    "noRecords": "Aucun enregistrement trouvé"
+    "noRecords": "Aucun enregistrement trouvé",
+    "txnId": "ID Txn",
+    "participant": "Participant",
+    "debit": "Débit",
+    "credit": "Crédit",
+    "net": "Net"
   },
   "backoffice": {
     "title": "Back Office",
@@ -103,7 +113,19 @@
     "auditLog": "Journal d'Audit",
     "monitoringEvents": "Événements de Monitoring",
     "noAuditLogs": "Aucun journal trouvé",
-    "noEvents": "Aucun événement trouvé"
+    "noEvents": "Aucun événement trouvé",
+    "criticalAlertMsg": "Alerte(s) Critique(s) - Action Requise",
+    "action": "Action",
+    "resource": "Ressource",
+    "status": "Statut",
+    "time": "Heure",
+    "type": "Type",
+    "severity": "Sévérité",
+    "message": "Message",
+    "ack": "Accusé",
+    "yes": "Oui",
+    "no": "Non",
+    "na": "-"
   },
   "ecommerce": {
     "title": "E-Commerce",
@@ -115,10 +137,35 @@
     "initiatePayment": "Initier un Paiement",
     "epgResult": "Résultat EPG",
     "createSession": "Créer une Session 3DS",
-    "threeDsResult": "Résultat 3DSS"
+    "threeDsResult": "Résultat 3DSS",
+    "tabAcs": "ACS (3D Secure)",
+    "tabEpg": "EPG (Passerelle de Paiement)",
+    "tab3dss": "3DSS (Serveur 3DS)",
+    "transactionId": "ID Transaction",
+    "cardId": "ID Carte",
+    "optional": "Optionnel",
+    "amount": "Montant",
+    "currency": "Devise",
+    "merchantId": "ID Commerçant",
+    "merchantTxnId": "ID Txn Commerçant",
+    "notificationUrl": "URL de Notification",
+    "id": "ID",
+    "status": "Statut",
+    "threeDsVersion": "Version 3DS",
+    "authValue": "Valeur d'Auth",
+    "eci": "ECI",
+    "threeDsRequired": "3DS Requis",
+    "threeDsStatus": "Statut 3DS",
+    "acsUrl": "URL ACS",
+    "requestChallenge": "Demander Challenge",
+    "creating": "Création...",
+    "initiating": "Initialisation...",
+    "yes": "Oui",
+    "no": "Non",
+    "na": "-"
   },
   "switching": {
-    "title": "Routage",
+    "title": "Règles de Routage",
     "routingRules": "Règles de Routage",
     "binTables": "Tables BIN",
     "source": "Source",
@@ -126,19 +173,57 @@
     "protocol": "Protocole",
     "priority": "Priorité",
     "noRules": "Aucune règle trouvée",
-    "noBins": "Aucune table BIN trouvée"
+    "noBins": "Aucune table BIN trouvée",
+    "name": "Nom",
+    "messageType": "Type de Message",
+    "status": "Statut",
+    "any": "TOUT",
+    "all": "TOUS"
   },
   "transactions": {
     "title": "Transactions",
-    "noTransactions": "Aucune transaction trouvée"
+    "noTransactions": "Aucune transaction trouvée",
+    "txnId": "ID Transaction",
+    "type": "Type",
+    "protocol": "Protocole",
+    "amount": "Montant",
+    "currency": "Devise",
+    "status": "Statut",
+    "response": "Réponse",
+    "time": "Temps",
+    "na": "N/D",
+    "ms": "ms"
   },
   "participants": {
     "title": "Participants",
-    "noParticipants": "Aucun participant trouvé"
+    "noParticipants": "Aucun participant trouvé",
+    "addParticipant": "Ajouter un Participant",
+    "code": "Code",
+    "name": "Nom",
+    "type": "Type",
+    "status": "Statut",
+    "endpointUrl": "URL d'Endpoint",
+    "supportedProtocols": "Protocoles Supportés",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "creating": "Création...",
+    "createError": "Échec de la création du participant",
+    "endpoint": "Endpoint",
+    "placeholderUrl": "https://...",
+    "placeholderProtocols": "ISO8583, ISO20022"
+  },
+  "binTables": {
+    "length": "Longueur",
+    "type": "Type",
+    "country": "Pays",
+    "currency": "Devise",
+    "na": "-"
   },
   "common": {
     "loading": "Chargement...",
     "noData": "Aucune donnée disponible",
-    "language": "Langue"
+    "language": "Langue",
+    "na": "N/D",
+    "failedToLoad": "Échec du chargement des données"
   }
 }

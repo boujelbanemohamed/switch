@@ -25,7 +25,10 @@
     "activeParticipants": "Active Participants",
     "pendingAlerts": "Pending Alerts",
     "statusDistribution": "Status Distribution",
-    "last24h": "Last 24h Breakdown"
+    "last24h": "Last 24h Breakdown",
+    "avgProcessing": "Avg Processing",
+    "failedToLoadStats": "Failed to load stats",
+    "ms": "ms"
   },
   "issuing": {
     "title": "Issuing",
@@ -66,7 +69,8 @@
     "status": "Status",
     "success": "Success",
     "failures": "Failures",
-    "noRules": "No authorization rules found"
+    "noRules": "No authorization rules found",
+    "na": "N/A"
   },
   "fraud": {
     "title": "Fraud Detection",
@@ -76,6 +80,7 @@
     "highScore": "High Score",
     "alerts": "Fraud Alerts",
     "rule": "Rule",
+    "transaction": "Transaction",
     "score": "Score",
     "status": "Status",
     "decision": "Decision",
@@ -92,7 +97,12 @@
     "amount": "Amount",
     "fee": "Fee",
     "status": "Status",
-    "noRecords": "No clearing records found"
+    "noRecords": "No clearing records found",
+    "txnId": "Txn ID",
+    "participant": "Participant",
+    "debit": "Debit",
+    "credit": "Credit",
+    "net": "Net"
   },
   "backoffice": {
     "title": "Back Office",
@@ -103,7 +113,19 @@
     "auditLog": "Audit Log",
     "monitoringEvents": "Monitoring Events",
     "noAuditLogs": "No audit logs found",
-    "noEvents": "No monitoring events found"
+    "noEvents": "No monitoring events found",
+    "criticalAlertMsg": "Critical Alert(s) - Action Required",
+    "action": "Action",
+    "resource": "Resource",
+    "status": "Status",
+    "time": "Time",
+    "type": "Type",
+    "severity": "Severity",
+    "message": "Message",
+    "ack": "Ack",
+    "yes": "Yes",
+    "no": "No",
+    "na": "-"
   },
   "ecommerce": {
     "title": "E-Commerce",
@@ -115,7 +137,32 @@
     "initiatePayment": "Initiate Payment",
     "epgResult": "EPG Result",
     "createSession": "Create 3DS Session",
-    "threeDsResult": "3DSS Result"
+    "threeDsResult": "3DSS Result",
+    "tabAcs": "ACS (3D Secure)",
+    "tabEpg": "EPG (Payment Gateway)",
+    "tab3dss": "3DSS (3DS Server)",
+    "transactionId": "Transaction ID",
+    "cardId": "Card ID",
+    "optional": "Optional",
+    "amount": "Amount",
+    "currency": "Currency",
+    "merchantId": "Merchant ID",
+    "merchantTxnId": "Merchant Txn ID",
+    "notificationUrl": "Notification URL",
+    "id": "ID",
+    "status": "Status",
+    "threeDsVersion": "3DS Version",
+    "authValue": "Auth Value",
+    "eci": "ECI",
+    "threeDsRequired": "3DS Required",
+    "threeDsStatus": "3DS Status",
+    "acsUrl": "ACS URL",
+    "requestChallenge": "Request Challenge",
+    "creating": "Creating...",
+    "initiating": "Initiating...",
+    "yes": "Yes",
+    "no": "No",
+    "na": "-"
   },
   "switching": {
     "title": "Routing Rules",
@@ -126,19 +173,57 @@
     "protocol": "Protocol",
     "priority": "Priority",
     "noRules": "No routing rules found",
-    "noBins": "No BIN tables found"
+    "noBins": "No BIN tables found",
+    "name": "Name",
+    "messageType": "Message Type",
+    "status": "Status",
+    "any": "ANY",
+    "all": "ALL"
   },
   "transactions": {
     "title": "Transactions",
-    "noTransactions": "No transactions found"
+    "noTransactions": "No transactions found",
+    "txnId": "Transaction ID",
+    "type": "Type",
+    "protocol": "Protocol",
+    "amount": "Amount",
+    "currency": "Currency",
+    "status": "Status",
+    "response": "Response",
+    "time": "Time",
+    "na": "N/A",
+    "ms": "ms"
   },
   "participants": {
     "title": "Participants",
-    "noParticipants": "No participants found"
+    "noParticipants": "No participants found",
+    "addParticipant": "Add Participant",
+    "code": "Code",
+    "name": "Name",
+    "type": "Type",
+    "status": "Status",
+    "endpointUrl": "Endpoint URL",
+    "supportedProtocols": "Supported Protocols",
+    "cancel": "Cancel",
+    "save": "Save",
+    "creating": "Creating...",
+    "createError": "Failed to create participant",
+    "endpoint": "Endpoint",
+    "placeholderUrl": "https://...",
+    "placeholderProtocols": "ISO8583, ISO20022"
+  },
+  "binTables": {
+    "length": "Length",
+    "type": "Type",
+    "country": "Country",
+    "currency": "Currency",
+    "na": "-"
   },
   "common": {
     "loading": "Loading...",
     "noData": "No data available",
-    "language": "Language"
+    "language": "Language",
+    "na": "N/A",
+    "failedToLoad": "Failed to load data"
   }
 }

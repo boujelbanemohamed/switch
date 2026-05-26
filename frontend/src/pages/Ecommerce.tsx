@@ -15,9 +15,9 @@ export function Ecommerce() {
   const [loading, setLoading] = useState(false);
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'acs', label: 'ACS (3D Secure)' },
-    { key: 'epg', label: 'EPG (Payment Gateway)' },
-    { key: 'threeDs', label: '3DSS (3DS Server)' },
+    { key: 'acs', label: t('ecommerce.tabAcs') },
+    { key: 'epg', label: t('ecommerce.tabEpg') },
+    { key: 'threeDs', label: t('ecommerce.tab3dss') },
   ];
 
   return (
@@ -94,16 +94,16 @@ function AcsPanel({ loading, setLoading, onResult }: {
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
       <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('ecommerce.createAuthentication')}</h3>
-        <Field label="Transaction ID">
+        <Field label={t('ecommerce.transactionId')}>
           <input value={txnId} onChange={e => setTxnId(e.target.value)} />
         </Field>
-        <Field label="Card ID">
-          <input value={cardId} onChange={e => setCardId(e.target.value)} placeholder="Optional" />
+        <Field label={t('ecommerce.cardId')}>
+          <input value={cardId} onChange={e => setCardId(e.target.value)} placeholder={t('ecommerce.optional')} />
         </Field>
-        <Field label="Amount">
+        <Field label={t('ecommerce.amount')}>
           <input value={amount} onChange={e => setAmount(e.target.value)} />
         </Field>
-        <Field label="Currency">
+        <Field label={t('ecommerce.currency')}>
           <select value={currency} onChange={e => setCurrency(e.target.value)}>
             <option>TND</option>
             <option>USD</option>
@@ -111,7 +111,7 @@ function AcsPanel({ loading, setLoading, onResult }: {
           </select>
         </Field>
         <button onClick={createAuth} disabled={loading} style={btnStyle}>
-          {loading ? '...' : t('ecommerce.createAuthentication')}
+          {loading ? t('ecommerce.creating') : t('ecommerce.createAuthentication')}
         </button>
       </div>
 
@@ -119,15 +119,15 @@ function AcsPanel({ loading, setLoading, onResult }: {
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('ecommerce.acsResult')}</h3>
         {auth ? (
           <div>
-            <DetailRow label="ID" value={auth.id} />
-            <DetailRow label="Status" value={auth.status} />
-            <DetailRow label="Amount" value={`${auth.amount} ${auth.currencyCode}`} />
-            <DetailRow label="3DS Version" value={auth.threeDsVersion} />
-            <DetailRow label="Auth Value" value={auth.authenticationValue || '-'} />
-            <DetailRow label="ECI" value={auth.eci || '-'} />
+            <DetailRow label={t('ecommerce.id')} value={auth.id} />
+            <DetailRow label={t('ecommerce.status')} value={auth.status} />
+            <DetailRow label={t('ecommerce.amount')} value={`${auth.amount} ${auth.currencyCode}`} />
+            <DetailRow label={t('ecommerce.threeDsVersion')} value={auth.threeDsVersion} />
+            <DetailRow label={t('ecommerce.authValue')} value={auth.authenticationValue || t('ecommerce.na')} />
+            <DetailRow label={t('ecommerce.eci')} value={auth.eci || t('ecommerce.na')} />
             {auth.status === 'CREATED' && (
               <button onClick={requestChallenge} disabled={loading} style={btnStyle}>
-                Request Challenge
+                {t('ecommerce.requestChallenge')}
               </button>
             )}
           </div>
@@ -165,16 +165,16 @@ function EpgPanel({ loading, setLoading, onResult }: {
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
       <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('ecommerce.initiatePayment')}</h3>
-        <Field label="Merchant ID">
+        <Field label={t('ecommerce.merchantId')}>
           <input value={merchantId} onChange={e => setMerchantId(e.target.value)} />
         </Field>
-        <Field label="Merchant Txn ID">
+        <Field label={t('ecommerce.merchantTxnId')}>
           <input value={merchantTxnId} onChange={e => setMerchantTxnId(e.target.value)} />
         </Field>
-        <Field label="Amount">
+        <Field label={t('ecommerce.amount')}>
           <input value={amount} onChange={e => setAmount(e.target.value)} />
         </Field>
-        <Field label="Currency">
+        <Field label={t('ecommerce.currency')}>
           <select value={currency} onChange={e => setCurrency(e.target.value)}>
             <option>TND</option>
             <option>USD</option>
@@ -182,7 +182,7 @@ function EpgPanel({ loading, setLoading, onResult }: {
           </select>
         </Field>
         <button onClick={initiate} disabled={loading} style={btnStyle}>
-          {loading ? '...' : t('ecommerce.initiatePayment')}
+          {loading ? t('ecommerce.initiating') : t('ecommerce.initiatePayment')}
         </button>
       </div>
 
@@ -190,11 +190,11 @@ function EpgPanel({ loading, setLoading, onResult }: {
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('ecommerce.epgResult')}</h3>
         {txn ? (
           <div>
-            <DetailRow label="ID" value={txn.id} />
-            <DetailRow label="Status" value={txn.status} />
-            <DetailRow label="Amount" value={`${txn.amount} ${txn.currencyCode}`} />
-            <DetailRow label="3DS Required" value={txn.threeDsRequired ? 'Yes' : 'No'} />
-            <DetailRow label="3DS Status" value={txn.threeDsStatus || '-'} />
+            <DetailRow label={t('ecommerce.id')} value={txn.id} />
+            <DetailRow label={t('ecommerce.status')} value={txn.status} />
+            <DetailRow label={t('ecommerce.amount')} value={`${txn.amount} ${txn.currencyCode}`} />
+            <DetailRow label={t('ecommerce.threeDsRequired')} value={txn.threeDsRequired ? t('ecommerce.yes') : t('ecommerce.no')} />
+            <DetailRow label={t('ecommerce.threeDsStatus')} value={txn.threeDsStatus || t('ecommerce.na')} />
           </div>
         ) : (
           <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{t('common.noData')}</p>
@@ -231,14 +231,14 @@ function ThreeDsPanel({ loading, setLoading, onResult }: {
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
       <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('ecommerce.createSession')}</h3>
-        <Field label="Transaction ID">
+        <Field label={t('ecommerce.transactionId')}>
           <input value={txnId} onChange={e => setTxnId(e.target.value)} />
         </Field>
-        <Field label="Notification URL">
+        <Field label={t('ecommerce.notificationUrl')}>
           <input value={notificationUrl} onChange={e => setNotificationUrl(e.target.value)} />
         </Field>
         <button onClick={create} disabled={loading} style={btnStyle}>
-          {loading ? '...' : t('ecommerce.createSession')}
+          {loading ? t('ecommerce.creating') : t('ecommerce.createSession')}
         </button>
       </div>
 
@@ -246,12 +246,12 @@ function ThreeDsPanel({ loading, setLoading, onResult }: {
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('ecommerce.threeDsResult')}</h3>
         {session ? (
           <div>
-            <DetailRow label="ID" value={session.id} />
-            <DetailRow label="Status" value={session.status} />
-            <DetailRow label="3DS Version" value={session.threeDsVersion} />
-            <DetailRow label="Auth Value" value={session.authenticationValue || '-'} />
-            <DetailRow label="ECI" value={session.eci || '-'} />
-            <DetailRow label="ACS URL" value={session.acsUrl || '-'} />
+            <DetailRow label={t('ecommerce.id')} value={session.id} />
+            <DetailRow label={t('ecommerce.status')} value={session.status} />
+            <DetailRow label={t('ecommerce.threeDsVersion')} value={session.threeDsVersion} />
+            <DetailRow label={t('ecommerce.authValue')} value={session.authenticationValue || t('ecommerce.na')} />
+            <DetailRow label={t('ecommerce.eci')} value={session.eci || t('ecommerce.na')} />
+            <DetailRow label={t('ecommerce.acsUrl')} value={session.acsUrl || t('ecommerce.na')} />
           </div>
         ) : (
           <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{t('common.noData')}</p>

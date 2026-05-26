@@ -1,0 +1,21 @@
+#!/bin/sh
+# Maven wrapper - downloads Maven if not cached
+set -e
+
+MAVEN_VERSION="3.9.9"
+CACHE_DIR="$HOME/.m2/wrapper"
+MAVEN_DIR="$CACHE_DIR/apache-maven-$MAVEN_VERSION"
+MVN_CMD="$MAVEN_DIR/bin/mvn"
+
+if [ ! -x "$MVN_CMD" ]; then
+  mkdir -p "$CACHE_DIR"
+  echo "Downloading Maven $MAVEN_VERSION..."
+  ARCHIVE="apache-maven-$MAVEN_VERSION-bin.tar.gz"
+  URL="https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/$ARCHIVE"
+  curl -fsSL "$URL" -o "/tmp/$ARCHIVE"
+  tar xzf "/tmp/$ARCHIVE" -C "$CACHE_DIR"
+  rm -f "/tmp/$ARCHIVE"
+  echo "Maven $MAVEN_VERSION downloaded to $MAVEN_DIR"
+fi
+
+exec "$MVN_CMD" "$@"

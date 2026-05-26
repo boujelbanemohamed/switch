@@ -131,6 +131,7 @@ export const api = {
     evaluate: (data: Record<string, unknown>) =>
       request<{ decision: string; score: number }>('/fraud/evaluate', { method: 'POST', body: JSON.stringify(data) }),
     rules: {
+      list: () => request<import('../types').FraudRule[]>('/fraud/rules'),
       create: (data: Partial<import('../types').FraudRule>) =>
         request<import('../types').FraudRule>('/fraud/rules', { method: 'POST', body: JSON.stringify(data) }),
     },

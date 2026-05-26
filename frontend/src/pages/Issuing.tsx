@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { Cardholder } from '../types';
+import { SectionHeader } from '../components/SectionHeader';
 
 export function Issuing() {
   const { t } = useTranslation();
@@ -20,6 +21,8 @@ export function Issuing() {
   return (
     <div>
       <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('issuing.title')}</h2>
+
+      <SectionHeader sectionKey="issuing" />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
         <StatCard title={t('issuing.totalCardholders')} value={cardholders.length.toLocaleString()} />

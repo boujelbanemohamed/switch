@@ -23,6 +23,11 @@ public class FraudController {
         return ResponseEntity.ok(fraudEngine.evaluateTransaction(context));
     }
 
+    @GetMapping("/rules")
+    public ResponseEntity<List<FraudRule>> listRules() {
+        return ResponseEntity.ok(fraudEngine.listRules());
+    }
+
     @PostMapping("/rules")
     public ResponseEntity<FraudRule> defineRule(@RequestBody FraudRule rule) {
         return ResponseEntity.ok(fraudEngine.defineRule(rule));

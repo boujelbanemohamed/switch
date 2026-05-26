@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { AuditLog, MonitoringEvent } from '../types';
+import { SectionHeader } from '../components/SectionHeader';
 
 export function Backoffice() {
   const { t } = useTranslation();
@@ -30,6 +31,8 @@ export function Backoffice() {
   return (
     <div>
       <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('backoffice.title')}</h2>
+
+      <SectionHeader sectionKey="backoffice" />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         <StatCard title={t('backoffice.auditLogs')} value={auditLogs.length.toLocaleString()} />

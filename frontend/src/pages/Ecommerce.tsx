@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { AcsAuthentication, AcsChallenge, EpgTransaction, ThreeDsSession } from '../types';
+import { SectionHeader } from '../components/SectionHeader';
 
 type Tab = 'acs' | 'epg' | 'threeDs';
 
@@ -23,6 +24,8 @@ export function Ecommerce() {
   return (
     <div>
       <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('ecommerce.title')}</h2>
+
+      <SectionHeader sectionKey="ecommerce" />
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         {tabs.map(tabItem => (

@@ -28,7 +28,10 @@
     "last24h": "Last 24h Breakdown",
     "avgProcessing": "Avg Processing",
     "failedToLoadStats": "Failed to load stats",
-    "ms": "ms"
+    "ms": "ms",
+    "sectionDescription": "Central monitoring interface for the entire switching platform. Displays real-time transaction volumes, participant activity, processing performance, and success rates in a consolidated view.",
+    "sectionRole": "Provides operators with an instant overview of platform health and activity levels. Serves as the entry point for monitoring transaction flows, detecting anomalies, and assessing overall system performance at a glance.",
+    "sectionUsage": "Upon loading, the Dashboard automatically fetches and displays four key metric cards (Total Transactions, Active Participants, Avg Processing Time, Success Rate). The Status Distribution bar chart shows transaction counts grouped by status (PENDING, ROUTING, PROCESSING, COMPLETED, FAILED, etc.). The Last 24h Breakdown pie chart visualises the proportional distribution of statuses over the past day. All data refreshes on page load — use the sidebar navigation to explore other sections."
   },
   "issuing": {
     "title": "Issuing",
@@ -40,7 +43,10 @@
     "email": "Email",
     "status": "Status",
     "kycLevel": "KYC Level",
-    "noCardholders": "No cardholders found"
+    "noCardholders": "No cardholders found",
+    "sectionDescription": "Manages cardholder identities, card issuance, and KYC compliance for issuing banks. Centralises the lifecycle of payment cards from creation through activation, blocking, and closure.",
+    "sectionRole": "Enables issuers to onboard and manage cardholders, track card statuses, and enforce Know Your Customer (KYC) regulatory requirements. Supports risk assessment through tiered KYC levels.",
+    "sectionUsage": "The page loads and displays a summary of total cardholders, active cards, and KYC Level 3+ cardholders. Below the summary, a table lists each cardholder with their name, email, status (ACTIVE / BLOCKED / PENDING), and KYC level. Use the sidebar to navigate to other modules."
   },
   "acquiring": {
     "title": "Acquiring",
@@ -54,7 +60,10 @@
     "category": "Category",
     "country": "Country",
     "status": "Status",
-    "noMerchants": "No merchants found"
+    "noMerchants": "No merchants found",
+    "sectionDescription": "Manages merchant onboarding, terminal configuration, and acquiring bank relationships. Handles the lifecycle of merchants who accept card payments through the switch.",
+    "sectionRole": "Provides acquiring banks with tools to register and monitor merchants, assign category codes, track settlement status, and manage merchant-level risk profiles.",
+    "sectionUsage": "Upon loading, the page shows summary cards for total merchants, active terminals, and pending settlements. The merchants table lists each merchant with their code, name, category, country, and status (ACTIVE / PENDING_APPROVAL / SUSPENDED / TERMINATED)."
   },
   "authorization": {
     "title": "Authorization Engine",
@@ -70,7 +79,10 @@
     "success": "Success",
     "failures": "Failures",
     "noRules": "No authorization rules found",
-    "na": "N/A"
+    "na": "N/A",
+    "sectionDescription": "Configurable decision engine that evaluates transaction authorisation requests against a set of rules. Determines whether to approve, decline, or flag transactions for review based on configurable criteria.",
+    "sectionRole": "Central authorisation logic for the switch platform. Applies business rules (velocity, amount thresholds, BIN-based routing, time-based restrictions) to each transaction before forwarding to the issuer.",
+    "sectionUsage": "The page displays summary statistics (total rules, active rules, success rate, total decisions). The rules table lists each authorization rule with its name, type, priority order, status, and success/failure counts. Rules with higher priority are evaluated first."
   },
   "fraud": {
     "title": "Fraud Detection",
@@ -84,7 +96,30 @@
     "score": "Score",
     "status": "Status",
     "decision": "Decision",
-    "noAlerts": "No fraud alerts found"
+    "noAlerts": "No fraud alerts found",
+    "tabAlerts": "Alerts",
+    "tabRules": "Rules",
+    "rules": "Fraud Rules",
+    "addRule": "Add Rule",
+    "noRules": "No fraud rules defined. Create one to start detecting suspicious transactions.",
+    "rulesName": "Name",
+    "rulesDescription": "Description",
+    "rulesCategory": "Category",
+    "rulesSeverity": "Severity",
+    "rulesAction": "Action",
+    "rulesWeight": "Score Weight",
+    "rulesStatus": "Status",
+    "rulesHits": "TP / FP",
+    "conditionExpression": "Condition Expression",
+    "conditionPlaceholder": "e.g. amount > 10000 && country != 'TN'",
+    "cooldownSeconds": "Cooldown (s)",
+    "cooldownPlaceholder": "Seconds between re-triggers",
+    "cancel": "Cancel",
+    "save": "Save Rule",
+    "saving": "Saving...",
+    "sectionDescription": "Real-time fraud monitoring system that analyses transactions against detection rules and assigns risk scores. Helps identify and mitigate suspicious payment activity.",
+    "sectionRole": "Protects the switch ecosystem by detecting potentially fraudulent transactions. Alerts are scored by severity and can be escalated for manual review or automatic blocking.",
+    "sectionUsage": "The Alerts tab shows summary statistics and a table of fraud alerts with their rule, transaction, risk score, status, and decision. Switch to the Rules tab to view, add, and manage fraud detection rules — configure category, severity, action, score weight, and condition expressions for each trigger."
   },
   "clearing": {
     "title": "Clearing & Settlement",
@@ -102,7 +137,10 @@
     "participant": "Participant",
     "debit": "Debit",
     "credit": "Credit",
-    "net": "Net"
+    "net": "Net",
+    "sectionDescription": "End-of-day clearing and settlement processing. Reconciles transactions between issuing and acquiring participants, calculates fees, and performs multilateral netting.",
+    "sectionRole": "Ensures that all parties in a transaction are correctly settled. Aggregates daily transaction volumes, computes interchange fees, resolves disputes, and generates net settlement positions for each participant.",
+    "sectionUsage": "The page loads clearing records and netting results for the current date. Summary cards show total cleared amount, total fees, net amount, and dispute count. The Clearing Records table lists each cleared transaction with its amount, fee, and status. The Netting Results table shows each participant's gross debit, gross credit, and net position."
   },
   "backoffice": {
     "title": "Back Office",
@@ -125,7 +163,10 @@
     "ack": "Ack",
     "yes": "Yes",
     "no": "No",
-    "na": "-"
+    "na": "-",
+    "sectionDescription": "Centralised administration console for platform monitoring, audit trails, and operational oversight. Provides a unified view of system events and user activity logs.",
+    "sectionRole": "Gives operators and administrators visibility into platform operations. The audit log tracks all configuration changes and user actions, while monitoring events provide real-time system health alerts.",
+    "sectionUsage": "The page displays summary cards for audit logs, critical alerts, warnings, and total events. Critical alerts are highlighted in a red banner at the top. The Audit Log table lists actions (CREATE / UPDATE / DELETE) with resource type, status, and timestamp. The Monitoring Events table shows system events with type, severity (CRITICAL / WARNING / INFO), message, and acknowledgment status."
   },
   "ecommerce": {
     "title": "E-Commerce",
@@ -162,7 +203,10 @@
     "initiating": "Initiating...",
     "yes": "Yes",
     "no": "No",
-    "na": "-"
+    "na": "-",
+    "sectionDescription": "Integrated e-commerce module combining Access Control Server (ACS), E-Payment Gateway (EPG), and 3DS Server (3DSS) for secure online payment processing with 3D Secure authentication.",
+    "sectionRole": "Provides the three core e-commerce components: ACS handles cardholder authentication via 3D Secure, EPG manages merchant payment initiation and processing, and 3DSS orchestrates the 3DS authentication flow between merchant, issuer, and directory server.",
+    "sectionUsage": "Use the tab buttons (ACS / EPG / 3DSS) to switch between sub-modules. Under ACS, fill in transaction details and click 'Create Authentication' to start a 3D Secure flow. Under EPG, provide merchant details to initiate a payment. Under 3DSS, create a 3DS session for authentication orchestration. Each tab displays the API response in the result panel on the right."
   },
   "switching": {
     "title": "Routing Rules",
@@ -178,7 +222,10 @@
     "messageType": "Message Type",
     "status": "Status",
     "any": "ANY",
-    "all": "ALL"
+    "all": "ALL",
+    "sectionDescription": "Dynamic transaction routing engine that directs payment messages between participants based on configurable rules. Determines the optimal path for each transaction using BIN ranges, protocol, message type, and priority.",
+    "sectionRole": "Core switching logic that ensures each transaction reaches the correct destination participant. Routes by source, destination, protocol (ISO 8583 / ISO 20022), message type, and priority order.",
+    "sectionUsage": "The page displays a table of all configured routing rules. Each rule shows its name, priority (lower number = higher priority), source participant, destination participant, protocol, message type filter, and status. Rules with status ACTIVE are enforced during transaction processing. Use the Participants section to manage participants before defining routes."
   },
   "transactions": {
     "title": "Transactions",
@@ -192,7 +239,10 @@
     "response": "Response",
     "time": "Time",
     "na": "N/A",
-    "ms": "ms"
+    "ms": "ms",
+    "sectionDescription": "Central transaction log and monitoring interface. Displays all payment transactions processed through the switch in real-time, with detailed status tracking and performance metrics.",
+    "sectionRole": "Provides a comprehensive audit trail of every transaction flowing through the platform. Enables operators to track transaction lifecycle from initiation through routing, authorisation, clearing, and settlement.",
+    "sectionUsage": "The page loads and displays a table of recent transactions. Each row shows the transaction ID (truncated), message type (e.g. 0100 for authorisation request), protocol (ISO8583 / ISO20022), amount, currency, current status (colour-coded), response code, and processing time. Use this page to monitor live transaction flows and investigate individual transaction outcomes."
   },
   "participants": {
     "title": "Participants",
@@ -210,14 +260,27 @@
     "createError": "Failed to create participant",
     "endpoint": "Endpoint",
     "placeholderUrl": "https://...",
-    "placeholderProtocols": "ISO8583, ISO20022"
+    "placeholderProtocols": "ISO8583, ISO20022",
+    "sectionDescription": "Directory of all participants connected to the switch network. Participants are financial institutions (issuers, acquirers), switches, or processors that exchange payment transactions through the platform.",
+    "sectionRole": "Central registry that defines which entities can send and receive transactions on the network. Each participant is assigned a type (ISSUER / ACQUIRER / SWITCH / PROCESSOR), status, endpoint URL, and supported protocols for routing purposes.",
+    "sectionUsage": "The page displays participant cards showing name, code, type (colour-coded), status, endpoint URL, and supported protocols. Click the 'Add Participant' button to open a modal form — fill in the name, code, select type and status, optionally provide an endpoint URL and supported protocols (comma-separated), then click Save. The participant list refreshes automatically after creation."
   },
   "binTables": {
     "length": "Length",
     "type": "Type",
     "country": "Country",
     "currency": "Currency",
-    "na": "-"
+    "na": "-",
+    "sectionDescription": "Bank Identification Number (BIN) directory that maps card number prefixes to issuing institutions, card brands, card types, and routing information. Essential for transaction routing and participant identification.",
+    "sectionRole": "Provides the BIN lookup foundation for the switching engine. Each BIN range identifies the card brand (VISA / MASTERCARD / AMEX / CB), card type (CREDIT / DEBIT / PREPAID), issuing country, currency, and the associated participant for routing decisions.",
+    "sectionUsage": "The page displays BIN entries as cards showing the BIN prefix (with masked remaining digits), card brand badge, BIN length, card type, country code, currency code, and the associated participant name. Browse through the cards to verify BIN coverage for enabled participants."
+  },
+  "sectionInfo": {
+    "toggle": "Section info — description, role & usage guide",
+    "toggleHide": "Hide section info",
+    "description": "Description",
+    "role": "Role",
+    "usageGuide": "Usage Guide"
   },
   "common": {
     "loading": "Loading...",

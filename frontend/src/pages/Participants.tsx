@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { Participant } from '../types';
 import { Plus, X } from 'lucide-react';
+import { SectionHeader } from '../components/SectionHeader';
 
 const typeColors: Record<string, string> = {
   ACQUIRER: '#22c55e',
@@ -98,6 +99,8 @@ export function Participants() {
           <Plus size={16} /> {t('participants.addParticipant')}
         </button>
       </div>
+
+      <SectionHeader sectionKey="participants" />
 
       {loading ? (
         <div style={{ opacity: 0.5 }}>{t('common.loading')}</div>

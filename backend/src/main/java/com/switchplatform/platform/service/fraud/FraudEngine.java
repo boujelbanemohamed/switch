@@ -115,6 +115,12 @@ public class FraudEngine {
         return true;
     }
 
+    public List<FraudRule> listRules() {
+        return rules.values().stream()
+                .sorted(Comparator.comparing(FraudRule::getCreatedAt).reversed())
+                .toList();
+    }
+
     public FraudRule defineRule(FraudRule rule) {
         if (rule.getId() == null) {
             rule.setId(UUID.randomUUID());

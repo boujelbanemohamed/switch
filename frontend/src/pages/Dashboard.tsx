@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { DashboardStats } from '../types';
+import { SectionHeader } from '../components/SectionHeader';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const COLORS = ['#22c55e', '#3b82f6', '#eab308', '#ef4444', '#a855f7', '#f97316'];
@@ -38,6 +39,8 @@ export function Dashboard() {
   return (
     <div>
       <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('dashboard.title')}</h2>
+
+      <SectionHeader sectionKey="dashboard" />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         <StatCard title={t('dashboard.totalTransactions')} value={stats.totalLastHour.toLocaleString()} />

@@ -28,7 +28,10 @@
     "last24h": "Dernières 24h",
     "avgProcessing": "Traitement Moyen",
     "failedToLoadStats": "Échec du chargement des statistiques",
-    "ms": "ms"
+    "ms": "ms",
+    "sectionDescription": "Interface de supervision centrale pour l'ensemble de la plateforme de switch. Affiche en temps réel les volumes de transactions, l'activité des participants, les performances de traitement et les taux de succès dans une vue consolidée.",
+    "sectionRole": "Offre aux opérateurs un aperçu instantané de la santé et de l'activité de la plateforme. Sert de point d'entrée pour surveiller les flux de transactions, détecter les anomalies et évaluer les performances globales du système en un coup d'œil.",
+    "sectionUsage": "Au chargement, le tableau de bord récupère et affiche quatre cartes de métriques clés (Transactions Totales, Participants Actifs, Temps de Traitement Moyen, Taux de Succès). Le graphique à barres Répartition par Statut montre les transactions groupées par statut (PENDING, ROUTING, PROCESSING, COMPLETED, FAILED, etc.). Le diagramme circulaire Dernières 24h visualise la distribution proportionnelle des statuts. Les données se rafraîchissent au chargement de la page."
   },
   "issuing": {
     "title": "Émission",
@@ -40,7 +43,10 @@
     "email": "Email",
     "status": "Statut",
     "kycLevel": "Niveau KYC",
-    "noCardholders": "Aucun porteur trouvé"
+    "noCardholders": "Aucun porteur trouvé",
+    "sectionDescription": "Gère les identités des porteurs de cartes, l'émission des cartes et la conformité KYC pour les banques émettrices. Centralise le cycle de vie des cartes de paiement de la création à l'activation, au blocage et à la clôture.",
+    "sectionRole": "Permet aux émetteurs d'inscrire et de gérer les porteurs de cartes, de suivre les statuts des cartes et d'appliquer les exigences réglementaires KYC. Supporte l'évaluation des risques via des niveaux KYC progressifs.",
+    "sectionUsage": "La page affiche un résumé du nombre total de porteurs, de cartes actives et de porteurs KYC Niveau 3+. Un tableau liste chaque porteur avec son nom, email, statut (ACTIF / BLOQUÉ / EN ATTENTE) et niveau KYC."
   },
   "acquiring": {
     "title": "Acquiring",
@@ -54,7 +60,10 @@
     "category": "Catégorie",
     "country": "Pays",
     "status": "Statut",
-    "noMerchants": "Aucun commerçant trouvé"
+    "noMerchants": "Aucun commerçant trouvé",
+    "sectionDescription": "Gère l'onboarding des commerçants, la configuration des terminaux et les relations avec les banques acquéreuses. Assure le cycle de vie des commerçants qui acceptent les paiements par carte via le switch.",
+    "sectionRole": "Fournit aux banques acquéreuses les outils pour inscrire et surveiller les commerçants, attribuer les codes catégories (MCC), suivre l'état des règlements et gérer les profils de risque des commerçants.",
+    "sectionUsage": "Au chargement, la page affiche des cartes récapitulatives : commerçants totaux, terminaux actifs et règlements en attente. Le tableau liste chaque commerçant avec son code, nom, catégorie, pays et statut (ACTIF / EN ATTENTE / SUSPENDU / RÉSILIÉ)."
   },
   "authorization": {
     "title": "Moteur d'Autorisation",
@@ -70,7 +79,10 @@
     "success": "Succès",
     "failures": "Échecs",
     "noRules": "Aucune règle trouvée",
-    "na": "N/D"
+    "na": "N/D",
+    "sectionDescription": "Moteur de décision configurable qui évalue les demandes d'autorisation de transactions selon un ensemble de règles. Détermine s'il faut approuver, refuser ou signaler les transactions pour examen selon des critères paramétrables.",
+    "sectionRole": "Logique d'autorisation centrale de la plateforme de switch. Applique les règles métier (vélocité, seuils de montant, routage basé sur le BIN, restrictions horaires) à chaque transaction avant de la transmettre à l'émetteur.",
+    "sectionUsage": "La page affiche des statistiques récapitulatives (règles totales, règles actives, taux de succès, décisions totales). Le tableau liste chaque règle d'autorisation avec son nom, type, ordre de priorité, statut et compteurs de succès/échecs. Les règles avec une priorité plus élevée sont évaluées en premier."
   },
   "fraud": {
     "title": "Détection de Fraude",
@@ -84,7 +96,30 @@
     "score": "Score",
     "status": "Statut",
     "decision": "Décision",
-    "noAlerts": "Aucune alerte trouvée"
+    "noAlerts": "Aucune alerte trouvée",
+    "tabAlerts": "Alertes",
+    "tabRules": "Règles",
+    "rules": "Règles de Fraude",
+    "addRule": "Ajouter une Règle",
+    "noRules": "Aucune règle de fraude définie. Créez-en une pour commencer à détecter des transactions suspectes.",
+    "rulesName": "Nom",
+    "rulesDescription": "Description",
+    "rulesCategory": "Catégorie",
+    "rulesSeverity": "Sévérité",
+    "rulesAction": "Action",
+    "rulesWeight": "Poids du Score",
+    "rulesStatus": "Statut",
+    "rulesHits": "VP / FP",
+    "conditionExpression": "Expression Conditionnelle",
+    "conditionPlaceholder": "ex. montant > 10000 && pays != 'TN'",
+    "cooldownSeconds": "Cooldown (s)",
+    "cooldownPlaceholder": "Secondes entre re-déclenchements",
+    "cancel": "Annuler",
+    "save": "Enregistrer la Règle",
+    "saving": "Enregistrement...",
+    "sectionDescription": "Système de détection de fraude en temps réel qui analyse les transactions selon des règles de détection et attribue des scores de risque. Aide à identifier et atténuer les activités de paiement suspectes.",
+    "sectionRole": "Protège l'écosystème du switch en détectant les transactions potentiellement frauduleuses. Les alertes sont notées par sévérité et peuvent être escaladées pour révision manuelle ou blocage automatique.",
+    "sectionUsage": "L'onglet Alertes affiche des statistiques récapitulatives et un tableau des alertes avec leur règle, transaction, score de risque, statut et décision. Passez à l'onglet Règles pour voir, ajouter et gérer les règles de détection — configurez la catégorie, la sévérité, l'action, le poids du score et les expressions conditionnelles pour chaque déclencheur."
   },
   "clearing": {
     "title": "Compensation & Règlement",
@@ -102,7 +137,10 @@
     "participant": "Participant",
     "debit": "Débit",
     "credit": "Crédit",
-    "net": "Net"
+    "net": "Net",
+    "sectionDescription": "Traitement de compensation et de règlement de fin de journée. Rapproche les transactions entre les participants émetteurs et acquéreurs, calcule les frais et effectue le netting multilatéral.",
+    "sectionRole": "Garantit que toutes les parties d'une transaction sont correctement réglées. Agrège les volumes de transactions quotidiens, calcule les commissions d'interchange, résout les litiges et génère les positions de règlement net pour chaque participant.",
+    "sectionUsage": "La page charge les enregistrements de compensation et les résultats de netting pour la date courante. Les cartes récapitulatives montrent le montant total compensé, les frais totaux, le montant net et le nombre de litiges. Le tableau des enregistrements liste chaque transaction compensée avec son montant, ses frais et son statut. Le tableau de netting montre le débit brut, le crédit brut et la position nette de chaque participant."
   },
   "backoffice": {
     "title": "Back Office",
@@ -125,7 +163,10 @@
     "ack": "Accusé",
     "yes": "Oui",
     "no": "Non",
-    "na": "-"
+    "na": "-",
+    "sectionDescription": "Console d'administration centralisée pour la supervision de la plateforme, les pistes d'audit et la surveillance opérationnelle. Offre une vue unifiée des événements système et des journaux d'activité des utilisateurs.",
+    "sectionRole": "Donne aux opérateurs et administrateurs une visibilité sur les opérations de la plateforme. Le journal d'audit trace toutes les modifications de configuration et actions utilisateur, tandis que les événements de monitoring fournissent des alertes de santé système en temps réel.",
+    "sectionUsage": "La page affiche des cartes récapitulatives pour les journaux d'audit, les alertes critiques, les avertissements et les événements totaux. Les alertes critiques sont mises en évidence dans une bannière rouge en haut. Le tableau Journal d'Audit liste les actions (CRÉATION / MODIFICATION / SUPPRESSION) avec le type de ressource, le statut et l'horodatage. Le tableau Événements de Monitoring montre les événements système avec leur type, sévérité (CRITIQUE / AVERTISSEMENT / INFO), message et statut d'accusé."
   },
   "ecommerce": {
     "title": "E-Commerce",
@@ -162,7 +203,10 @@
     "initiating": "Initialisation...",
     "yes": "Oui",
     "no": "Non",
-    "na": "-"
+    "na": "-",
+    "sectionDescription": "Module e-commerce intégré combinant Access Control Server (ACS), Passerelle de Paiement Électronique (EPG) et Serveur 3DS (3DSS) pour le traitement sécurisé des paiements en ligne avec authentification 3D Secure.",
+    "sectionRole": "Fournit les trois composants e-commerce fondamentaux : l'ACS gère l'authentification du porteur via 3D Secure, l'EPG gère l'initiation et le traitement des paiements marchands, et le 3DSS orchestre le flux d'authentification 3DS entre le marchand, l'émetteur et le serveur d'annuaire.",
+    "sectionUsage": "Utilisez les onglets (ACS / EPG / 3DSS) pour basculer entre les sous-modules. Dans ACS, remplissez les détails de la transaction et cliquez sur 'Créer une Authentification' pour lancer un flux 3D Secure. Dans EPG, fournissez les détails du marchand pour initier un paiement. Dans 3DSS, créez une session 3DS pour l'orchestration de l'authentification. Chaque onglet affiche la réponse API dans le panneau de résultats à droite."
   },
   "switching": {
     "title": "Règles de Routage",
@@ -178,7 +222,10 @@
     "messageType": "Type de Message",
     "status": "Statut",
     "any": "TOUT",
-    "all": "TOUS"
+    "all": "TOUS",
+    "sectionDescription": "Moteur de routage dynamique des transactions qui achemine les messages de paiement entre les participants selon des règles configurables. Détermine le chemin optimal pour chaque transaction en utilisant les plages BIN, le protocole, le type de message et la priorité.",
+    "sectionRole": "Logique centrale de switch qui garantit que chaque transaction atteint le bon participant destinataire. Route selon la source, la destination, le protocole (ISO 8583 / ISO 20022), le type de message et l'ordre de priorité.",
+    "sectionUsage": "La page affiche un tableau de toutes les règles de routage configurées. Chaque règle montre son nom, sa priorité (nombre inférieur = priorité plus élevée), le participant source, le participant destinataire, le protocole, le filtre de type de message et le statut. Les règles avec le statut ACTIF sont appliquées lors du traitement des transactions."
   },
   "transactions": {
     "title": "Transactions",
@@ -192,7 +239,10 @@
     "response": "Réponse",
     "time": "Temps",
     "na": "N/D",
-    "ms": "ms"
+    "ms": "ms",
+    "sectionDescription": "Journal central des transactions et interface de supervision. Affiche en temps réel toutes les transactions de paiement traitées via le switch, avec un suivi détaillé des statuts et des métriques de performance.",
+    "sectionRole": "Fournit une piste d'audit complète de chaque transaction transitant par la plateforme. Permet aux opérateurs de suivre le cycle de vie des transactions depuis l'initiation jusqu'au routage, à l'autorisation, à la compensation et au règlement.",
+    "sectionUsage": "La page charge et affiche un tableau des transactions récentes. Chaque ligne montre l'ID de transaction (tronqué), le type de message (ex. 0100 pour demande d'autorisation), le protocole (ISO8583 / ISO20022), le montant, la devise, le statut actuel (codé par couleur), le code réponse et le temps de traitement. Utilisez cette page pour superviser les flux de transactions en direct."
   },
   "participants": {
     "title": "Participants",
@@ -210,14 +260,27 @@
     "createError": "Échec de la création du participant",
     "endpoint": "Endpoint",
     "placeholderUrl": "https://...",
-    "placeholderProtocols": "ISO8583, ISO20022"
+    "placeholderProtocols": "ISO8583, ISO20022",
+    "sectionDescription": "Annuaire de tous les participants connectés au réseau de switch. Les participants sont des institutions financières (émetteurs, acquéreurs), des switches ou des processeurs qui échangent des transactions de paiement via la plateforme.",
+    "sectionRole": "Registre central qui définit quelles entités peuvent envoyer et recevoir des transactions sur le réseau. Chaque participant se voit attribuer un type (ÉMETTEUR / ACQUÉREUR / SWITCH / PROCESSEUR), un statut, une URL d'endpoint et des protocoles supportés pour le routage.",
+    "sectionUsage": "La page affiche des cartes participantes montrant le nom, le code, le type (codé par couleur), le statut, l'URL d'endpoint et les protocoles supportés. Cliquez sur 'Ajouter un Participant' pour ouvrir un formulaire modal — remplissez le nom, le code, sélectionnez le type et le statut, fournissez optionnellement une URL d'endpoint et des protocoles supportés (séparés par des virgules), puis cliquez sur Enregistrer. La liste des participants se rafraîchit automatiquement après la création."
   },
   "binTables": {
     "length": "Longueur",
     "type": "Type",
     "country": "Pays",
     "currency": "Devise",
-    "na": "-"
+    "na": "-",
+    "sectionDescription": "Répertoire des identifiants bancaires (BIN) qui fait correspondre les préfixes des numéros de carte aux institutions émettrices, marques de cartes, types de cartes et informations de routage. Essentiel pour le routage des transactions et l'identification des participants.",
+    "sectionRole": "Fonde la recherche BIN pour le moteur de switch. Chaque plage BIN identifie la marque de carte (VISA / MASTERCARD / AMEX / CB), le type de carte (CRÉDIT / DÉBIT / PRÉPAYÉ), le pays émetteur, la devise et le participant associé pour les décisions de routage.",
+    "sectionUsage": "La page affiche les entrées BIN sous forme de cartes montrant le préfixe BIN (avec les chiffres restants masqués), le badge de la marque de carte, la longueur du BIN, le type de carte, le code pays, le code devise et le nom du participant associé. Parcourez les cartes pour vérifier la couverture BIN des participants activés."
+  },
+  "sectionInfo": {
+    "toggle": "Info section — description, rôle & guide d'utilisation",
+    "toggleHide": "Masquer les infos de la section",
+    "description": "Description",
+    "role": "Rôle",
+    "usageGuide": "Guide d'utilisation"
   },
   "common": {
     "loading": "Chargement...",

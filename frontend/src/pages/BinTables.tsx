@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { BinTable } from '../types';
+import { SectionHeader } from '../components/SectionHeader';
 
 const brandColors: Record<string, string> = {
   VISA: '#1a1f71',
@@ -26,6 +27,8 @@ export function BinTables() {
   return (
     <div>
       <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('nav.binTables')}</h2>
+
+      <SectionHeader sectionKey="binTables" />
 
       {loading ? (
         <div style={{ opacity: 0.5 }}>{t('common.loading')}</div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { AuthRule } from '../types';
+import { SectionHeader } from '../components/SectionHeader';
 
 export function Authorization() {
   const { t } = useTranslation();
@@ -20,6 +21,8 @@ export function Authorization() {
   return (
     <div>
       <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('authorization.title')}</h2>
+
+      <SectionHeader sectionKey="authorization" />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         <StatCard title={t('authorization.totalRules')} value={rules.length.toLocaleString()} />

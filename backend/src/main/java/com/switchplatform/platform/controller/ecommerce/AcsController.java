@@ -21,11 +21,13 @@ public class AcsController {
 
     @PostMapping("/authentications")
     public ResponseEntity<AcsAuthentication> createAuthentication(@RequestBody Map<String, Object> request) {
+        UUID cardId = request.get("cardId") != null
+                ? UUID.fromString((String) request.get("cardId")) : null;
+        UUID merchantId = request.get("merchantId") != null
+                ? UUID.fromString((String) request.get("merchantId")) : null;
         AcsAuthentication auth = acsService.createAuthentication(
                 (String) request.get("transactionId"),
-                UUID.fromString((String) request.get("cardId")),
-                request.get("merchantId") != null
-                        ? UUID.fromString((String) request.get("merchantId")) : null,
+                cardId, merchantId,
                 new BigDecimal(request.get("amount").toString()),
                 (String) request.get("currencyCode"));
         return ResponseEntity.ok(auth);

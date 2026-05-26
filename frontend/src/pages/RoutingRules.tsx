@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { RoutingRule } from '../types';
+import { SectionHeader } from '../components/SectionHeader';
 
 export function RoutingRules() {
   const { t } = useTranslation();
@@ -18,6 +19,8 @@ export function RoutingRules() {
   return (
     <div>
       <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('switching.routingRules')}</h2>
+
+      <SectionHeader sectionKey="switching" />
 
       {loading ? (
         <div style={{ opacity: 0.5 }}>{t('common.loading')}</div>

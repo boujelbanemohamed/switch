@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { Merchant } from '../types';
+import { SectionHeader } from '../components/SectionHeader';
 
 const statusColors: Record<string, string> = {
   ACTIVE: '#22c55e',
@@ -27,6 +28,8 @@ export function Acquiring() {
   return (
     <div>
       <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('acquiring.title')}</h2>
+
+      <SectionHeader sectionKey="acquiring" />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
         <StatCard title={t('acquiring.totalMerchants')} value={merchants.length.toLocaleString()} />

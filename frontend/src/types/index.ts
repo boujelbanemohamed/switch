@@ -171,11 +171,18 @@ export interface AuthDecision {
 export interface FraudRule {
   id: string;
   name: string;
-  ruleType: string;
-  parameters: string;
-  priority: number;
-  status: string;
-  alertThreshold: number;
+  description?: string;
+  ruleCategory: 'VELOCITY' | 'GEO' | 'BEHAVIORAL' | 'AMOUNT' | 'MERCHANT' | 'DEVICE' | 'NETWORK' | 'ML_MODEL' | 'MANUAL';
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  action: 'BLOCK' | 'FLAG' | 'CHALLENGE' | 'MONITOR' | 'TFA' | 'ALLOW';
+  conditionExpression?: string;
+  scoreWeight?: number;
+  cooldownSeconds?: number;
+  status: 'ACTIVE' | 'INACTIVE' | 'TESTING';
+  falsePositiveCount: number;
+  truePositiveCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface FraudAlert {

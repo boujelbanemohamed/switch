@@ -36,6 +36,10 @@ spring:
       properties:
         spring.json.trusted.packages: "com.switch.platform.*"
 
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
+
 logging:
   level:
     com.switch: INFO

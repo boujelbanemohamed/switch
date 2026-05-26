@@ -1,0 +1,18 @@
+spring:
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+logging:
+  level:
+    com.switch: DEBUG
+    org.springframework: INFO
+
+switch:
+  threads:
+    core-pool-size: 5
+    max-pool-size: 10
+    queue-capacity: 50

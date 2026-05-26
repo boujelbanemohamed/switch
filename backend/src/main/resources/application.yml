@@ -1,0 +1,55 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: switch-platform
+  datasource:
+    url: jdbc:postgresql://localhost:5432/switch_db
+    username: switch_user
+    password: switch_pass
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: switch-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.switch.platform.*"
+
+logging:
+  level:
+    com.switch: INFO
+    org.springframework: WARN
+
+switch:
+  iso8583:
+    header: "ISO015000077"
+    max-message-length: 4096
+  iso20022:
+    namespace: "urn:iso:std:iso:20022:tech:xsd"
+  routing:
+    rules-file: classpath:routing-rules.yml
+  threads:
+    core-pool-size: 10
+    max-pool-size: 50
+    queue-capacity: 100

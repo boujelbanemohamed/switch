@@ -1,0 +1,192 @@
+package com.switch.platform.iso8583;
+
+import com.solab.iso8583.IsoMessage;
+import com.solab.iso8583.IsoType;
+import com.solab.iso8583.IsoValue;
+import com.solab.iso8583.MessageFactory;
+import com.solab.iso8583.parse.ConfigParser;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TimeZone;
+
+@Component
+@Slf4j
+public class Iso8583Engine {
+
+    private final MessageFactory<IsoMessage> messageFactory;
+
+    public Iso8583Engine() {
+        this.messageFactory = new MessageFactory<>();
+        this.messageFactory.setCharacterEncoding("UTF-8");
+        this.messageFactory.setForceSecondaryBitmap(true);
+    }
+
+    @PostConstruct
+    public void init() {
+        try {
+            ConfigParser.configureFromClasspathConfig(messageFactory, "/iso8583-config.xml");
+            log.info("ISO 8583 MessageFactory initialised with classpath config");
+        } catch (IOException e) {
+            log.warn("Could not load ISO 8583 config from classpath, using defaults");
+            initDefaultFields();
+        }
+    }
+
+    private void initDefaultFields() {
+        messageFactory.setCustomField(48, new AdditionalDataField());
+        messageFactory.setCustomField(62, new ReservedPrivateField());
+    }
+
+    public IsoMessage parse(byte[] data) {
+        try {
+            IsoMessage msg = messageFactory.parseMessage(data, 0);
+            if (msg == null) {
+                throw new IllegalArgumentException("Failed to parse ISO 8583 message");
+            }
+            return msg;
+        } catch (IOException e) {
+            throw new RuntimeException("ISO 8583 parsing error: " + e.getMessage(), e);
+        }
+    }
+
+    public IsoMessage parse(String data) {
+        return parse(data.getBytes());
+    }
+
+    public byte[] encode(IsoMessage message) {
+        byte[] data = message.writeData();
+        log.debug("Encoded ISO 8583 message ({} bytes, MTI: {})", data.length, message.getType());
+        return data;
+    }
+
+    public IsoMessage createMessage(String mti) {
+        IsoMessage msg = messageFactory.newMessage(Integer.parseInt(mti));
+        if (msg == null) {
+            IsoMessage m = new IsoMessage();
+            m.setType(Integer.parseInt(mti));
+            return m;
+        }
+        return msg;
+    }
+
+    public IsoMessage createAuthorizationRequest(
+            String pan, BigDecimal amount, String currencyCode,
+            String stan, String merchantId, String terminalId) {
+        IsoMessage msg = createMessage("0200");
+        msg.setValue(2, pan, IsoType.LLVAR, 19);
+        msg.setValue(3, "003000", IsoType.NUMERIC, 6);
+        msg.setValue(4, formatAmount(amount), IsoType.AMOUNT, 12);
+        msg.setValue(7, formatDate(new Date()), IsoType.DATE10, 10);
+        msg.setValue(11, stan, IsoType.NUMERIC, 6);
+        msg.setValue(12, formatTime(new Date()), IsoType.TIME, 6);
+        msg.setValue(13, formatMonthDay(new Date()), IsoType.DATE4, 4);
+        msg.setValue(22, "051", IsoType.NUMERIC, 3);
+        msg.setValue(35, pan, IsoType.LLVAR, 37);
+        msg.setValue(37, generateRrn(), IsoType.ALPHA, 12);
+        msg.setValue(41, terminalId, IsoType.ALPHA, 8);
+        msg.setValue(42, merchantId, IsoType.ALPHA, 15);
+        msg.setValue(49, currencyCode, IsoType.ALPHA, 3);
+        return msg;
+    }
+
+    public IsoMessage createAuthorizationResponse(IsoMessage request, String responseCode) {
+        IsoMessage response = createMessage("0210");
+        copyFields(response, request, 2, 3, 4, 7, 11, 12, 13, 22, 35, 37, 41, 42, 49);
+        response.setValue(39, responseCode, IsoType.ALPHA, 2);
+        return response;
+    }
+
+    public IsoMessage createReversalRequest(
+            String pan, BigDecimal amount, String stan,
+            String originalStan, String rrn) {
+        IsoMessage msg = createMessage("0400");
+        msg.setValue(2, pan, IsoType.LLVAR, 19);
+        msg.setValue(3, "003000", IsoType.NUMERIC, 6);
+        msg.setValue(4, formatAmount(amount), IsoType.AMOUNT, 12);
+        msg.setValue(7, formatDate(new Date()), IsoType.DATE10, 10);
+        msg.setValue(11, stan, IsoType.NUMERIC, 6);
+        msg.setValue(12, formatTime(new Date()), IsoType.TIME, 6);
+        msg.setValue(37, rrn, IsoType.ALPHA, 12);
+        msg.setValue(90, originalStan + rrn, IsoType.LLVAR, 42);
+        return msg;
+    }
+
+    public IsoMessage createFinancialRequest(
+            String pan, BigDecimal amount, String currencyCode,
+            String stan, String merchantId, String terminalId) {
+        IsoMessage msg = createMessage("0100");
+        msg.setValue(2, pan, IsoType.LLVAR, 19);
+        msg.setValue(3, "003000", IsoType.NUMERIC, 6);
+        msg.setValue(4, formatAmount(amount), IsoType.AMOUNT, 12);
+        msg.setValue(7, formatDate(new Date()), IsoType.DATE10, 10);
+        msg.setValue(11, stan, IsoType.NUMERIC, 6);
+        msg.setValue(12, formatTime(new Date()), IsoType.TIME, 6);
+        msg.setValue(13, formatMonthDay(new Date()), IsoType.DATE4, 4);
+        msg.setValue(22, "051", IsoType.NUMERIC, 3);
+        msg.setValue(35, pan, IsoType.LLVAR, 37);
+        msg.setValue(37, generateRrn(), IsoType.ALPHA, 12);
+        msg.setValue(41, terminalId, IsoType.ALPHA, 8);
+        msg.setValue(42, merchantId, IsoType.ALPHA, 15);
+        msg.setValue(49, currencyCode, IsoType.ALPHA, 3);
+        return msg;
+    }
+
+    public Map<String, Object> toMap(IsoMessage msg) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("mti", String.format("%04d", msg.getType()));
+        for (int i = 2; i <= 128; i++) {
+            IsoValue<?> value = msg.getField(i);
+            if (value != null) {
+                result.put("field_" + i, value.getValue());
+            }
+        }
+        return result;
+    }
+
+    private void copyFields(IsoMessage target, IsoMessage source, int... fields) {
+        for (int field : fields) {
+            IsoValue<?> value = source.getField(field);
+            if (value != null) {
+                target.setField(field, value);
+            }
+        }
+    }
+
+    private String formatAmount(BigDecimal amount) {
+        return String.format("%012d", amount.multiply(new BigDecimal(100)).longValue());
+    }
+
+    private String formatDate(Date date) {
+        SimpleDateFormat sdf = new SimpleDateFormat("MMddHHmmss");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return sdf.format(date);
+    }
+
+    private String formatTime(Date date) {
+        SimpleDateFormat sdf = new SimpleDateFormat("HHmmss");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return sdf.format(date);
+    }
+
+    private String formatMonthDay(Date date) {
+        SimpleDateFormat sdf = new SimpleDateFormat("MMdd");
+        return sdf.format(date);
+    }
+
+    private String generateRrn() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmmssSSS");
+        return sdf.format(new Date()) + (int)(Math.random() * 1000);
+    }
+
+    public MessageFactory<IsoMessage> getMessageFactory() {
+        return messageFactory;
+    }
+}

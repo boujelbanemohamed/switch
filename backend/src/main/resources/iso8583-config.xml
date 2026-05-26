@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE isopackager SYSTEM "isopackager.dtd">
+
+<isopackager>
+    <!-- ISO 8583:1987 BINARY packager -->
+    <field num="0" length="4" name="Message Type Indicator" class="ISO8583_TYPE_NUMERIC"/>
+    <field num="1" length="8" name="Bitmap" class="ISO8583_TYPE_BITMAP"/>
+    <field num="2" length="19" name="Primary Account Number" class="ISO8583_TYPE_LLVAR"/>
+    <field num="3" length="6" name="Processing Code" class="ISO8583_TYPE_NUMERIC"/>
+    <field num="4" length="12" name="Amount, Transaction" class="ISO8583_TYPE_AMOUNT"/>
+    <field num="7" length="10" name="Transmission Date and Time" class="ISO8583_TYPE_DATE10"/>
+    <field num="11" length="6" name="Systems Trace Audit Number" class="ISO8583_TYPE_NUMERIC"/>
+    <field num="12" length="6" name="Time, Local Transaction" class="ISO8583_TYPE_TIME"/>
+    <field num="13" length="4" name="Date, Local Transaction" class="ISO8583_TYPE_DATE4"/>
+    <field num="15" length="4" name="Date, Settlement" class="ISO8583_TYPE_DATE4"/>
+    <field num="18" length="4" name="Merchant Type" class="ISO8583_TYPE_NUMERIC"/>
+    <field num="22" length="3" name="Point of Service Entry Mode" class="ISO8583_TYPE_NUMERIC"/>
+    <field num="23" length="3" name="Card Sequence Number" class="ISO8583_TYPE_NUMERIC"/>
+    <field num="25" length="2" name="Point of Service Condition Code" class="ISO8583_TYPE_NUMERIC"/>
+    <field num="26" length="2" name="Point of Service Pin Capture Code" class="ISO8583_TYPE_NUMERIC"/>
+    <field num="28" length="6" name="Amount, Transaction Fee" class="ISO8583_TYPE_AMOUNT"/>
+    <field num="30" length="6" name="Amount, Settlement" class="ISO8583_TYPE_AMOUNT"/>
+    <field num="32" length="11" name="Acquiring Institution ID" class="ISO8583_TYPE_LLVAR"/>
+    <field num="33" length="11" name="Forwarding Institution ID" class="ISO8583_TYPE_LLVAR"/>
+    <field num="35" length="37" name="Track 2 Data" class="ISO8583_TYPE_LLVAR"/>
+    <field num="37" length="12" name="Retrieval Reference Number" class="ISO8583_TYPE_ALPHA"/>
+    <field num="38" length="6" name="Authorization ID Response" class="ISO8583_TYPE_ALPHA"/>
+    <field num="39" length="2" name="Response Code" class="ISO8583_TYPE_ALPHA"/>
+    <field num="41" length="8" name="Card Acceptor Terminal ID" class="ISO8583_TYPE_ALPHA"/>
+    <field num="42" length="15" name="Card Acceptor ID" class="ISO8583_TYPE_ALPHA"/>
+    <field num="43" length="40" name="Card Acceptor Name/Location" class="ISO8583_TYPE_ALPHA"/>
+    <field num="48" length="999" name="Additional Data" class="ISO8583_TYPE_LLLVAR"/>
+    <field num="49" length="3" name="Currency Code" class="ISO8583_TYPE_ALPHA"/>
+    <field num="52" length="8" name="PIN Data" class="ISO8583_TYPE_BINARY"/>
+    <field num="53" length="16" name="Security Related Control Info" class="ISO8583_TYPE_NUMERIC"/>
+    <field num="55" length="999" name="ICC Data (EMV)" class="ISO8583_TYPE_LLLVAR"/>
+    <field num="60" length="999" name="Reserved for National Use" class="ISO8583_TYPE_LLLVAR"/>
+    <field num="61" length="999" name="Reserved for National Use" class="ISO8583_TYPE_LLLVAR"/>
+    <field num="62" length="999" name="Reserved for Private Use" class="ISO8583_TYPE_LLLVAR"/>
+    <field num="63" length="999" name="Reserved for Private Use" class="ISO8583_TYPE_LLLVAR"/>
+    <field num="90" length="42" name="Original Data Elements" class="ISO8583_TYPE_LLVAR"/>
+    <field num="95" length="42" name="Replacement Amounts" class="ISO8583_TYPE_LLVAR"/>
+    <field num="100" length="11" name="Receiving Institution ID" class="ISO8583_TYPE_LLVAR"/>
+    <field num="102" length="28" name="Account ID 1" class="ISO8583_TYPE_LLVAR"/>
+    <field num="103" length="28" name="Account ID 2" class="ISO8583_TYPE_LLVAR"/>
+    <field num="120" length="999" name="Reserved for Private Use" class="ISO8583_TYPE_LLLVAR"/>
+    <field num="121" length="999" name="Reserved for Private Use" class="ISO8583_TYPE_LLLVAR"/>
+    <field num="123" length="999" name="Reserved for National Use" class="ISO8583_TYPE_LLLVAR"/>
+    <field num="128" length="8" name="Message Authentication Code" class="ISO8583_TYPE_BINARY"/>
+</isopackager>

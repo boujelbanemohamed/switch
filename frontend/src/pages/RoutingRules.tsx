@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { RoutingRule } from '../types';
 
 export function RoutingRules() {
+  const { t } = useTranslation();
   const [rules, setRules] = useState<RoutingRule[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -15,10 +17,10 @@ export function RoutingRules() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Routing Rules</h2>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('switching.title')}</h2>
 
       {loading ? (
-        <div style={{ opacity: 0.5 }}>Loading...</div>
+        <div style={{ opacity: 0.5 }}>{t('common.loading')}</div>
       ) : (
         <div style={{ background: 'var(--surface)', borderRadius: 12, overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -75,7 +77,7 @@ export function RoutingRules() {
               {rules.length === 0 && (
                 <tr>
                   <td colSpan={7} style={{ padding: 32, textAlign: 'center', color: 'var(--text-secondary)' }}>
-                    No routing rules configured
+                    {t('switching.noRules')}
                   </td>
                 </tr>
               )}

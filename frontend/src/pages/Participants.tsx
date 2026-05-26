@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { Participant } from '../types';
 import { Plus } from 'lucide-react';
@@ -17,6 +18,7 @@ const statusColors: Record<string, string> = {
 };
 
 export function Participants() {
+  const { t } = useTranslation();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,7 +32,7 @@ export function Participants() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700 }}>Participants</h2>
+        <h2 style={{ fontSize: 24, fontWeight: 700 }}>{t('participants.title')}</h2>
         <button style={{
           display: 'flex', alignItems: 'center', gap: 8,
           background: '#3b82f6', color: 'white', border: 'none',
@@ -42,7 +44,7 @@ export function Participants() {
       </div>
 
       {loading ? (
-        <div style={{ opacity: 0.5 }}>Loading...</div>
+        <div style={{ opacity: 0.5 }}>{t('common.loading')}</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
           {participants.map(p => (

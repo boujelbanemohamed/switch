@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { BinTable } from '../types';
 
@@ -11,6 +12,7 @@ const brandColors: Record<string, string> = {
 };
 
 export function BinTables() {
+  const { t } = useTranslation();
   const [tables, setTables] = useState<BinTable[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,10 +25,10 @@ export function BinTables() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>BIN Tables</h2>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('nav.binTables')}</h2>
 
       {loading ? (
-        <div style={{ opacity: 0.5 }}>Loading...</div>
+        <div style={{ opacity: 0.5 }}>{t('common.loading')}</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
           {tables.map(bt => (

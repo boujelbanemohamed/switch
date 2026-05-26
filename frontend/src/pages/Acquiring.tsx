@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { Merchant } from '../types';
 
@@ -10,6 +11,7 @@ const statusColors: Record<string, string> = {
 };
 
 export function Acquiring() {
+  const { t } = useTranslation();
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,29 +22,29 @@ export function Acquiring() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div style={{ opacity: 0.5 }}>Loading...</div>;
+  if (loading) return <div style={{ opacity: 0.5 }}>{t('common.loading')}</div>;
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Acquiring</h2>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('acquiring.title')}</h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
-        <StatCard title="Total Merchants" value={merchants.length.toLocaleString()} />
-        <StatCard title="Active" value={merchants.filter(m => m.status === 'ACTIVE').length.toLocaleString()} />
-        <StatCard title="Pending Approval" value={merchants.filter(m => m.status === 'PENDING_APPROVAL').length.toLocaleString()} />
+        <StatCard title={t('acquiring.totalMerchants')} value={merchants.length.toLocaleString()} />
+        <StatCard title={t('acquiring.activeTerminals')} value={merchants.filter(m => m.status === 'ACTIVE').length.toLocaleString()} />
+        <StatCard title={t('acquiring.pendingSettlements')} value={merchants.filter(m => m.status === 'PENDING_APPROVAL').length.toLocaleString()} />
       </div>
 
       <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Merchants</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('acquiring.merchants')}</h3>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Code</th>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Name</th>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Category</th>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Country</th>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Status</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('acquiring.code')}</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('acquiring.name')}</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('acquiring.category')}</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('acquiring.country')}</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('acquiring.status')}</th>
               </tr>
             </thead>
             <tbody>
@@ -66,7 +68,7 @@ export function Acquiring() {
               {merchants.length === 0 && (
                 <tr>
                   <td colSpan={5} style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>
-                    No merchants found
+                    {t('acquiring.noMerchants')}
                   </td>
                 </tr>
               )}

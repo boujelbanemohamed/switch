@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { AuthRule } from '../types';
 
 export function Authorization() {
+  const { t } = useTranslation();
   const [rules, setRules] = useState<AuthRule[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -13,36 +15,36 @@ export function Authorization() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div style={{ opacity: 0.5 }}>Loading...</div>;
+  if (loading) return <div style={{ opacity: 0.5 }}>{t('common.loading')}</div>;
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Authorization Engine</h2>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('authorization.title')}</h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-        <StatCard title="Total Rules" value={rules.length.toLocaleString()} />
-        <StatCard title="Active" value={rules.filter(r => r.status === 'ACTIVE').length.toLocaleString()} />
-        <StatCard title="Success Rate" value={
+        <StatCard title={t('authorization.totalRules')} value={rules.length.toLocaleString()} />
+        <StatCard title={t('authorization.activeRules')} value={rules.filter(r => r.status === 'ACTIVE').length.toLocaleString()} />
+        <StatCard title={t('authorization.successRate')} value={
           rules.length > 0
             ? `${Math.round((rules.reduce((s, r) => s + r.successCount, 0) / Math.max(1,
                 rules.reduce((s, r) => s + r.successCount + r.failureCount, 0))) * 100)}%`
             : 'N/A'
         } />
-        <StatCard title="Total Decisions" value={rules.reduce((s, r) => s + r.successCount + r.failureCount, 0).toLocaleString()} />
+        <StatCard title={t('authorization.totalDecisions')} value={rules.reduce((s, r) => s + r.successCount + r.failureCount, 0).toLocaleString()} />
       </div>
 
       <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Authorization Rules</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('authorization.rules')}</h3>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Name</th>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Type</th>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Priority</th>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Status</th>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Success</th>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Failures</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('authorization.name')}</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('authorization.type')}</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('authorization.priority')}</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('authorization.status')}</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('authorization.success')}</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('authorization.failures')}</th>
               </tr>
             </thead>
             <tbody>
@@ -67,7 +69,7 @@ export function Authorization() {
               {rules.length === 0 && (
                 <tr>
                   <td colSpan={6} style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>
-                    No authorization rules defined
+                    {t('authorization.noRules')}
                   </td>
                 </tr>
               )}

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { Cardholder } from '../types';
 
 export function Issuing() {
+  const { t } = useTranslation();
   const [cardholders, setCardholders] = useState<Cardholder[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -13,28 +15,28 @@ export function Issuing() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div style={{ opacity: 0.5 }}>Loading...</div>;
+  if (loading) return <div style={{ opacity: 0.5 }}>{t('common.loading')}</div>;
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Issuing</h2>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('issuing.title')}</h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
-        <StatCard title="Total Cardholders" value={cardholders.length.toLocaleString()} />
-        <StatCard title="Active Cards" value={cardholders.filter(c => c.status === 'ACTIVE').length.toLocaleString()} />
-        <StatCard title="KYC Level 3+" value={cardholders.filter(c => c.kycLevel >= 3).length.toLocaleString()} />
+        <StatCard title={t('issuing.totalCardholders')} value={cardholders.length.toLocaleString()} />
+        <StatCard title={t('issuing.activeCards')} value={cardholders.filter(c => c.status === 'ACTIVE').length.toLocaleString()} />
+        <StatCard title={t('issuing.kycLevel3')} value={cardholders.filter(c => c.kycLevel >= 3).length.toLocaleString()} />
       </div>
 
       <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Cardholders</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('issuing.cardholders')}</h3>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Name</th>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Email</th>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Status</th>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>KYC Level</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('issuing.name')}</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('issuing.email')}</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('issuing.status')}</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('issuing.kycLevel')}</th>
               </tr>
             </thead>
             <tbody>
@@ -57,7 +59,7 @@ export function Issuing() {
               {cardholders.length === 0 && (
                 <tr>
                   <td colSpan={4} style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>
-                    No cardholders found
+                    {t('issuing.noCardholders')}
                   </td>
                 </tr>
               )}

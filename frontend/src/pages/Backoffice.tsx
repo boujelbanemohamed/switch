@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { AuditLog, MonitoringEvent } from '../types';
 
 export function Backoffice() {
+  const { t } = useTranslation();
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [alerts, setAlerts] = useState<MonitoringEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,17 +25,17 @@ export function Backoffice() {
   const criticalAlerts = alerts.filter(a => a.severity === 'CRITICAL' && !a.acknowledged);
   const warningAlerts = alerts.filter(a => a.severity === 'WARNING' && !a.acknowledged);
 
-  if (loading) return <div style={{ opacity: 0.5 }}>Loading...</div>;
+  if (loading) return <div style={{ opacity: 0.5 }}>{t('common.loading')}</div>;
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Back Office</h2>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('backoffice.title')}</h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-        <StatCard title="Audit Entries" value={auditLogs.length.toLocaleString()} />
-        <StatCard title="Critical Alerts" value={criticalAlerts.length.toLocaleString()} />
-        <StatCard title="Warnings" value={warningAlerts.length.toLocaleString()} />
-        <StatCard title="Total Events" value={alerts.length.toLocaleString()} />
+        <StatCard title={t('backoffice.auditLogs')} value={auditLogs.length.toLocaleString()} />
+        <StatCard title={t('backoffice.critical')} value={criticalAlerts.length.toLocaleString()} />
+        <StatCard title={t('backoffice.warnings')} value={warningAlerts.length.toLocaleString()} />
+        <StatCard title={t('backoffice.events')} value={alerts.length.toLocaleString()} />
       </div>
 
       {criticalAlerts.length > 0 && (
@@ -54,7 +56,7 @@ export function Backoffice() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
         <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Audit Log</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('backoffice.auditLog')}</h3>
           <div style={{ overflowX: 'auto', maxHeight: 400, overflowY: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
@@ -87,7 +89,7 @@ export function Backoffice() {
                 {auditLogs.length === 0 && (
                   <tr>
                     <td colSpan={4} style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>
-                      No audit logs
+                      {t('backoffice.noAuditLogs')}
                     </td>
                   </tr>
                 )}
@@ -97,7 +99,7 @@ export function Backoffice() {
         </div>
 
         <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Monitoring Events</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('backoffice.monitoringEvents')}</h3>
           <div style={{ overflowX: 'auto', maxHeight: 400, overflowY: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
@@ -133,7 +135,7 @@ export function Backoffice() {
                 {alerts.length === 0 && (
                   <tr>
                     <td colSpan={4} style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>
-                      No monitoring events
+                      {t('backoffice.noEvents')}
                     </td>
                   </tr>
                 )}

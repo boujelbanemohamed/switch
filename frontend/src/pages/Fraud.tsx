@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { FraudAlert } from '../types';
 
@@ -10,6 +11,7 @@ const alertColors: Record<string, string> = {
 };
 
 export function Fraud() {
+  const { t } = useTranslation();
   const [alerts, setAlerts] = useState<FraudAlert[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,30 +25,30 @@ export function Fraud() {
   const openAlerts = alerts.filter(a => a.status === 'OPEN');
   const confirmedAlerts = alerts.filter(a => a.status === 'CONFIRMED');
 
-  if (loading) return <div style={{ opacity: 0.5 }}>Loading...</div>;
+  if (loading) return <div style={{ opacity: 0.5 }}>{t('common.loading')}</div>;
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Fraud Detection</h2>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('fraud.title')}</h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-        <StatCard title="Total Alerts" value={alerts.length.toLocaleString()} />
-        <StatCard title="Open" value={openAlerts.length.toLocaleString()} />
-        <StatCard title="Confirmed" value={confirmedAlerts.length.toLocaleString()} />
-        <StatCard title="High Score (>80)" value={alerts.filter(a => a.score > 80).length.toLocaleString()} />
+        <StatCard title={t('fraud.totalAlerts')} value={alerts.length.toLocaleString()} />
+        <StatCard title={t('fraud.open')} value={openAlerts.length.toLocaleString()} />
+        <StatCard title={t('fraud.confirmed')} value={confirmedAlerts.length.toLocaleString()} />
+        <StatCard title={t('fraud.highScore')} value={alerts.filter(a => a.score > 80).length.toLocaleString()} />
       </div>
 
       <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Fraud Alerts</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('fraud.alerts')}</h3>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Rule</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('fraud.rule')}</th>
                 <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Transaction</th>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Score</th>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Status</th>
-                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Decision</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('fraud.score')}</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('fraud.status')}</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('fraud.decision')}</th>
               </tr>
             </thead>
             <tbody>
@@ -79,7 +81,7 @@ export function Fraud() {
               {alerts.length === 0 && (
                 <tr>
                   <td colSpan={5} style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>
-                    No fraud alerts
+                    {t('fraud.noAlerts')}
                   </td>
                 </tr>
               )}

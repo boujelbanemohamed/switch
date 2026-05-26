@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { AcsAuthentication, AcsChallenge, EpgTransaction, ThreeDsSession } from '../types';
 
 type Tab = 'acs' | 'epg' | 'threeDs';
 
 export function Ecommerce() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('acs');
   const [authResult, setAuthResult] = useState<AcsAuthentication | null>(null);
   const [epgResult, setEpgResult] = useState<EpgTransaction | null>(null);
@@ -20,25 +22,25 @@ export function Ecommerce() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>E-Commerce</h2>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('ecommerce.title')}</h2>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-        {tabs.map(t => (
+        {tabs.map(tabItem => (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
+            key={tabItem.key}
+            onClick={() => setTab(tabItem.key)}
             style={{
               padding: '8px 20px',
               borderRadius: 8,
               border: 'none',
-              background: tab === t.key ? '#3b82f6' : 'var(--surface)',
-              color: tab === t.key ? '#fff' : 'var(--text-secondary)',
+              background: tab === tabItem.key ? '#3b82f6' : 'var(--surface)',
+              color: tab === tabItem.key ? '#fff' : 'var(--text-secondary)',
               fontWeight: 600,
               fontSize: 13,
               cursor: 'pointer',
             }}
           >
-            {t.label}
+            {tabItem.label}
           </button>
         ))}
       </div>
@@ -55,6 +57,7 @@ function AcsPanel({ loading, setLoading, onResult }: {
   setLoading: (v: boolean) => void;
   onResult: (r: AcsAuthentication | null) => void;
 }) {
+  const { t } = useTranslation();
   const [txnId, setTxnId] = useState('TXN-' + Date.now());
   const [cardId, setCardId] = useState('');
   const [amount, setAmount] = useState('150.00');
@@ -90,7 +93,7 @@ function AcsPanel({ loading, setLoading, onResult }: {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
       <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Create Authentication</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('ecommerce.createAuthentication')}</h3>
         <Field label="Transaction ID">
           <input value={txnId} onChange={e => setTxnId(e.target.value)} />
         </Field>
@@ -108,12 +111,12 @@ function AcsPanel({ loading, setLoading, onResult }: {
           </select>
         </Field>
         <button onClick={createAuth} disabled={loading} style={btnStyle}>
-          {loading ? 'Creating...' : 'Create Authentication'}
+          {loading ? '...' : t('ecommerce.createAuthentication')}
         </button>
       </div>
 
       <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>ACS Result</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('ecommerce.acsResult')}</h3>
         {auth ? (
           <div>
             <DetailRow label="ID" value={auth.id} />
@@ -129,7 +132,7 @@ function AcsPanel({ loading, setLoading, onResult }: {
             )}
           </div>
         ) : (
-          <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Create an authentication to see details</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{t('common.noData')}</p>
         )}
       </div>
     </div>
@@ -141,6 +144,7 @@ function EpgPanel({ loading, setLoading, onResult }: {
   setLoading: (v: boolean) => void;
   onResult: (r: EpgTransaction | null) => void;
 }) {
+  const { t } = useTranslation();
   const [merchantId, setMerchantId] = useState('');
   const [merchantTxnId, setMerchantTxnId] = useState('TXN-' + Date.now());
   const [amount, setAmount] = useState('99.99');
@@ -160,7 +164,7 @@ function EpgPanel({ loading, setLoading, onResult }: {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
       <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Initiate Payment</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('ecommerce.initiatePayment')}</h3>
         <Field label="Merchant ID">
           <input value={merchantId} onChange={e => setMerchantId(e.target.value)} />
         </Field>
@@ -178,12 +182,12 @@ function EpgPanel({ loading, setLoading, onResult }: {
           </select>
         </Field>
         <button onClick={initiate} disabled={loading} style={btnStyle}>
-          {loading ? 'Initiating...' : 'Initiate Transaction'}
+          {loading ? '...' : t('ecommerce.initiatePayment')}
         </button>
       </div>
 
       <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>EPG Result</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('ecommerce.epgResult')}</h3>
         {txn ? (
           <div>
             <DetailRow label="ID" value={txn.id} />
@@ -193,7 +197,7 @@ function EpgPanel({ loading, setLoading, onResult }: {
             <DetailRow label="3DS Status" value={txn.threeDsStatus || '-'} />
           </div>
         ) : (
-          <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Initiate a payment to see details</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{t('common.noData')}</p>
         )}
       </div>
     </div>
@@ -205,6 +209,7 @@ function ThreeDsPanel({ loading, setLoading, onResult }: {
   setLoading: (v: boolean) => void;
   onResult: (r: ThreeDsSession | null) => void;
 }) {
+  const { t } = useTranslation();
   const [txnId, setTxnId] = useState('3DS-' + Date.now());
   const [notificationUrl, setNotificationUrl] = useState('https://merchant.example.com/3ds-callback');
   const [session, setSession] = useState<ThreeDsSession | null>(null);
@@ -225,7 +230,7 @@ function ThreeDsPanel({ loading, setLoading, onResult }: {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
       <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Create 3DS Session</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('ecommerce.createSession')}</h3>
         <Field label="Transaction ID">
           <input value={txnId} onChange={e => setTxnId(e.target.value)} />
         </Field>
@@ -233,12 +238,12 @@ function ThreeDsPanel({ loading, setLoading, onResult }: {
           <input value={notificationUrl} onChange={e => setNotificationUrl(e.target.value)} />
         </Field>
         <button onClick={create} disabled={loading} style={btnStyle}>
-          {loading ? 'Creating...' : 'Create Session'}
+          {loading ? '...' : t('ecommerce.createSession')}
         </button>
       </div>
 
       <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>3DSS Result</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('ecommerce.threeDsResult')}</h3>
         {session ? (
           <div>
             <DetailRow label="ID" value={session.id} />
@@ -249,7 +254,7 @@ function ThreeDsPanel({ loading, setLoading, onResult }: {
             <DetailRow label="ACS URL" value={session.acsUrl || '-'} />
           </div>
         ) : (
-          <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Create a session to see details</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{t('common.noData')}</p>
         )}
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { DashboardStats } from '../types';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -6,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 const COLORS = ['#22c55e', '#3b82f6', '#eab308', '#ef4444', '#a855f7', '#f97316'];
 
 export function Dashboard() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -16,7 +18,7 @@ export function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div style={{ opacity: 0.5 }}>Loading...</div>;
+  if (loading) return <div style={{ opacity: 0.5 }}>{t('common.loading')}</div>;
   if (!stats) return <div style={{ color: 'var(--danger)' }}>Failed to load stats</div>;
 
   const statusData = Object.entries(stats.totalByStatus || {}).map(([name, value]) => ({
@@ -35,13 +37,13 @@ export function Dashboard() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Dashboard</h2>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('dashboard.title')}</h2>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-        <StatCard title="Transactions (1h)" value={stats.totalLastHour.toLocaleString()} />
-        <StatCard title="Transactions (24h)" value={stats.totalLast24h.toLocaleString()} />
+        <StatCard title={t('dashboard.totalTransactions')} value={stats.totalLastHour.toLocaleString()} />
+        <StatCard title={t('dashboard.activeParticipants')} value={stats.totalLast24h.toLocaleString()} />
         <StatCard title="Avg Processing" value={`${Math.round(stats.avgProcessingTimeMs)}ms`} />
-        <StatCard title="Success Rate" value={
+        <StatCard title={t('dashboard.successRate')} value={
           stats.statusBreakdown?.COMPLETED
             ? `${Math.round((stats.statusBreakdown.COMPLETED / Math.max(1,
                 Object.values(stats.statusBreakdown).reduce((a, b) => a + b, 0))) * 100)}%`
@@ -51,7 +53,7 @@ export function Dashboard() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
         <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Status Distribution</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('dashboard.statusDistribution')}</h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={statusData}>
               <XAxis dataKey="name" tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} />
@@ -70,7 +72,7 @@ export function Dashboard() {
         </div>
 
         <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Last 24h Breakdown</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('dashboard.last24h')}</h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie

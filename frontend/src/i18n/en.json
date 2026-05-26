@@ -1,0 +1,144 @@
+{
+  "app": {
+    "title": "Switch Platform - ISO 8583 / 20022"
+  },
+  "nav": {
+    "general": "General",
+    "modules": "Modules",
+    "dashboard": "Dashboard",
+    "transactions": "Transactions",
+    "participants": "Participants",
+    "routingRules": "Routing Rules",
+    "binTables": "BIN Tables",
+    "issuing": "Issuing",
+    "acquiring": "Acquiring",
+    "authorization": "Authorization",
+    "fraud": "Fraud",
+    "clearing": "Clearing",
+    "backoffice": "Back Office",
+    "ecommerce": "E-Commerce"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalTransactions": "Total Transactions",
+    "successRate": "Success Rate",
+    "activeParticipants": "Active Participants",
+    "pendingAlerts": "Pending Alerts",
+    "statusDistribution": "Status Distribution",
+    "last24h": "Last 24h Breakdown"
+  },
+  "issuing": {
+    "title": "Issuing",
+    "totalCardholders": "Total Cardholders",
+    "activeCards": "Active Cards",
+    "kycLevel3": "KYC Level 3+",
+    "cardholders": "Cardholders",
+    "name": "Name",
+    "email": "Email",
+    "status": "Status",
+    "kycLevel": "KYC Level",
+    "noCardholders": "No cardholders found"
+  },
+  "acquiring": {
+    "title": "Acquiring",
+    "totalMerchants": "Total Merchants",
+    "activeTerminals": "Active Terminals",
+    "pendingSettlements": "Pending Settlements",
+    "totalMdr": "Total MDR",
+    "merchants": "Merchants",
+    "code": "Code",
+    "name": "Name",
+    "category": "Category",
+    "country": "Country",
+    "status": "Status",
+    "noMerchants": "No merchants found"
+  },
+  "authorization": {
+    "title": "Authorization Engine",
+    "totalRules": "Total Rules",
+    "activeRules": "Active Rules",
+    "successRate": "Success Rate",
+    "totalDecisions": "Total Decisions",
+    "rules": "Authorization Rules",
+    "name": "Name",
+    "type": "Type",
+    "priority": "Priority",
+    "status": "Status",
+    "success": "Success",
+    "failures": "Failures",
+    "noRules": "No authorization rules found"
+  },
+  "fraud": {
+    "title": "Fraud Detection",
+    "totalAlerts": "Total Alerts",
+    "open": "Open",
+    "confirmed": "Confirmed",
+    "highScore": "High Score",
+    "alerts": "Fraud Alerts",
+    "rule": "Rule",
+    "score": "Score",
+    "status": "Status",
+    "decision": "Decision",
+    "noAlerts": "No fraud alerts found"
+  },
+  "clearing": {
+    "title": "Clearing & Settlement",
+    "totalCleared": "Total Cleared",
+    "totalFees": "Total Fees",
+    "netAmount": "Net Amount",
+    "disputes": "Disputes",
+    "clearingRecords": "Clearing Records",
+    "nettingResults": "Netting Results",
+    "amount": "Amount",
+    "fee": "Fee",
+    "status": "Status",
+    "noRecords": "No clearing records found"
+  },
+  "backoffice": {
+    "title": "Back Office",
+    "auditLogs": "Audit Logs",
+    "critical": "Critical",
+    "warnings": "Warnings",
+    "events": "Events",
+    "auditLog": "Audit Log",
+    "monitoringEvents": "Monitoring Events",
+    "noAuditLogs": "No audit logs found",
+    "noEvents": "No monitoring events found"
+  },
+  "ecommerce": {
+    "title": "E-Commerce",
+    "acs": "ACS",
+    "epg": "EPG",
+    "3dss": "3DSS",
+    "createAuthentication": "Create Authentication",
+    "acsResult": "ACS Result",
+    "initiatePayment": "Initiate Payment",
+    "epgResult": "EPG Result",
+    "createSession": "Create 3DS Session",
+    "threeDsResult": "3DSS Result"
+  },
+  "switching": {
+    "title": "Routing Rules",
+    "routingRules": "Routing Rules",
+    "binTables": "BIN Tables",
+    "source": "Source",
+    "destination": "Destination",
+    "protocol": "Protocol",
+    "priority": "Priority",
+    "noRules": "No routing rules found",
+    "noBins": "No BIN tables found"
+  },
+  "transactions": {
+    "title": "Transactions",
+    "noTransactions": "No transactions found"
+  },
+  "participants": {
+    "title": "Participants",
+    "noParticipants": "No participants found"
+  },
+  "common": {
+    "loading": "Loading...",
+    "noData": "No data available",
+    "language": "Language"
+  }
+}

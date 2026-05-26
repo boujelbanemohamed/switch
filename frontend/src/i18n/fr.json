@@ -1,0 +1,144 @@
+{
+  "app": {
+    "title": "Plateforme Switch - ISO 8583 / 20022"
+  },
+  "nav": {
+    "general": "Général",
+    "modules": "Modules",
+    "dashboard": "Tableau de bord",
+    "transactions": "Transactions",
+    "participants": "Participants",
+    "routingRules": "Règles de Routage",
+    "binTables": "Tables BIN",
+    "issuing": "Émission",
+    "acquiring": "Acquiring",
+    "authorization": "Autorisation",
+    "fraud": "Fraude",
+    "clearing": "Compensation",
+    "backoffice": "Back Office",
+    "ecommerce": "E-Commerce"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "totalTransactions": "Transactions Totales",
+    "successRate": "Taux de Succès",
+    "activeParticipants": "Participants Actifs",
+    "pendingAlerts": "Alertes en Attente",
+    "statusDistribution": "Répartition par Statut",
+    "last24h": "Dernières 24h"
+  },
+  "issuing": {
+    "title": "Émission",
+    "totalCardholders": "Porteurs de Cartes",
+    "activeCards": "Cartes Actives",
+    "kycLevel3": "KYC Niveau 3+",
+    "cardholders": "Porteurs de Cartes",
+    "name": "Nom",
+    "email": "Email",
+    "status": "Statut",
+    "kycLevel": "Niveau KYC",
+    "noCardholders": "Aucun porteur trouvé"
+  },
+  "acquiring": {
+    "title": "Acquiring",
+    "totalMerchants": "Commerçants Totaux",
+    "activeTerminals": "Terminaux Actifs",
+    "pendingSettlements": "Règlements en Attente",
+    "totalMdr": "MDR Total",
+    "merchants": "Commerçants",
+    "code": "Code",
+    "name": "Nom",
+    "category": "Catégorie",
+    "country": "Pays",
+    "status": "Statut",
+    "noMerchants": "Aucun commerçant trouvé"
+  },
+  "authorization": {
+    "title": "Moteur d'Autorisation",
+    "totalRules": "Règles Totales",
+    "activeRules": "Règles Actives",
+    "successRate": "Taux de Succès",
+    "totalDecisions": "Décisions Totales",
+    "rules": "Règles d'Autorisation",
+    "name": "Nom",
+    "type": "Type",
+    "priority": "Priorité",
+    "status": "Statut",
+    "success": "Succès",
+    "failures": "Échecs",
+    "noRules": "Aucune règle trouvée"
+  },
+  "fraud": {
+    "title": "Détection de Fraude",
+    "totalAlerts": "Alertes Totales",
+    "open": "Ouvertes",
+    "confirmed": "Confirmées",
+    "highScore": "Score Élevé",
+    "alerts": "Alertes de Fraude",
+    "rule": "Règle",
+    "score": "Score",
+    "status": "Statut",
+    "decision": "Décision",
+    "noAlerts": "Aucune alerte trouvée"
+  },
+  "clearing": {
+    "title": "Compensation & Règlement",
+    "totalCleared": "Total Compensé",
+    "totalFees": "Frais Totaux",
+    "netAmount": "Montant Net",
+    "disputes": "Litiges",
+    "clearingRecords": "Registres de Compensation",
+    "nettingResults": "Résultats de Netting",
+    "amount": "Montant",
+    "fee": "Frais",
+    "status": "Statut",
+    "noRecords": "Aucun enregistrement trouvé"
+  },
+  "backoffice": {
+    "title": "Back Office",
+    "auditLogs": "Journaux d'Audit",
+    "critical": "Critique",
+    "warnings": "Avertissements",
+    "events": "Événements",
+    "auditLog": "Journal d'Audit",
+    "monitoringEvents": "Événements de Monitoring",
+    "noAuditLogs": "Aucun journal trouvé",
+    "noEvents": "Aucun événement trouvé"
+  },
+  "ecommerce": {
+    "title": "E-Commerce",
+    "acs": "ACS",
+    "epg": "EPG",
+    "3dss": "3DSS",
+    "createAuthentication": "Créer une Authentification",
+    "acsResult": "Résultat ACS",
+    "initiatePayment": "Initier un Paiement",
+    "epgResult": "Résultat EPG",
+    "createSession": "Créer une Session 3DS",
+    "threeDsResult": "Résultat 3DSS"
+  },
+  "switching": {
+    "title": "Routage",
+    "routingRules": "Règles de Routage",
+    "binTables": "Tables BIN",
+    "source": "Source",
+    "destination": "Destination",
+    "protocol": "Protocole",
+    "priority": "Priorité",
+    "noRules": "Aucune règle trouvée",
+    "noBins": "Aucune table BIN trouvée"
+  },
+  "transactions": {
+    "title": "Transactions",
+    "noTransactions": "Aucune transaction trouvée"
+  },
+  "participants": {
+    "title": "Participants",
+    "noParticipants": "Aucun participant trouvé"
+  },
+  "common": {
+    "loading": "Chargement...",
+    "noData": "Aucune donnée disponible",
+    "language": "Langue"
+  }
+}

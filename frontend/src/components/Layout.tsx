@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard, Repeat, Building2, Network, GitCompare,
   CreditCard, Store, ShieldCheck, Siren, DollarSign, Settings, ShoppingCart,
@@ -9,25 +10,33 @@ interface LayoutProps {
   children: ReactNode;
 }
 
-const mainNavItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/transactions', icon: Repeat, label: 'Transactions' },
-  { to: '/participants', icon: Building2, label: 'Participants' },
-  { to: '/routing', icon: GitCompare, label: 'Routing Rules' },
-  { to: '/bin-tables', icon: Network, label: 'BIN Tables' },
-];
-
-const moduleNavItems = [
-  { to: '/issuing', icon: CreditCard, label: 'Issuing' },
-  { to: '/acquiring', icon: Store, label: 'Acquiring' },
-  { to: '/authorization', icon: ShieldCheck, label: 'Authorization' },
-  { to: '/fraud', icon: Siren, label: 'Fraud' },
-  { to: '/clearing', icon: DollarSign, label: 'Clearing' },
-  { to: '/backoffice', icon: Settings, label: 'Back Office' },
-  { to: '/ecommerce', icon: ShoppingCart, label: 'E-Commerce' },
-];
-
 export function Layout({ children }: LayoutProps) {
+  const { t, i18n } = useTranslation();
+
+  const toggleLang = () => {
+    const next = i18n.language === 'fr' ? 'en' : 'fr';
+    i18n.changeLanguage(next);
+    localStorage.setItem('lang', next);
+  };
+
+  const mainNavItems = [
+    { to: '/', icon: LayoutDashboard, label: t('nav.dashboard') },
+    { to: '/transactions', icon: Repeat, label: t('nav.transactions') },
+    { to: '/participants', icon: Building2, label: t('nav.participants') },
+    { to: '/routing', icon: GitCompare, label: t('nav.routingRules') },
+    { to: '/bin-tables', icon: Network, label: t('nav.binTables') },
+  ];
+
+  const moduleNavItems = [
+    { to: '/issuing', icon: CreditCard, label: t('nav.issuing') },
+    { to: '/acquiring', icon: Store, label: t('nav.acquiring') },
+    { to: '/authorization', icon: ShieldCheck, label: t('nav.authorization') },
+    { to: '/fraud', icon: Siren, label: t('nav.fraud') },
+    { to: '/clearing', icon: DollarSign, label: t('nav.clearing') },
+    { to: '/backoffice', icon: Settings, label: t('nav.backoffice') },
+    { to: '/ecommerce', icon: ShoppingCart, label: t('nav.ecommerce') },
+  ];
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <nav style={{
@@ -48,7 +57,7 @@ export function Layout({ children }: LayoutProps) {
         </div>
 
         <div style={{ padding: '0 1.5rem', marginBottom: 8, fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>
-          General
+          {t('nav.general')}
         </div>
         {mainNavItems.map(item => (
           <NavLink
@@ -74,7 +83,7 @@ export function Layout({ children }: LayoutProps) {
         ))}
 
         <div style={{ padding: '0 1.5rem', marginTop: 16, marginBottom: 8, fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>
-          Modules
+          {t('nav.modules')}
         </div>
         {moduleNavItems.map(item => (
           <NavLink
@@ -97,6 +106,29 @@ export function Layout({ children }: LayoutProps) {
             {item.label}
           </NavLink>
         ))}
+
+        <div style={{ marginTop: 'auto', padding: '1rem 1.5rem', borderTop: '1px solid var(--border)' }}>
+          <button
+            onClick={toggleLang}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              padding: '8px 12px',
+              cursor: 'pointer',
+              color: 'var(--text)',
+              fontSize: 13,
+              fontWeight: 500,
+              width: '100%',
+            }}
+          >
+            <span style={{ fontSize: 16 }}>{i18n.language === 'fr' ? '🇫🇷' : '🇬🇧'}</span>
+            {i18n.language === 'fr' ? 'Français' : 'English'}
+          </button>
+        </div>
       </nav>
 
       <main style={{ flex: 1, padding: '1.5rem 2rem', overflow: 'auto' }}>

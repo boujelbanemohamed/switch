@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { Transaction } from '../types';
 
@@ -13,6 +14,7 @@ const statusColors: Record<string, string> = {
 };
 
 export function Transactions() {
+  const { t } = useTranslation();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,10 +27,10 @@ export function Transactions() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Transactions</h2>
+      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('transactions.title')}</h2>
 
       {loading ? (
-        <div style={{ opacity: 0.5 }}>Loading...</div>
+        <div style={{ opacity: 0.5 }}>{t('common.loading')}</div>
       ) : (
         <div style={{ background: 'var(--surface)', borderRadius: 12, overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -94,7 +96,7 @@ export function Transactions() {
               {transactions.length === 0 && (
                 <tr>
                   <td colSpan={8} style={{ padding: 32, textAlign: 'center', color: 'var(--text-secondary)' }}>
-                    No transactions yet
+                    {t('transactions.noTransactions')}
                   </td>
                 </tr>
               )}

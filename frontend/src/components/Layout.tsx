@@ -13,12 +13,6 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { t, i18n } = useTranslation();
 
-  const toggleLang = () => {
-    const next = i18n.language === 'fr' ? 'en' : 'fr';
-    i18n.changeLanguage(next);
-    localStorage.setItem('lang', next);
-  };
-
   const mainNavItems = [
     { to: '/', icon: LayoutDashboard, label: t('nav.dashboard') },
     { to: '/transactions', icon: Repeat, label: t('nav.transactions') },
@@ -108,26 +102,30 @@ export function Layout({ children }: LayoutProps) {
         ))}
 
         <div style={{ marginTop: 'auto', padding: '1rem 1.5rem', borderTop: '1px solid var(--border)' }}>
-          <button
-            onClick={toggleLang}
+          <label style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600, marginBottom: 6, display: 'block' }}>
+            {t('common.language')}
+          </label>
+          <select
+            value={i18n.language}
+            onChange={e => {
+              i18n.changeLanguage(e.target.value);
+              localStorage.setItem('lang', e.target.value);
+            }}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
               background: 'var(--bg)',
               border: '1px solid var(--border)',
               borderRadius: 8,
               padding: '8px 12px',
-              cursor: 'pointer',
               color: 'var(--text)',
               fontSize: 13,
               fontWeight: 500,
               width: '100%',
+              cursor: 'pointer',
             }}
           >
-            <span style={{ fontSize: 16 }}>{i18n.language === 'fr' ? '🇫🇷' : '🇬🇧'}</span>
-            {i18n.language === 'fr' ? 'Français' : 'English'}
-          </button>
+            <option value="fr">Français</option>
+            <option value="en">English</option>
+          </select>
         </div>
       </nav>
 

@@ -1,10 +1,51 @@
 const BASE_URL = '/api/v1';
 
+function getToken(): string | null {
+  return localStorage.getItem('accessToken');
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const token = getToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { ...headers, ...(options?.headers as Record<string, string>) },
     ...options,
   });
+
+  if (res.status === 401 && token) {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (refreshToken) {
+      try {
+        const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        });
+        if (refreshRes.ok) {
+          const data = await refreshRes.json();
+          localStorage.setItem('accessToken', data.accessToken);
+          localStorage.setItem('refreshToken', data.refreshToken);
+          headers['Authorization'] = `Bearer ${data.accessToken}`;
+          const retryRes = await fetch(`${BASE_URL}${path}`, {
+            headers: { ...headers, ...(options?.headers as Record<string, string>) },
+            ...options,
+          });
+          if (!retryRes.ok) {
+            const err = await retryRes.text();
+            throw new Error(`API error ${retryRes.status}: ${err}`);
+          }
+          return retryRes.json();
+        }
+      } catch {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+      }
+    }
+  }
+
   if (!res.ok) {
     const err = await res.text();
     throw new Error(`API error ${res.status}: ${err}`);
@@ -78,6 +119,29 @@ export const api = {
       get: (tokenUuid: string) => request<import('../types').WalletToken>(`/issuing/tokens/${tokenUuid}`),
       suspend: (token: string) => request<import('../types').WalletToken>(`/issuing/tokens/${token}/suspend`, { method: 'POST' }),
       listByCard: (cardId: string) => request<import('../types').WalletToken[]>(`/issuing/cards/${cardId}/tokens`),
+    },
+    accounts: {
+      list: () => request<import('../types').CardAccount[]>('/issuing/accounts'),
+      get: (id: string) => request<import('../types').CardAccount>(`/issuing/accounts/${id}`),
+      listByCardholder: (cardholderId: string) =>
+        request<import('../types').CardAccount[]>(`/issuing/cardholders/${cardholderId}/accounts`),
+      create: (data: Partial<import('../types').CardAccount>) =>
+        request<import('../types').CardAccount>('/issuing/accounts', { method: 'POST', body: JSON.stringify(data) }),
+      debit: (id: string, amount: number, currencyCode: string) =>
+        request<import('../types').CardAccount>(`/issuing/accounts/${id}/debit`, { method: 'POST', body: JSON.stringify({ amount, currencyCode }) }),
+      credit: (id: string, amount: number, currencyCode: string) =>
+        request<import('../types').CardAccount>(`/issuing/accounts/${id}/credit`, { method: 'POST', body: JSON.stringify({ amount, currencyCode }) }),
+      hold: (id: string, amount: number) =>
+        request<import('../types').CardAccount>(`/issuing/accounts/${id}/hold`, { method: 'POST', body: JSON.stringify({ amount }) }),
+      releaseHold: (id: string, amount: number) =>
+        request<import('../types').CardAccount>(`/issuing/accounts/${id}/release-hold`, { method: 'POST', body: JSON.stringify({ amount }) }),
+    },
+    notifications: {
+      list: () => request<import('../types').Notification[]>('/issuing/notifications'),
+      listByCardholder: (cardholderId: string) =>
+        request<import('../types').Notification[]>(`/issuing/notifications/by-cardholder/${cardholderId}`),
+      listByCard: (cardId: string) =>
+        request<import('../types').Notification[]>(`/issuing/notifications/by-card/${cardId}`),
     },
   },
   acquiring: {
@@ -224,6 +288,21 @@ export const api = {
         request<import('../types').ThreeDsSession>(`/3dss/sessions/${id}/complete`, { method: 'POST', body: JSON.stringify({ authenticationValue }) }),
       fail: (id: string, errorDescription: string) =>
         request<import('../types').ThreeDsSession>(`/3dss/sessions/${id}/fail`, { method: 'POST', body: JSON.stringify({ errorDescription }) }),
+    },
+  },
+  auth: {
+    login: (data: import('../types').LoginRequest) =>
+      request<import('../types').LoginResponse>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),
+    register: (data: import('../types').RegisterRequest) =>
+      request<import('../types').AuthUser>('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+    refresh: (refreshToken: string) =>
+      request<import('../types').LoginResponse>('/auth/refresh', { method: 'POST', body: JSON.stringify({ refreshToken }) }),
+    me: () => request<import('../types').AuthUser>('/auth/me'),
+    users: {
+      list: () => request<import('../types').AuthUser[]>('/auth/users'),
+      update: (id: string, data: Partial<import('../types').AuthUser>) =>
+        request<import('../types').AuthUser>(`/auth/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      delete: (id: string) => request<void>(`/auth/users/${id}`, { method: 'DELETE' }),
     },
   },
 };

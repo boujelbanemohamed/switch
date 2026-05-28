@@ -1,13 +1,17 @@
 package com.switchplatform.platform.controller.fraud;
 
+import com.switchplatform.platform.model.fraud.BehavioralProfile;
 import com.switchplatform.platform.model.fraud.FraudAlert;
 import com.switchplatform.platform.model.fraud.FraudRule;
+import com.switchplatform.platform.service.fraud.BehavioralProfileService;
 import com.switchplatform.platform.service.fraud.FraudEngine;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -16,6 +20,7 @@ import java.util.UUID;
 public class FraudController {
 
     private final FraudEngine fraudEngine;
+    private final BehavioralProfileService behavioralProfileService;
 
     @PostMapping("/evaluate")
     public ResponseEntity<FraudEngine.FraudEvaluationResult> evaluate(
@@ -33,6 +38,12 @@ public class FraudController {
         return ResponseEntity.ok(fraudEngine.defineRule(rule));
     }
 
+    @DeleteMapping("/rules/{id}")
+    public ResponseEntity<Void> deleteRule(@PathVariable UUID id) {
+        fraudEngine.deleteRule(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/alerts")
     public ResponseEntity<List<FraudAlert>> listAlerts(
             @RequestParam(required = false) String status) {
@@ -40,6 +51,16 @@ public class FraudController {
             return ResponseEntity.ok(fraudEngine.getAlertsByStatus(status));
         }
         return ResponseEntity.ok(fraudEngine.getAlertsByStatus("OPEN"));
+    }
+
+    @GetMapping("/alerts/all")
+    public ResponseEntity<List<FraudAlert>> getAllAlerts() {
+        return ResponseEntity.ok(fraudEngine.getAllAlerts());
+    }
+
+    @GetMapping("/alerts/stats")
+    public ResponseEntity<Map<String, Long>> getAlertStats() {
+        return ResponseEntity.ok(fraudEngine.getAlertStats());
     }
 
     @GetMapping("/alerts/card/{cardId}")
@@ -63,5 +84,37 @@ public class FraudController {
     @PostMapping("/alerts/{id}/dismiss")
     public ResponseEntity<FraudAlert> dismissAlert(@PathVariable UUID id) {
         return ResponseEntity.ok(fraudEngine.dismissAsFalsePositive(id));
+    }
+
+    @GetMapping("/profiles")
+    public ResponseEntity<List<BehavioralProfile>> listProfiles() {
+        return ResponseEntity.ok(behavioralProfileService.listAllProfiles());
+    }
+
+    @GetMapping("/profiles/{cardholderId}")
+    public ResponseEntity<BehavioralProfile> getProfile(@PathVariable UUID cardholderId) {
+        return ResponseEntity.ok(behavioralProfileService.getOrCreateProfile(cardholderId));
+    }
+
+    @PostMapping("/profiles/{cardholderId}/record")
+    public ResponseEntity<Void> recordTransaction(
+            @PathVariable UUID cardholderId,
+            @RequestBody BehavioralProfileService.TransactionRequest request) {
+        behavioralProfileService.recordTransaction(cardholderId,
+                request.getMerchantCategory(),
+                request.getCountryCode(),
+                request.getAmount(),
+                request.getTimestamp());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/profiles/{cardholderId}/anomalies")
+    public ResponseEntity<BehavioralProfileService.AnomalyResult> checkAnomalies(
+            @PathVariable UUID cardholderId,
+            @RequestParam BigDecimal amount,
+            @RequestParam(required = false) String merchantCategory,
+            @RequestParam(required = false) String countryCode) {
+        return ResponseEntity.ok(behavioralProfileService.detectAnomalies(
+                cardholderId, amount, merchantCategory, countryCode, null));
     }
 }

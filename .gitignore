@@ -8,3 +8,5 @@ target/
 *.iml
 .vscode/
 frontend/test-results/
+frontend/playwright-report/
+frontend/e2e/.auth.json

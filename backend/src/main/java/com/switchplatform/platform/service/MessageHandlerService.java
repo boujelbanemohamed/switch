@@ -2,6 +2,8 @@ package com.switchplatform.platform.service;
 
 import com.switchplatform.platform.model.Participant;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -10,10 +12,25 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Slf4j
 public class MessageHandlerService {
+
+    private final KafkaTemplate<String, byte[]> kafkaTemplate;
+    private final ConcurrentHashMap<String, byte[]> pendingResponses = new ConcurrentHashMap<>();
+    private final boolean kafkaEnabled;
+
+    public MessageHandlerService(ObjectProvider<KafkaTemplate<String, byte[]>> kafkaProvider) {
+        this.kafkaTemplate = kafkaProvider.getIfAvailable();
+        this.kafkaEnabled = this.kafkaTemplate != null;
+        if (kafkaEnabled) {
+            log.info("Kafka transport enabled for MQ message handling");
+        } else {
+            log.warn("KafkaTemplate not available — MQ transport will use stub responses");
+        }
+    }
 
     public byte[] sendAndReceive(Participant destination, byte[] message) {
         return switch (destination.getEndpointType()) {
@@ -87,9 +104,24 @@ public class MessageHandlerService {
     }
 
     private byte[] sendMq(Participant destination, byte[] message) {
-        log.info("MQ message sent to {} (queue: {})", destination.getCode(),
-                destination.getEndpointUrl());
-        return "OK".getBytes();
+        if (!kafkaEnabled) {
+            log.info("MQ stub: message to {} (queue: {})", destination.getCode(),
+                    destination.getEndpointUrl());
+            return "OK".getBytes();
+        }
+
+        try {
+            String topic = destination.getEndpointUrl() != null
+                    ? destination.getEndpointUrl() : "switch-mq-" + destination.getCode();
+            String correlationId = java.util.UUID.randomUUID().toString();
+
+            kafkaTemplate.send(topic, correlationId, message);
+            log.info("MQ Kafka: message sent to topic={}, correlationId={}", topic, correlationId);
+            return "OK".getBytes(StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            log.error("MQ Kafka send failed: {}", e.getMessage());
+            return "ERROR".getBytes(StandardCharsets.UTF_8);
+        }
     }
 
     private byte[] sendFile(Participant destination, byte[] message) {

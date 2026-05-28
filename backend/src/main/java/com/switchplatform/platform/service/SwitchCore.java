@@ -12,6 +12,8 @@ import com.switchplatform.platform.repository.RoutingRuleRepository;
 import com.switchplatform.platform.repository.TransactionRepository;
 import com.switchplatform.platform.router.RoutingContext;
 import com.switchplatform.platform.router.RoutingResult;
+import com.switchplatform.platform.service.acquiring.MerchantService;
+import com.switchplatform.platform.service.clearing.ClearingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -36,6 +38,8 @@ public class SwitchCore {
     private final ParticipantService participantService;
     private final MessageHandlerService messageHandlerService;
     private final ObjectMapper objectMapper;
+    private final MerchantService merchantService;
+    private final ClearingService clearingService;
 
     public Transaction processIso8583Message(byte[] rawMessage, String sourceCode) {
         IsoMessage isoMsg = iso8583Engine.parse(rawMessage);
@@ -138,6 +142,10 @@ public class SwitchCore {
             transaction.setResponseAt(OffsetDateTime.now());
             transaction.setProcessingTimeMs(calculateProcessingTime(transaction.getRequestAt()));
 
+            if (transaction.getStatus() == Transaction.TransactionStatus.COMPLETED) {
+                postProcessTransaction(transaction, pan, mti);
+            }
+
         } catch (Exception e) {
             log.error("Transaction {} failed: {}", transaction.getTransactionId(), e.getMessage());
             transaction.setResponseCode("99");
@@ -227,6 +235,10 @@ public class SwitchCore {
                     Transaction.TransactionStatus.FAILED);
             transaction.setResponseAt(OffsetDateTime.now());
 
+            if (transaction.getStatus() == Transaction.TransactionStatus.COMPLETED) {
+                postProcessTransaction(transaction, pan, "pacs.008");
+            }
+
         } catch (Exception e) {
             log.error("ISO 20022 transaction failed: {}", e.getMessage());
             transaction.setResponseCode("RJCT");
@@ -235,6 +247,48 @@ public class SwitchCore {
         }
 
         return transactionRepository.save(transaction);
+    }
+
+    private void postProcessTransaction(Transaction transaction, String pan, String mti) {
+        // Module B: Calculate MDR fee for merchant
+        if (transaction.getMerchantId() != null && transaction.getAmount() != null) {
+            try {
+                merchantService.getMerchantByCode(transaction.getMerchantId())
+                        .ifPresent(merchant -> {
+                            BigDecimal fee = merchantService.calculateMdr(
+                                    merchant.getId(), transaction.getAmount(), "VISA", "DEBIT");
+                            log.info("MDR calculated: merchant={}, amount={}, fee={}",
+                                    merchant.getMerchantId(), transaction.getAmount(), fee);
+                        });
+            } catch (Exception e) {
+                log.warn("MDR calculation failed for transaction {}: {}",
+                        transaction.getTransactionId(), e.getMessage());
+            }
+        }
+
+        // Module E: Auto-submit to clearing
+        try {
+            if (transaction.getAmount() != null
+                    && transaction.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+                ClearingService.ClearingData clearingData = ClearingService.ClearingData.builder()
+                        .transactionId(transaction.getTransactionId())
+                        .acquiringParticipantId(transaction.getAcquiringParticipant() != null
+                                ? transaction.getAcquiringParticipant().getId() : null)
+                        .issuingParticipantId(transaction.getIssuingParticipant() != null
+                                ? transaction.getIssuingParticipant().getId() : null)
+                        .amount(transaction.getAmount())
+                        .currencyCode(transaction.getCurrencyCode() != null
+                                ? transaction.getCurrencyCode() : "TND")
+                        .messageType(mti)
+                        .transactionDate(OffsetDateTime.now())
+                        .build();
+                clearingService.processClearing(clearingData);
+                log.info("Clearing submitted for transaction {}", transaction.getTransactionId());
+            }
+        } catch (Exception e) {
+            log.warn("Clearing submission failed for transaction {}: {}",
+                    transaction.getTransactionId(), e.getMessage());
+        }
     }
 
     private RoutingRule routingRuleFromResult(RoutingResult result) {

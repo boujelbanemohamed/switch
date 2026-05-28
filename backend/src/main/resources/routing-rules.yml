@@ -1,0 +1,129 @@
+routing-rules:
+  - name: "Visa Domestic - TND"
+    description: "Route Visa TND transactions to Tunisian Visa issuer"
+    priority: 1
+    condition: "bin.startsWith('4765') || bin.startsWith('4634')"
+    source: "*"
+    destination: "ISSUER"
+    protocol: "ISO8583"
+    messageTypes: ["0100", "0200", "0420"]
+    status: "ACTIVE"
+
+  - name: "Mastercard Domestic - TND"
+    description: "Route Mastercard TND transactions to Tunisian Mastercard issuer"
+    priority: 2
+    condition: "bin.startsWith('5178') || bin.startsWith('4321') || bin.startsWith('4403')"
+    source: "*"
+    destination: "ISSUER"
+    protocol: "ISO8583"
+    messageTypes: ["0100", "0200", "0420"]
+    status: "ACTIVE"
+
+  - name: "Carte Bleue (SIB) - TND"
+    description: "Route Carte Bleue (5070) transactions to SIB"
+    priority: 3
+    condition: "bin.startsWith('5070')"
+    source: "*"
+    destination: "SIB"
+    protocol: "ISO8583"
+    messageTypes: ["0100", "0200", "0420"]
+    status: "ACTIVE"
+
+  - name: "e-DINAR (Poste Tunisienne) - TND"
+    description: "Route e-DINAR (609x) transactions to La Poste Tunisienne"
+    priority: 4
+    condition: "bin.startsWith('6091') || bin.startsWith('6092') || bin.startsWith('6093') || bin.startsWith('6094')"
+    source: "*"
+    destination: "POSTE_TUNISIENNE"
+    protocol: "ISO8583"
+    messageTypes: ["0100", "0200", "0420"]
+    status: "ACTIVE"
+
+  - name: "ATB Mastercard - TND"
+    description: "Route ATB Mastercard transactions"
+    priority: 5
+    condition: "bin.startsWith('5178') && merchantCategory != '6010'"
+    source: "*"
+    destination: "ATB"
+    protocol: "ISO8583"
+    messageTypes: ["0100", "0200"]
+    status: "ACTIVE"
+
+  - name: "BH Visa - TND"
+    description: "Route BH Visa transactions"
+    priority: 6
+    condition: "bin.startsWith('4765') && merchantCategory != '6010'"
+    source: "*"
+    destination: "BH"
+    protocol: "ISO8583"
+    messageTypes: ["0100", "0200"]
+    status: "ACTIVE"
+
+  - name: "BNA Visa - TND"
+    description: "Route BNA Visa transactions"
+    priority: 7
+    condition: "bin.startsWith('4634')"
+    source: "*"
+    destination: "BNA"
+    protocol: "ISO8583"
+    messageTypes: ["0100", "0200"]
+    status: "ACTIVE"
+
+  - name: "UIB Mastercard - TND"
+    description: "Route UIB Mastercard transactions"
+    priority: 8
+    condition: "bin.startsWith('4321')"
+    source: "*"
+    destination: "UIB"
+    protocol: "ISO8583"
+    messageTypes: ["0100", "0200"]
+    status: "ACTIVE"
+
+  - name: "AMC Mastercard - TND"
+    description: "Route AMC Mastercard transactions"
+    priority: 9
+    condition: "bin.startsWith('4403')"
+    source: "*"
+    destination: "AMC"
+    protocol: "ISO8583"
+    messageTypes: ["0100", "0200"]
+    status: "ACTIVE"
+
+  - name: "Default TND Acquirer -> Switch"
+    description: "Default routing for unmatched TND transactions"
+    priority: 100
+    condition: "true"
+    source: "*"
+    destination: "SWITCH"
+    protocol: "BOTH"
+    messageTypes: ["*"]
+    status: "ACTIVE"
+
+  - name: "ISO 20022 - TND Clearing"
+    description: "Route ISO 20022 pacs.008 clearing messages"
+    priority: 10
+    condition: "mti == 'pacs.008' && currencyCode == 'TND'"
+    source: "*"
+    destination: "CLEARING_HOUSE"
+    protocol: "ISO20022"
+    messageTypes: ["pacs.008", "pacs.004", "camt.056"]
+    status: "ACTIVE"
+
+  - name: "E-Commerce - 3DSecure Routing"
+    description: "Route 3DSecure authentication messages to ACS"
+    priority: 20
+    condition: "mti == '0100' && posEntryMode == '05' && merchantCategory == '5734'"
+    source: "*"
+    destination: "ACS"
+    protocol: "ISO8583"
+    messageTypes: ["0100"]
+    status: "ACTIVE"
+
+  - name: "International - Visa/MC"
+    description: "Route international transactions to Visa/Mastercard international gateway"
+    priority: 50
+    condition: "currencyCode != 'TND'"
+    source: "*"
+    destination: "INTERNATIONAL_GATEWAY"
+    protocol: "BOTH"
+    status: "ACTIVE"

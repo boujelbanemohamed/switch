@@ -9,7 +9,7 @@ test.describe('Back-office & Reporting', () => {
   test('affiche les statistiques (Audit, Critical, Warnings, Events)', async ({ page }) => {
     await page.goto('/backoffice');
     await page.waitForLoadState('networkidle');
-    const statCards = page.locator('main > div > div').first().locator('> div');
+    const statCards = page.locator('main > div > div').nth(1).locator('> div');
     const count = await statCards.count();
     expect(count).toBeGreaterThanOrEqual(3);
   });

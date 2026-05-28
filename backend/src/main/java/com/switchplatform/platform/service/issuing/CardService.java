@@ -3,6 +3,7 @@ package com.switchplatform.platform.service.issuing;
 import com.switchplatform.platform.model.issuing.Card;
 import com.switchplatform.platform.model.issuing.CardOperation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,8 @@ public class CardService {
     private final ConcurrentMap<String, UUID> suffixIndex = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, List<CardOperation>> operationStore = new ConcurrentHashMap<>();
     private final AtomicLong operationIdCounter = new AtomicLong(1);
+
+    private final NotificationService notificationService;
 
     @Transactional
     public Card createCard(Card card) {
@@ -61,6 +64,7 @@ public class CardService {
         card.setActivationDate(LocalDate.now());
         card.setUpdatedAt(OffsetDateTime.now());
         recordOperation(cardId, "ACTIVATE", oldStatus.name(), card.getStatus().name(), "Card activated");
+        notificationService.notifyCardActivation(card);
         log.info("Activated card {}", cardId);
         return card;
     }
@@ -74,6 +78,7 @@ public class CardService {
         card.setBlockDate(LocalDate.now());
         card.setUpdatedAt(OffsetDateTime.now());
         recordOperation(cardId, "BLOCK", oldStatus.name(), card.getStatus().name(), reason);
+        notificationService.notifyCardBlocked(card, reason);
         log.info("Blocked card {} reason: {}", cardId, reason);
         return card;
     }
@@ -87,6 +92,7 @@ public class CardService {
         card.setBlockDate(null);
         card.setUpdatedAt(OffsetDateTime.now());
         recordOperation(cardId, "UNBLOCK", oldStatus.name(), card.getStatus().name(), "Card unblocked");
+        notificationService.notifyCardUnblocked(card);
         log.info("Unblocked card {}", cardId);
         return card;
     }
@@ -100,6 +106,7 @@ public class CardService {
         card.setBlockDate(LocalDate.now());
         card.setUpdatedAt(OffsetDateTime.now());
         recordOperation(cardId, "REPORT_LOST", oldStatus.name(), card.getStatus().name(), "Card reported lost");
+        notificationService.notifyCardLost(card);
         log.info("Card {} reported as lost", cardId);
         return card;
     }
@@ -113,6 +120,7 @@ public class CardService {
         card.setBlockDate(LocalDate.now());
         card.setUpdatedAt(OffsetDateTime.now());
         recordOperation(cardId, "REPORT_STOLEN", oldStatus.name(), card.getStatus().name(), "Card reported stolen");
+        notificationService.notifyCardStolen(card);
         log.info("Card {} reported as stolen", cardId);
         return card;
     }
@@ -164,6 +172,7 @@ public class CardService {
         cardStore.put(renewed.getId(), renewed);
         suffixIndex.put(renewed.getCardNumberSuffix(), renewed.getId());
         recordOperation(renewed.getId(), "CREATE", null, renewed.getStatus().name(), "Renewed card");
+        notificationService.notifyCardRenewed(oldCard, renewed);
         log.info("Renewed card {} -> new card {}", cardId, renewed.getId());
         return renewed;
     }
@@ -202,6 +211,7 @@ public class CardService {
         card.setPinAttempts(0);
         card.setUpdatedAt(OffsetDateTime.now());
         recordOperation(cardId, "CHANGE_PIN", null, null, "PIN changed");
+        notificationService.notifyPinChanged(card);
         log.info("PIN changed for card {}", cardId);
         return card;
     }
@@ -222,6 +232,7 @@ public class CardService {
             card.setUpdatedAt(OffsetDateTime.now());
             recordOperation(cardId, "BLOCK", card.getStatus().name(), Card.CardStatus.BLOCKED.name(),
                     "Blocked after " + card.getPinAttempts() + " failed PIN attempts");
+            notificationService.notifyCardBlocked(card, "MAX_PIN_ATTEMPTS_EXCEEDED");
             log.warn("Card {} blocked after max PIN attempts", cardId);
             return false;
         }
@@ -247,6 +258,7 @@ public class CardService {
                 card.setUpdatedAt(OffsetDateTime.now());
                 recordOperation(cardId, "BLOCK", null, Card.CardStatus.BLOCKED.name(),
                         "Blocked after max PIN attempts");
+                notificationService.notifyCardBlocked(card, "MAX_PIN_ATTEMPTS_EXCEEDED");
                 log.warn("Card {} blocked after max PIN attempts", cardId);
             }
         }

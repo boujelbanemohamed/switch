@@ -6,6 +6,9 @@ import com.switchplatform.platform.model.authorization.AuthRule.ActionType;
 import com.switchplatform.platform.model.authorization.AuthRule.RuleStatus;
 import com.switchplatform.platform.model.authorization.CardLimitUsage;
 import com.switchplatform.platform.model.authorization.VelocityCheck;
+import com.switchplatform.platform.model.issuing.CardAccount;
+import com.switchplatform.platform.service.fraud.FraudEngine;
+import com.switchplatform.platform.service.issuing.CardAccountService;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,9 @@ public class AuthorizationEngine {
     private final Map<UUID, List<CardLimitUsage>> cardLimits = new ConcurrentHashMap<>();
     private final Map<UUID, List<VelocityCheck>> velocityChecks = new ConcurrentHashMap<>();
 
+    private final FraudEngine fraudEngine;
+    private final CardAccountService cardAccountService;
+
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         long start = System.currentTimeMillis();
         log.info("Authorization request: cardId={}, amount={}, currency={}",
@@ -47,34 +53,66 @@ public class AuthorizationEngine {
                 .requestedAt(OffsetDateTime.now())
                 .build();
 
-        List<AuthRule> applicableRules = rules.values().stream()
-                .filter(r -> r.getStatus() == RuleStatus.ACTIVE)
-                .filter(r -> evaluateCondition(r, request))
-                .sorted(Comparator.comparingInt(AuthRule::getPriority))
-                .toList();
+        // 1. Evaluate fraud score
+        FraudEngine.FraudEvaluationResult fraudResult = evaluateFraud(request);
+        decision.setFraudScore(fraudResult.getScore());
+        decision.setRiskScore(fraudResult.getScore());
 
-        AuthRule matchedRule = null;
-        for (AuthRule rule : applicableRules) {
-            matchedRule = rule;
-            ActionType action = rule.getAction();
-            decision.setRuleId(rule.getId());
-            decision.setRuleName(rule.getName());
-            decision.setResponseCode(rule.getResponseCode());
+        if (fraudResult.getAction() == FraudEngine.FraudAction.BLOCK) {
+            decision.setDecision(AuthDecision.Decision.DECLINED);
+            decision.setResponseReason("Blocked by fraud engine (score: " + fraudResult.getScore() + ")");
+            decision.setResponseCode("59");
+        }
 
-            if (action == ActionType.DECLINE) {
-                decision.setDecision(AuthDecision.Decision.DECLINED);
-                decision.setResponseReason("Declined by rule: " + rule.getName());
-                break;
-            } else if (action == ActionType.CHALLENGE) {
-                decision.setDecision(AuthDecision.Decision.CHALLENGED);
-                decision.setResponseReason("Challenge by rule: " + rule.getName());
-                break;
-            } else if (action == ActionType.APPROVE) {
-                decision.setDecision(AuthDecision.Decision.APPROVED);
-                decision.setResponseReason("Approved by rule: " + rule.getName());
+        // 2. Check card account balance
+        if (decision.getDecision() == null && request.getCardholderId() != null) {
+            List<CardAccount> cardAccounts = cardAccountService.getAccountsByCardholderId(request.getCardholderId());
+            if (!cardAccounts.isEmpty()) {
+                CardAccount account = cardAccounts.get(0);
+                decision.setCardBalanceBefore(account.getAvailableBalance());
+                if (request.getAmount() != null
+                        && account.getAvailableBalance().compareTo(request.getAmount()) < 0) {
+                    decision.setDecision(AuthDecision.Decision.DECLINED);
+                    decision.setResponseReason("Insufficient balance");
+                    decision.setResponseCode("51");
+                    log.warn("Insufficient balance: account={}, available={}, required={}",
+                            account.getId(), account.getAvailableBalance(), request.getAmount());
+                }
             }
         }
 
+        // 3. Evaluate authorization rules
+        AuthRule matchedRule = null;
+        if (decision.getDecision() == null) {
+            List<AuthRule> applicableRules = rules.values().stream()
+                    .filter(r -> r.getStatus() == RuleStatus.ACTIVE)
+                    .filter(r -> evaluateCondition(r, request))
+                    .sorted(Comparator.comparingInt(AuthRule::getPriority))
+                    .toList();
+
+            for (AuthRule rule : applicableRules) {
+                matchedRule = rule;
+                ActionType action = rule.getAction();
+                decision.setRuleId(rule.getId());
+                decision.setRuleName(rule.getName());
+                decision.setResponseCode(rule.getResponseCode());
+
+                if (action == ActionType.DECLINE) {
+                    decision.setDecision(AuthDecision.Decision.DECLINED);
+                    decision.setResponseReason("Declined by rule: " + rule.getName());
+                    break;
+                } else if (action == ActionType.CHALLENGE) {
+                    decision.setDecision(AuthDecision.Decision.CHALLENGED);
+                    decision.setResponseReason("Challenge by rule: " + rule.getName());
+                    break;
+                } else if (action == ActionType.APPROVE) {
+                    decision.setDecision(AuthDecision.Decision.APPROVED);
+                    decision.setResponseReason("Approved by rule: " + rule.getName());
+                }
+            }
+        }
+
+        // 4. Check card limits
         if (decision.getDecision() == AuthDecision.Decision.APPROVED
                 || decision.getDecision() == null) {
             String limitReason = checkCardLimits(request);
@@ -85,6 +123,7 @@ public class AuthorizationEngine {
             }
         }
 
+        // 5. Check velocity
         if (decision.getDecision() == AuthDecision.Decision.APPROVED) {
             String velocityReason = checkVelocity(request);
             if (velocityReason != null) {
@@ -94,10 +133,16 @@ public class AuthorizationEngine {
             }
         }
 
+        // 6. Default approval
         if (decision.getDecision() == null) {
             decision.setDecision(AuthDecision.Decision.APPROVED);
             decision.setResponseCode("00");
             decision.setResponseReason("Approved");
+        }
+
+        // 7. Post-approval actions: hold on account + update limit usage
+        if (decision.getDecision() == AuthDecision.Decision.APPROVED) {
+            postApprovalActions(request, decision);
         }
 
         if (matchedRule != null) {
@@ -110,8 +155,9 @@ public class AuthorizationEngine {
         decision.setDecidedAt(OffsetDateTime.now());
         decisions.add(decision);
 
-        log.info("Authorization result: {} reason={} time={}ms",
-                decision.getDecision(), decision.getResponseReason(), elapsed);
+        log.info("Authorization result: {} reason={} fraudScore={} time={}ms",
+                decision.getDecision(), decision.getResponseReason(),
+                decision.getFraudScore(), elapsed);
 
         return AuthorizationResponse.builder()
                 .decision(mapDecision(decision.getDecision()))
@@ -119,8 +165,58 @@ public class AuthorizationEngine {
                         ? decision.getResponseCode() : "00")
                 .reason(decision.getResponseReason())
                 .processingTimeMs((int) elapsed)
+                .fraudScore(decision.getFraudScore())
                 .authDecisionId(decision.getId())
                 .build();
+    }
+
+    private FraudEngine.FraudEvaluationResult evaluateFraud(AuthorizationRequest request) {
+        FraudEngine.EvaluationContext ctx = FraudEngine.EvaluationContext.builder()
+                .cardId(request.getCardId())
+                .cardholderId(request.getCardholderId())
+                .transactionId(request.getStan())
+                .amount(request.getAmount())
+                .currencyCode(request.getCurrencyCode())
+                .merchantId(request.getMerchantId())
+                .merchantCategory(request.getMerchantCategory())
+                .countryCode(request.getCountryCode())
+                .panHash(request.getPanHash())
+                .timestamp(OffsetDateTime.now())
+                .build();
+        return fraudEngine.evaluateTransaction(ctx);
+    }
+
+    private void postApprovalActions(AuthorizationRequest request, AuthDecision decision) {
+        if (request.getCardId() == null || request.getAmount() == null) return;
+
+        // Place hold on account
+        if (request.getCardholderId() != null) {
+            try {
+                List<CardAccount> cardAccounts = cardAccountService.getAccountsByCardholderId(request.getCardholderId());
+                if (!cardAccounts.isEmpty()) {
+                    CardAccount account = cardAccountService.hold(cardAccounts.get(0).getId(), request.getAmount());
+                    decision.setCardBalanceAfter(account.getAvailableBalance());
+                    log.info("Hold placed: cardholderId={}, amount={}", request.getCardholderId(), request.getAmount());
+                }
+            } catch (Exception e) {
+                log.warn("Failed to place hold for cardholderId={}: {}", request.getCardholderId(), e.getMessage());
+            }
+        }
+
+        // Update limit usage
+        if (request.getAmount() != null) {
+            List<CardLimitUsage> limits = cardLimits.computeIfAbsent(
+                    request.getCardId(), k -> new ArrayList<>());
+            for (CardLimitUsage limit : limits) {
+                BigDecimal used = limit.getUsedAmount() != null ? limit.getUsedAmount() : BigDecimal.ZERO;
+                limit.setUsedAmount(used.add(request.getAmount()));
+                limit.setCountUsed((limit.getCountUsed() != null ? limit.getCountUsed() : 0) + 1);
+                decision.setLimitUsed(limit.getUsedAmount());
+                decision.setLimitMax(limit.getLimitAmount());
+                decision.setVelocityUsed(limit.getCountUsed() != null ? limit.getCountUsed() : 0);
+                decision.setVelocityMax(limit.getCountMax() != null ? limit.getCountMax() : 0);
+            }
+        }
     }
 
     private boolean evaluateCondition(AuthRule rule, AuthorizationRequest request) {

@@ -13,7 +13,7 @@ spring:
       minimum-idle: 5
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
@@ -57,3 +57,8 @@ switch:
     core-pool-size: 10
     max-pool-size: 50
     queue-capacity: 100
+  auth:
+    jwt:
+      secret: "6c156d8b6c9e8a3f4d2e5f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7"
+      access-token-expiration: 3600000
+      refresh-token-expiration: 86400000

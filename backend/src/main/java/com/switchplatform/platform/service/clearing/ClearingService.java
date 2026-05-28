@@ -42,6 +42,9 @@ public class ClearingService {
         private BigDecimal feeAmount;
         private String messageType;
         private OffsetDateTime transactionDate;
+        private String cardBrand;
+        private String cardType;
+        private String merchantCategoryCode;
     }
 
     public ClearingRecord processClearing(ClearingData data) {
@@ -55,6 +58,14 @@ public class ClearingService {
             throw new IllegalArgumentException("Issuing participant is required");
         }
 
+        BigDecimal interchangeAmount = data.getInterchangeAmount() != null
+                ? data.getInterchangeAmount()
+                : calculateInterchangeFee(data);
+        BigDecimal feeAmount = data.getFeeAmount() != null
+                ? data.getFeeAmount()
+                : interchangeAmount;
+        BigDecimal netAmount = data.getAmount().subtract(interchangeAmount);
+
         ClearingRecord record = ClearingRecord.builder()
                 .clearingDate(data.getTransactionDate() != null
                         ? data.getTransactionDate().toLocalDate() : LocalDate.now())
@@ -63,9 +74,9 @@ public class ClearingService {
                 .issuingParticipantId(data.getIssuingParticipantId())
                 .amount(data.getAmount())
                 .currencyCode(data.getCurrencyCode())
-                .interchangeAmount(data.getInterchangeAmount())
-                .feeAmount(data.getFeeAmount())
-                .netAmount(data.getAmount())
+                .interchangeAmount(interchangeAmount)
+                .feeAmount(feeAmount)
+                .netAmount(netAmount)
                 .messageType(data.getMessageType())
                 .transactionDate(data.getTransactionDate())
                 .status(ClearingRecord.Status.PENDING)
@@ -79,6 +90,66 @@ public class ClearingService {
         log.info("Processed clearing record {} for transaction {}",
                 record.getId(), data.getTransactionId());
         return record;
+    }
+
+    private BigDecimal calculateInterchangeFee(ClearingData data) {
+        BigDecimal amount = data.getAmount() != null ? data.getAmount() : BigDecimal.ZERO;
+        String brand = data.getCardBrand() != null ? data.getCardBrand().toUpperCase() : "VISA";
+        String type = data.getCardType() != null ? data.getCardType().toUpperCase() : "DEBIT";
+        String mcc = data.getMerchantCategoryCode();
+
+        BigDecimal rate;
+        BigDecimal fixedFee;
+
+        switch (brand) {
+            case "VISA":
+                if ("CREDIT".equals(type)) {
+                    rate = new BigDecimal("0.0120");
+                    fixedFee = new BigDecimal("0.50");
+                } else if ("PREPAID".equals(type)) {
+                    rate = new BigDecimal("0.0080");
+                    fixedFee = new BigDecimal("0.20");
+                } else {
+                    rate = new BigDecimal("0.0095");
+                    fixedFee = new BigDecimal("0.25");
+                }
+                break;
+            case "MASTERCARD":
+                if ("CREDIT".equals(type)) {
+                    rate = new BigDecimal("0.0130");
+                    fixedFee = new BigDecimal("0.55");
+                } else if ("PREPAID".equals(type)) {
+                    rate = new BigDecimal("0.0075");
+                    fixedFee = new BigDecimal("0.15");
+                } else {
+                    rate = new BigDecimal("0.0100");
+                    fixedFee = new BigDecimal("0.30");
+                }
+                break;
+            case "CB":
+            case "CARTE_BLEUE":
+                rate = new BigDecimal("0.0080");
+                fixedFee = new BigDecimal("0.15");
+                break;
+            case "E-DINAR":
+                rate = new BigDecimal("0.0050");
+                fixedFee = new BigDecimal("0.10");
+                break;
+            default:
+                rate = new BigDecimal("0.0110");
+                fixedFee = new BigDecimal("0.35");
+        }
+
+        if (mcc != null && ("4814".equals(mcc) || "4899".equals(mcc))) {
+            rate = rate.add(new BigDecimal("0.0020"));
+        }
+
+        BigDecimal percentageFee = amount.multiply(rate).setScale(3, java.math.RoundingMode.HALF_UP);
+        BigDecimal totalFee = percentageFee.add(fixedFee).setScale(3, java.math.RoundingMode.HALF_UP);
+
+        log.info("Interchange fee calculated: brand={}, type={}, amount={}, rate={}, fee={}",
+                brand, type, amount, rate, totalFee);
+        return totalFee;
     }
 
     public ClearingRecord clearTransaction(UUID clearingId) {

@@ -9,10 +9,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -21,6 +24,10 @@ public class FraudEngine {
 
     private final Map<UUID, FraudRule> rules = new ConcurrentHashMap<>();
     private final List<FraudAlert> alerts = new CopyOnWriteArrayList<>();
+    private final Map<UUID, Deque<VelocityRecord>> velocityCache = new ConcurrentHashMap<>();
+    private final BehavioralProfileService profileService;
+
+    private static final long VELOCITY_WINDOW_MINUTES = 60;
 
     public FraudEvaluationResult evaluateTransaction(EvaluationContext ctx) {
         log.info("Fraud evaluation: cardId={}, txnId={}, amount={}",
@@ -33,6 +40,7 @@ public class FraudEngine {
         int totalScore = 0;
         List<String> matchedRuleNames = new ArrayList<>();
         List<UUID> alertIds = new ArrayList<>();
+        int dynamicScore = 0;
 
         for (FraudRule rule : activeRules) {
             if (matchesCondition(rule, ctx)) {
@@ -63,6 +71,22 @@ public class FraudEngine {
             }
         }
 
+        if (ctx.getCardholderId() != null) {
+            BehavioralProfileService.AnomalyResult anomaly = profileService.detectAnomalies(
+                    ctx.getCardholderId(), ctx.getAmount(), ctx.getMerchantCategory(),
+                    ctx.getCountryCode(),
+                    ctx.getTimestamp() != null ? ctx.getTimestamp().toLocalDateTime() : LocalDateTime.now());
+            dynamicScore += anomaly.getScore();
+            if (!anomaly.getReasons().isEmpty()) {
+                log.info("Behavioral anomalies detected: {} (score={})",
+                        anomaly.getReasons(), anomaly.getScore());
+            }
+        }
+
+        int velocityScore = checkVelocity(ctx);
+        dynamicScore += velocityScore;
+
+        totalScore += dynamicScore;
         totalScore = Math.min(totalScore, 100);
 
         RiskLevel riskLevel;
@@ -81,8 +105,10 @@ public class FraudEngine {
             action = FraudAction.ALLOW;
         }
 
-        log.info("Fraud result: score={}, risk={}, action={}, rules={}",
-                totalScore, riskLevel, action, matchedRuleNames.size());
+        recordVelocity(ctx);
+
+        log.info("Fraud result: score={} (dynamic={}), risk={}, action={}, rules={}",
+                totalScore, dynamicScore, riskLevel, action, matchedRuleNames.size());
 
         return FraudEvaluationResult.builder()
                 .score(totalScore)
@@ -98,21 +124,134 @@ public class FraudEngine {
         if (expr != null && !expr.isBlank()) {
             return evaluateExpression(expr, ctx);
         }
+
         FraudRule.RuleCategory category = rule.getRuleCategory();
-        if (category == FraudRule.RuleCategory.AMOUNT && ctx.getAmount() != null) {
-            return ctx.getAmount().compareTo(BigDecimal.valueOf(10000)) > 0;
-        }
-        if (category == FraudRule.RuleCategory.GEO && ctx.getCountryCode() != null) {
-            return true;
-        }
-        if (category == FraudRule.RuleCategory.VELOCITY) {
-            return true;
-        }
-        return true;
+        Objects.requireNonNull(category, "Rule category must not be null for rule: " + rule.getName());
+
+        return switch (category) {
+            case AMOUNT -> ctx.getAmount() != null
+                    && ctx.getAmount().compareTo(BigDecimal.valueOf(10000)) > 0;
+            case GEO -> ctx.getCountryCode() != null
+                    && !ctx.getCountryCode().equalsIgnoreCase(ctx.getPreviousCountryCode());
+            case VELOCITY -> checkVelocity(ctx) > 0;
+            case BEHAVIORAL -> ctx.getCardholderId() != null
+                    && profileService.detectAnomalies(ctx.getCardholderId(), ctx.getAmount(),
+                            ctx.getMerchantCategory(), ctx.getCountryCode(),
+                            ctx.getTimestamp() != null ? ctx.getTimestamp().toLocalDateTime()
+                                    : LocalDateTime.now()).getScore() > 0;
+            case DEVICE -> ctx.getDeviceId() != null && ctx.getPreviousDeviceId() != null
+                    && !ctx.getDeviceId().equals(ctx.getPreviousDeviceId());
+            case MERCHANT -> ctx.getMerchantId() != null && ctx.getPreviousMerchantId() != null
+                    && !ctx.getMerchantId().equals(ctx.getPreviousMerchantId());
+            default -> true;
+        };
     }
 
     private boolean evaluateExpression(String expr, EvaluationContext ctx) {
-        return true;
+        try {
+            String e = expr.trim();
+
+            if (e.startsWith("amount > ")) {
+                BigDecimal threshold = new BigDecimal(e.substring(9).trim());
+                return ctx.getAmount() != null && ctx.getAmount().compareTo(threshold) > 0;
+            }
+            if (e.startsWith("amount < ")) {
+                BigDecimal threshold = new BigDecimal(e.substring(9).trim());
+                return ctx.getAmount() != null && ctx.getAmount().compareTo(threshold) < 0;
+            }
+            if (e.startsWith("country != ")) {
+                String country = e.substring(11).trim().replaceAll("['\"]", "");
+                return ctx.getCountryCode() != null && !ctx.getCountryCode().equalsIgnoreCase(country);
+            }
+            if (e.startsWith("country == ")) {
+                String country = e.substring(11).trim().replaceAll("['\"]", "");
+                return ctx.getCountryCode() != null && ctx.getCountryCode().equalsIgnoreCase(country);
+            }
+            if (e.startsWith("mcc == ")) {
+                String mcc = e.substring(7).trim().replaceAll("['\"]", "");
+                return ctx.getMerchantCategory() != null && ctx.getMerchantCategory().equals(mcc);
+            }
+            if (e.startsWith("mcc != ")) {
+                String mcc = e.substring(7).trim().replaceAll("['\"]", "");
+                return ctx.getMerchantCategory() != null && !ctx.getMerchantCategory().equals(mcc);
+            }
+            if (e.equals("is_foreign")) {
+                return ctx.getCountryCode() != null && !"TN".equalsIgnoreCase(ctx.getCountryCode());
+            }
+            if (e.equals("is_high_amount")) {
+                return ctx.getAmount() != null && ctx.getAmount().compareTo(BigDecimal.valueOf(5000)) > 0;
+            }
+
+            log.warn("Unsupported expression: {}", expr);
+            return false;
+        } catch (Exception ex) {
+            log.error("Failed to evaluate expression: {}", expr, ex);
+            return false;
+        }
+    }
+
+    private int checkVelocity(EvaluationContext ctx) {
+        if (ctx.getCardId() == null) return 0;
+
+        Deque<VelocityRecord> records = velocityCache.get(ctx.getCardId());
+        if (records == null || records.isEmpty()) return 0;
+
+        OffsetDateTime cutoff = OffsetDateTime.now().minusMinutes(VELOCITY_WINDOW_MINUTES);
+        List<VelocityRecord> recent = records.stream()
+                .filter(r -> r.timestamp.isAfter(cutoff))
+                .toList();
+
+        if (recent.isEmpty()) return 0;
+
+        int score = 0;
+        int count = recent.size();
+
+        if (count > 10) {
+            score += 30;
+        } else if (count > 5) {
+            score += 15;
+        } else if (count > 3) {
+            score += 5;
+        }
+
+        BigDecimal totalAmount = recent.stream()
+                .map(r -> r.amount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (totalAmount.compareTo(BigDecimal.valueOf(50000)) > 0) {
+            score += 20;
+        } else if (totalAmount.compareTo(BigDecimal.valueOf(20000)) > 0) {
+            score += 10;
+        }
+
+        if (recent.size() >= 3) {
+            Set<String> uniqueCountries = recent.stream()
+                    .map(r -> r.countryCode)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            if (uniqueCountries.size() >= 3) {
+                score += 25;
+            } else if (uniqueCountries.size() >= 2) {
+                score += 10;
+            }
+        }
+
+        return score;
+    }
+
+    private void recordVelocity(EvaluationContext ctx) {
+        if (ctx.getCardId() == null) return;
+
+        Deque<VelocityRecord> records = velocityCache
+                .computeIfAbsent(ctx.getCardId(), k -> new ConcurrentLinkedDeque<>());
+
+        records.addFirst(new VelocityRecord(ctx.getAmount(), ctx.getCountryCode(),
+                OffsetDateTime.now()));
+
+        while (records.size() > 100) {
+            records.removeLast();
+        }
     }
 
     public List<FraudRule> listRules() {
@@ -128,12 +267,19 @@ public class FraudEngine {
         if (rule.getStatus() == null) {
             rule.setStatus(FraudRule.Status.ACTIVE);
         }
-        rule.setCreatedAt(OffsetDateTime.now());
+        if (rule.getCreatedAt() == null) {
+            rule.setCreatedAt(OffsetDateTime.now());
+        }
         rule.setUpdatedAt(OffsetDateTime.now());
         rules.put(rule.getId(), rule);
         log.info("Fraud rule defined: id={}, name={}, category={}",
                 rule.getId(), rule.getName(), rule.getRuleCategory());
         return rule;
+    }
+
+    public void deleteRule(UUID ruleId) {
+        rules.remove(ruleId);
+        log.info("Fraud rule deleted: id={}", ruleId);
     }
 
     public List<FraudAlert> getAlertsByStatus(String status) {
@@ -188,6 +334,18 @@ public class FraudEngine {
         return alert;
     }
 
+    public List<FraudAlert> getAllAlerts() {
+        return alerts.stream()
+                .sorted(Comparator.comparing(FraudAlert::getCreatedAt).reversed())
+                .collect(Collectors.toList());
+    }
+
+    public Map<String, Long> getAlertStats() {
+        return alerts.stream()
+                .collect(Collectors.groupingBy(
+                        a -> a.getStatus().name(), Collectors.counting()));
+    }
+
     @Data
     @Builder
     public static class EvaluationContext {
@@ -197,11 +355,14 @@ public class FraudEngine {
         private BigDecimal amount;
         private String currencyCode;
         private String merchantId;
+        private String previousMerchantId;
         private String merchantCategory;
         private String countryCode;
+        private String previousCountryCode;
+        private String deviceId;
+        private String previousDeviceId;
         private OffsetDateTime timestamp;
         private String panHash;
-        private String deviceId;
     }
 
     @Data
@@ -221,4 +382,6 @@ public class FraudEngine {
     public enum FraudAction {
         ALLOW, FLAG, BLOCK
     }
+
+    private record VelocityRecord(BigDecimal amount, String countryCode, OffsetDateTime timestamp) {}
 }

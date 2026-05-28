@@ -9,6 +9,9 @@ import com.switchplatform.platform.model.authorization.VelocityCheck;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.switchplatform.platform.service.fraud.BehavioralProfileService;
+import com.switchplatform.platform.service.fraud.FraudEngine;
+import com.switchplatform.platform.service.issuing.CardAccountService;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.List;
@@ -25,7 +28,9 @@ class AuthorizationEngineTest {
 
     @BeforeEach
     void setUp() {
-        authEngine = new AuthorizationEngine();
+        authEngine = new AuthorizationEngine(
+                new FraudEngine(new BehavioralProfileService()),
+                new CardAccountService());
     }
 
     private void setField(Object target, String fieldName, Object value) {

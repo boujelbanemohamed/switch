@@ -1,10 +1,13 @@
 package com.switchplatform.platform.controller.issuing;
 
 import com.switchplatform.platform.model.issuing.Card;
+import com.switchplatform.platform.model.issuing.CardAccount;
 import com.switchplatform.platform.model.issuing.Cardholder;
 import com.switchplatform.platform.model.issuing.WalletToken;
+import com.switchplatform.platform.service.issuing.CardAccountService;
 import com.switchplatform.platform.service.issuing.CardService;
 import com.switchplatform.platform.service.issuing.CardholderService;
+import com.switchplatform.platform.service.issuing.NotificationService;
 import com.switchplatform.platform.service.issuing.WalletTokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +28,8 @@ public class IssuingController {
     private final CardholderService cardholderService;
     private final CardService cardService;
     private final WalletTokenService walletTokenService;
+    private final CardAccountService cardAccountService;
+    private final NotificationService notificationService;
 
     // ─── Cardholder endpoints ───────────────────────────────────────────────
 
@@ -177,5 +182,78 @@ public class IssuingController {
     @GetMapping("/cards/{cardId}/tokens")
     public ResponseEntity<List<WalletToken>> getTokensForCard(@PathVariable UUID cardId) {
         return ResponseEntity.ok(walletTokenService.getTokensByCard(cardId));
+    }
+
+    // ─── Card Account endpoints ─────────────────────────────────────────────
+
+    @PostMapping("/accounts")
+    public ResponseEntity<CardAccount> createAccount(@RequestBody CardAccount account) {
+        return ResponseEntity.ok(cardAccountService.createAccount(account));
+    }
+
+    @GetMapping("/accounts/{id}")
+    public ResponseEntity<CardAccount> getAccount(@PathVariable UUID id) {
+        return cardAccountService.getAccount(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/cardholders/{cardholderId}/accounts")
+    public ResponseEntity<List<CardAccount>> getAccountsByCardholder(@PathVariable UUID cardholderId) {
+        return ResponseEntity.ok(cardAccountService.getAccountsByCardholderId(cardholderId));
+    }
+
+    @PostMapping("/accounts/{id}/debit")
+    public ResponseEntity<CardAccount> debitAccount(
+            @PathVariable UUID id, @RequestBody Map<String, Object> body) {
+        BigDecimal amount = new BigDecimal(body.get("amount").toString());
+        String currency = (String) body.get("currencyCode");
+        return ResponseEntity.ok(cardAccountService.debit(id, amount, currency));
+    }
+
+    @PostMapping("/accounts/{id}/credit")
+    public ResponseEntity<CardAccount> creditAccount(
+            @PathVariable UUID id, @RequestBody Map<String, Object> body) {
+        BigDecimal amount = new BigDecimal(body.get("amount").toString());
+        String currency = (String) body.get("currencyCode");
+        return ResponseEntity.ok(cardAccountService.credit(id, amount, currency));
+    }
+
+    @PostMapping("/accounts/{id}/hold")
+    public ResponseEntity<CardAccount> holdAccount(
+            @PathVariable UUID id, @RequestBody Map<String, Object> body) {
+        BigDecimal amount = new BigDecimal(body.get("amount").toString());
+        return ResponseEntity.ok(cardAccountService.hold(id, amount));
+    }
+
+    @PostMapping("/accounts/{id}/release-hold")
+    public ResponseEntity<CardAccount> releaseHold(
+            @PathVariable UUID id, @RequestBody Map<String, Object> body) {
+        BigDecimal amount = new BigDecimal(body.get("amount").toString());
+        return ResponseEntity.ok(cardAccountService.releaseHold(id, amount));
+    }
+
+    @GetMapping("/accounts")
+    public ResponseEntity<List<CardAccount>> listAccounts() {
+        return ResponseEntity.ok(cardAccountService.listAll());
+    }
+
+    // ─── Notification endpoints ─────────────────────────────────────────────
+
+    @GetMapping("/notifications")
+    public ResponseEntity<List<NotificationService.Notification>> listNotifications() {
+        return ResponseEntity.ok(notificationService.listAll());
+    }
+
+    @GetMapping("/notifications/by-cardholder/{cardholderId}")
+    public ResponseEntity<List<NotificationService.Notification>> getNotificationsByCardholder(
+            @PathVariable UUID cardholderId) {
+        return ResponseEntity.ok(notificationService.getNotificationsByCardholder(cardholderId));
+    }
+
+    @GetMapping("/notifications/by-card/{cardId}")
+    public ResponseEntity<List<NotificationService.Notification>> getNotificationsByCard(
+            @PathVariable UUID cardId) {
+        return ResponseEntity.ok(notificationService.getNotificationsByCard(cardId));
     }
 }

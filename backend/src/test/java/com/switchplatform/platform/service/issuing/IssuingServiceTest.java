@@ -18,10 +18,12 @@ class IssuingServiceTest {
     private CardService cardService;
     private CardholderService cardholderService;
     private WalletTokenService walletTokenService;
+    private NotificationService notificationService;
 
     @BeforeEach
     void setUp() {
-        cardService = new CardService();
+        notificationService = new NotificationService();
+        cardService = new CardService(notificationService);
         cardholderService = new CardholderService(cardService);
         walletTokenService = new WalletTokenService();
     }

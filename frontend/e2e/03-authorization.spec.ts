@@ -9,7 +9,7 @@ test.describe('Authorization - Moteur d\'Autorisation', () => {
   test('affiche les statistiques (Total Rules, Active, Success Rate, Decisions)', async ({ page }) => {
     await page.goto('/authorization');
     await page.waitForLoadState('networkidle');
-    const statCards = page.locator('main > div > div').first().locator('> div');
+    const statCards = page.locator('main > div > div').nth(1).locator('> div');
     const count = await statCards.count();
     expect(count).toBeGreaterThanOrEqual(3);
   });

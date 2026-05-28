@@ -14,10 +14,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class FraudEngineTest {
 
     private FraudEngine fraudEngine;
+    private BehavioralProfileService profileService;
 
     @BeforeEach
     void setUp() {
-        fraudEngine = new FraudEngine();
+        profileService = new BehavioralProfileService();
+        fraudEngine = new FraudEngine(profileService);
     }
 
     @Test

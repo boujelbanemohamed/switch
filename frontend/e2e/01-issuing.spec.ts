@@ -9,7 +9,7 @@ test.describe('Issuing - Émission Cartes & Wallets', () => {
   test('affiche les cartes statistiques (Total Cardholders, Active Cards, KYC)', async ({ page }) => {
     await page.goto('/issuing');
     await page.waitForLoadState('networkidle');
-    const statCards = page.locator('main > div > div').first().locator('> div');
+    const statCards = page.locator('main > div > div').nth(1).locator('> div');
     const count = await statCards.count();
     expect(count).toBeGreaterThanOrEqual(3);
   });

@@ -102,6 +102,28 @@ export interface WalletToken {
   createdAt: string;
 }
 
+export interface CardAccount {
+  id: string;
+  cardId: string;
+  cardholderId: string;
+  balance: number;
+  availableBalance: number;
+  holdAmount: number;
+  currencyCode: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface Notification {
+  id: string;
+  cardId: string;
+  cardholderId: string;
+  type: string;
+  message: string;
+  actionRequired: boolean;
+  createdAt: string;
+}
+
 // Acquiring
 export interface Merchant {
   id: string;
@@ -255,6 +277,41 @@ export interface MonitoringEvent {
   acknowledged: boolean;
   acknowledgedBy?: string;
   createdAt: string;
+}
+
+// Auth
+export interface AuthUser {
+  id: string;
+  username: string;
+  email: string;
+  displayName?: string;
+  role: 'ADMIN' | 'OPERATOR' | 'ANALYST' | 'AUDITOR' | 'VIEWER';
+  enabled: boolean;
+  lastLogin?: string;
+  createdAt: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  username: string;
+  role: string;
+  displayName: string;
+  email: string;
+  tokenType: string;
+}
+
+export interface RegisterRequest {
+  username: string;
+  password: string;
+  email: string;
+  displayName?: string;
+  role?: string;
 }
 
 // E-commerce

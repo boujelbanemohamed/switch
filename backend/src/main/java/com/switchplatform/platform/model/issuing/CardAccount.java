@@ -3,7 +3,6 @@ package com.switchplatform.platform.model.issuing;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -52,10 +51,10 @@ public class CardAccount {
     private AccountStatus status = AccountStatus.ACTIVE;
 
     @Column(name = "opened_at")
-    private LocalDate openedAt;
+    private OffsetDateTime openedAt;
 
     @Column(name = "closed_at")
-    private LocalDate closedAt;
+    private OffsetDateTime closedAt;
 
     @Column(nullable = false)
     private OffsetDateTime createdAt;
@@ -67,7 +66,7 @@ public class CardAccount {
     protected void onCreate() {
         createdAt = OffsetDateTime.now();
         updatedAt = OffsetDateTime.now();
-        if (openedAt == null) openedAt = LocalDate.now();
+        if (openedAt == null) openedAt = OffsetDateTime.now();
     }
 
     @PreUpdate

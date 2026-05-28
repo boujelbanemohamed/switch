@@ -9,7 +9,7 @@ test.describe('Fraud & Risk - Détection de Fraude', () => {
   test('affiche les statistiques (Total Alerts, Open, Confirmed, High Score)', async ({ page }) => {
     await page.goto('/fraud');
     await page.waitForLoadState('networkidle');
-    const statCards = page.locator('main > div > div').first().locator('> div');
+    const statCards = page.locator('main > div > div').nth(2).locator('> div');
     const count = await statCards.count();
     expect(count).toBeGreaterThanOrEqual(3);
   });

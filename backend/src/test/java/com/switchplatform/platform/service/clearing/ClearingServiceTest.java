@@ -106,6 +106,7 @@ class ClearingServiceTest {
                         .issuingParticipantId(p2)
                         .amount(BigDecimal.valueOf(500))
                         .currencyCode("USD")
+                        .interchangeAmount(BigDecimal.ZERO)
                         .build());
         clearingService.clearTransaction(rec1.getId());
 
@@ -116,6 +117,7 @@ class ClearingServiceTest {
                         .issuingParticipantId(p1)
                         .amount(BigDecimal.valueOf(200))
                         .currencyCode("USD")
+                        .interchangeAmount(BigDecimal.ZERO)
                         .build());
         clearingService.clearTransaction(rec2.getId());
 

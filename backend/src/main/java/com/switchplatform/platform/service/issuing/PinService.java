@@ -126,10 +126,27 @@ public class PinService {
             log.warn("No PBKDF2 hash stored for card {}, cannot verify raw PIN", record.cardId());
             return false;
         }
-        String computedHash = hashWithPbkdf2(rawPin);
-        boolean matches = computedHash.equals(record.pinHash());
+        boolean matches = verifyWithPbkdf2(rawPin, record.pinHash());
         log.info("Raw PIN verification for card {}: {}", record.cardId(), matches ? "success" : "failure");
         return matches;
+    }
+
+    private boolean verifyWithPbkdf2(String pin, String storedHash) {
+        try {
+            String[] parts = storedHash.split(":");
+            if (parts.length != 2) return false;
+            byte[] salt = HexFormat.of().parseHex(parts[0]);
+            String expectedHash = parts[1];
+
+            PBEKeySpec spec = new PBEKeySpec(pin.toCharArray(), salt, PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH);
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            byte[] hash = factory.generateSecret(spec).getEncoded();
+            String computedHash = HexFormat.of().formatHex(hash);
+
+            return expectedHash.equals(computedHash);
+        } catch (Exception e) {
+            throw new RuntimeException("PBKDF2 verification failed", e);
+        }
     }
 
     private boolean verifyPinBlock(PinRecord record, String cardId, String incomingPinBlock) {

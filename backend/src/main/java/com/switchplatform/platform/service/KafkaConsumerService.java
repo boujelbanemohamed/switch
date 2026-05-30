@@ -45,11 +45,9 @@ public class KafkaConsumerService {
             log.info("Kafka processed transaction: id={}, status={}, responseCode={}",
                     result.getTransactionId(), result.getStatus(), result.getResponseCode());
 
-            acknowledgment.acknowledge();
         } catch (Exception e) {
             log.error("Kafka message processing failed: topic={}, partition={}, offset={}, error={}",
                     topic, partition, offset, e.getMessage(), e);
-            acknowledgment.acknowledge();
         }
     }
 
@@ -78,7 +76,6 @@ public class KafkaConsumerService {
         } catch (Exception e) {
             log.error("Kafka XML message processing failed: topic={}, partition={}, offset={}, error={}",
                     topic, partition, offset, e.getMessage(), e);
-            acknowledgment.acknowledge();
         }
     }
 }

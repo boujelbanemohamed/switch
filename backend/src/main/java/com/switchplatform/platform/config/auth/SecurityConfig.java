@@ -43,16 +43,27 @@ public class SecurityConfig {
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register",
+                        "/api/v1/auth/refresh", "/api/v1/auth/mfa/authenticate").permitAll()
+                .requestMatchers("/api/v1/auth/mfa/setup",
+                        "/api/v1/auth/mfa/verify", "/api/v1/auth/mfa/disable").authenticated()
+                .requestMatchers("/api/v1/auth/users/**",
+                        "/api/v1/auth/audit/**").hasRole(AuthUser.Role.ADMIN.name())
+                .requestMatchers("/api/v1/auth/me").authenticated()
                 .requestMatchers("/api/v1/backoffice/monitoring/events").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole(AuthUser.Role.ADMIN.name())
 
                 .requestMatchers(HttpMethod.GET, "/api/v1/fraud/alerts/**",
-                        "/api/v1/fraud/rules", "/api/v1/fraud/profiles/**").hasAnyRole(
+                        "/api/v1/fraud/rules", "/api/v1/fraud/profiles/**",
+                        "/api/v1/fraud/devices/**").hasAnyRole(
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name(),
                         AuthUser.Role.ANALYST.name())
+                .requestMatchers("/api/v1/fraud/devices/register",
+                        "/api/v1/fraud/devices/evaluate").hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name())
                 .requestMatchers("/api/v1/fraud/**").hasAnyRole(
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name())
@@ -66,10 +77,27 @@ public class SecurityConfig {
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name())
 
+                .requestMatchers("/api/v1/clearing/interchange/configure").hasRole(AuthUser.Role.ADMIN.name())
                 .requestMatchers("/api/v1/clearing/**").hasAnyRole(
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name())
+                .requestMatchers("/api/v1/issuing/pins/**",
+                        "/api/v1/issuing/tokens/**").hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name())
                 .requestMatchers("/api/v1/issuing/**").hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name())
+
+                .requestMatchers("/api/v1/authorization/holds/**").hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name())
+                .requestMatchers("/api/v1/acquiring/settlements/**",
+                        "/api/v1/acquiring/terminals/**",
+                        "/api/v1/acquiring/merchants/*/netting").hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name())
+                .requestMatchers("/api/v1/switch/mq/**").hasAnyRole(
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name())
 

@@ -8,6 +8,8 @@ import com.switchplatform.platform.service.auth.AuthUserService;
 import com.switchplatform.platform.service.auth.MfaService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -182,8 +184,12 @@ public class AuthController {
 
         String newAccessToken = jwtUtil.generateAccessToken(
                 username, user.getRole().name());
+        String newRefreshToken = jwtUtil.generateRefreshToken(username);
 
-        return ResponseEntity.ok(Map.of("accessToken", newAccessToken, "tokenType", "Bearer"));
+        return ResponseEntity.ok(Map.of(
+                "accessToken", newAccessToken,
+                "refreshToken", newRefreshToken,
+                "tokenType", "Bearer"));
     }
 
     @GetMapping("/me")
@@ -241,6 +247,10 @@ public class AuthController {
 
     private String resolveUsername(String provided) {
         if (provided != null) return provided;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()) {
+            return auth.getName();
+        }
         return null;
     }
 

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.switchplatform.platform.service.fraud.BehavioralProfileService;
+import com.switchplatform.platform.service.fraud.DeviceFingerprintService;
 import com.switchplatform.platform.service.fraud.FraudEngine;
 import com.switchplatform.platform.service.issuing.CardAccountService;
 import java.lang.reflect.Field;
@@ -29,8 +30,9 @@ class AuthorizationEngineTest {
     @BeforeEach
     void setUp() {
         authEngine = new AuthorizationEngine(
-                new FraudEngine(new BehavioralProfileService()),
-                new CardAccountService());
+                new FraudEngine(new BehavioralProfileService(), new DeviceFingerprintService()),
+                new CardAccountService(),
+                new HoldService(new CardAccountService()));
     }
 
     private void setField(Object target, String fieldName, Object value) {

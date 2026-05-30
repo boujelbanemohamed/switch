@@ -379,13 +379,29 @@
     "editUser": "Edit User",
     "sectionDescription": "Centralised administration console for platform monitoring, audit trails, user management, and operational oversight. Provides a unified view of system events, user activity logs, and platform user accounts.",
     "sectionRole": "Gives operators and administrators visibility into platform operations. The audit log tracks all configuration changes and user actions, while monitoring events provide real-time system health alerts. The user management module allows administrators to create, update roles, and manage access for all platform users authenticated via JWT.",
-    "sectionUsage": "The page displays summary cards for audit logs, critical alerts, warnings, and total events. Critical alerts are highlighted in a red banner at the top. The Audit Log table lists actions (CREATE / UPDATE / DELETE) with resource type, status, and timestamp. The Monitoring Events table shows system events with type, severity (CRITICAL / WARNING / INFO), message, and acknowledgment status. The Users section lists all platform users with their roles (ADMIN / OPERATOR / ANALYST / AUDITOR / VIEWER) and allows creating, editing, and deleting user accounts."
+    "sectionUsage": "The page displays summary cards for audit logs, critical alerts, warnings, and total events. Critical alerts are highlighted in a red banner at the top. The Audit Log table lists actions (CREATE / UPDATE / DELETE) with resource type, status, and timestamp. The Monitoring Events table shows system events with type, severity (CRITICAL / WARNING / INFO), message, and acknowledgment status. The Users section lists all platform users with their roles (ADMIN / OPERATOR / ANALYST / AUDITOR / VIEWER) and allows creating, editing, and deleting user accounts.",
+    "subtitle": "Sign in to your account",
+    "usernamePlaceholder": "Enter your username",
+    "loginError": "Invalid username or password",
+    "lastLogin": "Last Login",
+    "mfaTitle": "Two-Factor Authentication",
+    "mfaSubtitle": "Enter the verification code from your authenticator app",
+    "mfaStatus": "Status",
+    "mfaEnabled": "Enabled",
+    "mfaDisabled": "Disabled",
+    "mfaCode": "Verification Code",
+    "mfaInstructions": "Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.) or enter the secret key manually:",
+    "setupMfa": "Enable 2FA",
+    "disableMfa": "Disable 2FA",
+    "verify": "Verify"
   },
   "common": {
     "loading": "Loading...",
     "noData": "No data available",
     "language": "Language",
     "na": "N/A",
-    "failedToLoad": "Failed to load data"
+    "failedToLoad": "Failed to load data",
+    "copy": "Copy",
+    "copied": "Copied!"
   }
 }

@@ -304,5 +304,15 @@ export const api = {
         request<import('../types').AuthUser>(`/auth/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
       delete: (id: string) => request<void>(`/auth/users/${id}`, { method: 'DELETE' }),
     },
+    mfa: {
+      setup: (username?: string) =>
+        request<import('../types').MfaSetupData>('/auth/mfa/setup', { method: 'POST', body: JSON.stringify({ username }) }),
+      verify: (username: string, code: string) =>
+        request<{ enabled: boolean }>('/auth/mfa/verify', { method: 'POST', body: JSON.stringify({ username, code }) }),
+      disable: (username: string, code: string) =>
+        request<{ disabled: boolean }>('/auth/mfa/disable', { method: 'POST', body: JSON.stringify({ username, code }) }),
+      authenticate: (username: string, code: string) =>
+        request<import('../types').LoginResponse>('/auth/mfa/authenticate', { method: 'POST', body: JSON.stringify({ username, code }) }),
+    },
   },
 };

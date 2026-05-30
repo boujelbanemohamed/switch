@@ -1,6 +1,7 @@
 package com.switchplatform.platform.service.clearing;
 
 import com.switchplatform.platform.model.clearing.ClearingRecord;
+import com.switchplatform.platform.model.clearing.InterchangeResult;
 import com.switchplatform.platform.model.clearing.NettingRecord;
 import com.switchplatform.platform.model.clearing.ReconciliationRecord;
 import lombok.Builder;
@@ -30,6 +31,8 @@ public class ClearingService {
     private final Map<UUID, ReconciliationRecord> reconciliationRecords = new ConcurrentHashMap<>();
     private final AtomicLong reconciliationIdSeq = new AtomicLong(0);
 
+    private final InterchangeService interchangeService;
+
     @Data
     @Builder
     public static class ClearingData {
@@ -45,6 +48,7 @@ public class ClearingService {
         private String cardBrand;
         private String cardType;
         private String merchantCategoryCode;
+        private String region;
     }
 
     public ClearingRecord processClearing(ClearingData data) {
@@ -58,9 +62,27 @@ public class ClearingService {
             throw new IllegalArgumentException("Issuing participant is required");
         }
 
-        BigDecimal interchangeAmount = data.getInterchangeAmount() != null
-                ? data.getInterchangeAmount()
-                : calculateInterchangeFee(data);
+        String region = data.getRegion() != null ? data.getRegion() : "TN";
+        String brand = data.getCardBrand() != null ? data.getCardBrand() : "VISA";
+        String cardType = data.getCardType() != null ? data.getCardType() : "DEBIT";
+        String mcc = data.getMerchantCategoryCode();
+
+        BigDecimal interchangeAmount;
+        BigDecimal interchangeFee;
+        String interchangeBreakdown;
+
+        if (data.getInterchangeAmount() != null) {
+            interchangeAmount = data.getInterchangeAmount();
+            interchangeFee = interchangeAmount;
+            interchangeBreakdown = "Manual override";
+        } else {
+            InterchangeResult result = interchangeService.calculateInterchange(
+                    brand, cardType, region, mcc, data.getAmount(), data.getCurrencyCode());
+            interchangeAmount = result.totalFee();
+            interchangeFee = result.totalFee();
+            interchangeBreakdown = result.breakdown();
+        }
+
         BigDecimal feeAmount = data.getFeeAmount() != null
                 ? data.getFeeAmount()
                 : interchangeAmount;
@@ -75,6 +97,8 @@ public class ClearingService {
                 .amount(data.getAmount())
                 .currencyCode(data.getCurrencyCode())
                 .interchangeAmount(interchangeAmount)
+                .interchangeFee(interchangeFee)
+                .interchangeBreakdown(interchangeBreakdown)
                 .feeAmount(feeAmount)
                 .netAmount(netAmount)
                 .messageType(data.getMessageType())

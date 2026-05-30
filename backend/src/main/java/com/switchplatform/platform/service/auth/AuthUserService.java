@@ -22,6 +22,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthUserService implements UserDetailsService {
 
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+    private static final int LOCK_DURATION_MINUTES = 15;
+
     private final Map<UUID, AuthUser> users = new ConcurrentHashMap<>();
     private final Map<String, UUID> usernameIndex = new ConcurrentHashMap<>();
     private final PasswordEncoder passwordEncoder;
@@ -40,6 +43,9 @@ public class AuthUserService implements UserDetailsService {
         if (authUser == null) {
             throw new UsernameNotFoundException("User not found: " + username);
         }
+        if (authUser.getLockedUntil() != null && authUser.getLockedUntil().isAfter(OffsetDateTime.now())) {
+            throw new UsernameNotFoundException("Account locked until " + authUser.getLockedUntil());
+        }
         return new User(
                 authUser.getUsername(),
                 authUser.getPassword(),
@@ -48,6 +54,37 @@ public class AuthUserService implements UserDetailsService {
                 true,
                 authUser.isAccountNonLocked(),
                 List.of(new SimpleGrantedAuthority("ROLE_" + authUser.getRole().name())));
+    }
+
+    public boolean isAccountLocked(String username) {
+        AuthUser user = findByUsername(username);
+        if (user == null) return false;
+        if (user.getLockedUntil() == null) return false;
+        if (user.getLockedUntil().isBefore(OffsetDateTime.now())) {
+            user.setLockedUntil(null);
+            user.setFailedAttempts(0);
+            return false;
+        }
+        return true;
+    }
+
+    public void recordFailedAttempt(String username) {
+        AuthUser user = findByUsername(username);
+        if (user == null) return;
+        user.setFailedAttempts(user.getFailedAttempts() + 1);
+        if (user.getFailedAttempts() >= MAX_FAILED_ATTEMPTS) {
+            user.setLockedUntil(OffsetDateTime.now().plusMinutes(LOCK_DURATION_MINUTES));
+            log.warn("Account locked after {} failed attempts: {}", MAX_FAILED_ATTEMPTS, username);
+        }
+        user.setUpdatedAt(OffsetDateTime.now());
+    }
+
+    public void resetFailedAttempts(String username) {
+        AuthUser user = findByUsername(username);
+        if (user == null) return;
+        user.setFailedAttempts(0);
+        user.setLockedUntil(null);
+        user.setUpdatedAt(OffsetDateTime.now());
     }
 
     public AuthUser registerUser(String username, String password, String email,
@@ -69,6 +106,8 @@ public class AuthUserService implements UserDetailsService {
                 .enabled(true)
                 .accountNonExpired(true)
                 .accountNonLocked(true)
+                .mfaEnabled(false)
+                .failedAttempts(0)
                 .createdAt(OffsetDateTime.now())
                 .updatedAt(OffsetDateTime.now())
                 .build();
@@ -118,6 +157,9 @@ public class AuthUserService implements UserDetailsService {
         AuthUser user = findByUsername(username);
         if (user != null) {
             user.setLastLogin(OffsetDateTime.now());
+            user.setFailedAttempts(0);
+            user.setLockedUntil(null);
+            user.setUpdatedAt(OffsetDateTime.now());
         }
     }
 

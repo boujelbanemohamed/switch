@@ -2,6 +2,7 @@ package com.switchplatform.platform.service.authorization;
 
 import com.switchplatform.platform.model.authorization.AuthDecision;
 import com.switchplatform.platform.model.authorization.AuthRule;
+import com.switchplatform.platform.model.authorization.HoldRecord;
 import com.switchplatform.platform.model.authorization.AuthRule.ActionType;
 import com.switchplatform.platform.model.authorization.AuthRule.RuleStatus;
 import com.switchplatform.platform.model.authorization.CardLimitUsage;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -34,6 +36,7 @@ public class AuthorizationEngine {
 
     private final FraudEngine fraudEngine;
     private final CardAccountService cardAccountService;
+    private final HoldService holdService;
 
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         long start = System.currentTimeMillis();
@@ -142,7 +145,11 @@ public class AuthorizationEngine {
 
         // 7. Post-approval actions: hold on account + update limit usage
         if (decision.getDecision() == AuthDecision.Decision.APPROVED) {
-            postApprovalActions(request, decision);
+            if (!postApprovalActions(request, decision)) {
+                decision.setDecision(AuthDecision.Decision.DECLINED);
+                decision.setResponseCode("51");
+                decision.setResponseReason("HOLD_FAILED");
+            }
         }
 
         if (matchedRule != null) {
@@ -186,20 +193,31 @@ public class AuthorizationEngine {
         return fraudEngine.evaluateTransaction(ctx);
     }
 
-    private void postApprovalActions(AuthorizationRequest request, AuthDecision decision) {
-        if (request.getCardId() == null || request.getAmount() == null) return;
+    private boolean postApprovalActions(AuthorizationRequest request, AuthDecision decision) {
+        if (request.getCardId() == null || request.getAmount() == null) return true;
 
-        // Place hold on account
+        // Place hold via HoldService
         if (request.getCardholderId() != null) {
             try {
                 List<CardAccount> cardAccounts = cardAccountService.getAccountsByCardholderId(request.getCardholderId());
                 if (!cardAccounts.isEmpty()) {
-                    CardAccount account = cardAccountService.hold(cardAccounts.get(0).getId(), request.getAmount());
+                    CardAccount account = cardAccounts.get(0);
+                    String transactionId = request.getStan() != null ? request.getStan() : UUID.randomUUID().toString();
+                    HoldRecord hold = holdService.placeHold(
+                            transactionId,
+                            request.getCardId().toString(),
+                            account.getId().toString(),
+                            request.getAmount(),
+                            request.getCurrencyCode(),
+                            Duration.ofMinutes(30)
+                    );
                     decision.setCardBalanceAfter(account.getAvailableBalance());
-                    log.info("Hold placed: cardholderId={}, amount={}", request.getCardholderId(), request.getAmount());
+                    log.info("Hold placed: id={}, cardholderId={}, amount={}",
+                            hold.getId(), request.getCardholderId(), request.getAmount());
                 }
             } catch (Exception e) {
                 log.warn("Failed to place hold for cardholderId={}: {}", request.getCardholderId(), e.getMessage());
+                return false;
             }
         }
 
@@ -217,6 +235,8 @@ public class AuthorizationEngine {
                 decision.setVelocityMax(limit.getCountMax() != null ? limit.getCountMax() : 0);
             }
         }
+
+        return true;
     }
 
     private boolean evaluateCondition(AuthRule rule, AuthorizationRequest request) {

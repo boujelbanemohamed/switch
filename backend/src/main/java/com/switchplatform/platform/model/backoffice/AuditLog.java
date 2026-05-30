@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.OffsetDateTime;
 
-@Entity
-@Table(name = "audit_logs")
+@Entity(name = "BackofficeAuditLog")
+@Table(name = "backoffice_audit_logs")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -47,7 +47,7 @@ public class AuditLog {
     @Column(name = "failure_reason", columnDefinition = "TEXT")
     private String failureReason;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
     @PrePersist

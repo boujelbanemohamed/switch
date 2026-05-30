@@ -2,7 +2,9 @@ package com.switchplatform.platform.controller.authorization;
 
 import com.switchplatform.platform.model.authorization.AuthDecision;
 import com.switchplatform.platform.model.authorization.AuthRule;
+import com.switchplatform.platform.model.authorization.HoldRecord;
 import com.switchplatform.platform.service.authorization.AuthorizationEngine;
+import com.switchplatform.platform.service.authorization.HoldService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +18,7 @@ import java.util.UUID;
 public class AuthorizationController {
 
     private final AuthorizationEngine authorizationEngine;
+    private final HoldService holdService;
 
     @PostMapping("/authorize")
     public ResponseEntity<AuthorizationEngine.AuthorizationResponse> authorize(
@@ -52,5 +55,33 @@ public class AuthorizationController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(decision);
+    }
+
+    @GetMapping("/holds/card/{cardId}")
+    public ResponseEntity<List<HoldRecord>> getHoldsForCard(@PathVariable String cardId) {
+        return ResponseEntity.ok(holdService.getActiveHoldsForCard(cardId));
+    }
+
+    @GetMapping("/holds/account/{accountId}")
+    public ResponseEntity<List<HoldRecord>> getHoldsForAccount(@PathVariable String accountId) {
+        return ResponseEntity.ok(holdService.getActiveHoldsForAccount(accountId));
+    }
+
+    @PostMapping("/holds/{holdId}/release")
+    public ResponseEntity<Void> releaseHold(@PathVariable UUID holdId) {
+        boolean released = holdService.releaseHold(holdId);
+        if (!released) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/holds/{holdId}/capture")
+    public ResponseEntity<Void> captureHold(@PathVariable UUID holdId) {
+        boolean captured = holdService.captureHold(holdId);
+        if (!captured) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok().build();
     }
 }

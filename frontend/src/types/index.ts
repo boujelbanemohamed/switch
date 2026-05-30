@@ -289,6 +289,7 @@ export interface AuthUser {
   enabled: boolean;
   lastLogin?: string;
   createdAt: string;
+  mfaEnabled?: boolean;
 }
 
 export interface LoginRequest {
@@ -304,6 +305,12 @@ export interface LoginResponse {
   displayName: string;
   email: string;
   tokenType: string;
+  mfaRequired?: boolean;
+}
+
+export interface MfaSetupData {
+  secret: string;
+  uri: string;
 }
 
 export interface RegisterRequest {

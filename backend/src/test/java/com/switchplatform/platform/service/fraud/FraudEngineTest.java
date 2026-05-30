@@ -15,11 +15,13 @@ class FraudEngineTest {
 
     private FraudEngine fraudEngine;
     private BehavioralProfileService profileService;
+    private DeviceFingerprintService deviceFingerprintService;
 
     @BeforeEach
     void setUp() {
         profileService = new BehavioralProfileService();
-        fraudEngine = new FraudEngine(profileService);
+        deviceFingerprintService = new DeviceFingerprintService();
+        fraudEngine = new FraudEngine(profileService, deviceFingerprintService);
     }
 
     @Test

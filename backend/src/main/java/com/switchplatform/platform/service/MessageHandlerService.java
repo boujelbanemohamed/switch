@@ -1,9 +1,11 @@
 package com.switchplatform.platform.service;
 
+import com.switchplatform.platform.model.DLQRecord;
 import com.switchplatform.platform.model.Participant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -12,7 +14,17 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Service
 @Slf4j
@@ -20,7 +32,12 @@ public class MessageHandlerService {
 
     private final KafkaTemplate<String, byte[]> kafkaTemplate;
     private final ConcurrentHashMap<String, byte[]> pendingResponses = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, DLQRecord> deadLetterQueue = new ConcurrentHashMap<>();
     private final boolean kafkaEnabled;
+
+    private static final long[] RETRY_DELAYS_MS = {100L, 500L, 2000L};
+    private static final int MAX_RETRIES = 3;
+    private static final long SEND_TIMEOUT_SECONDS = 5;
 
     public MessageHandlerService(ObjectProvider<KafkaTemplate<String, byte[]>> kafkaProvider) {
         this.kafkaTemplate = kafkaProvider.getIfAvailable();
@@ -45,6 +62,49 @@ public class MessageHandlerService {
         byte[] response = sendAndReceive(destination,
                 xmlMessage.getBytes(StandardCharsets.UTF_8));
         return new String(response, StandardCharsets.UTF_8);
+    }
+
+    public List<DLQRecord> getDeadLetterQueue() {
+        return new ArrayList<>(deadLetterQueue.values());
+    }
+
+    public boolean retryDlqMessage(UUID dlqId) {
+        DLQRecord record = deadLetterQueue.get(dlqId);
+        if (record == null) {
+            return false;
+        }
+        if (!kafkaEnabled) {
+            log.warn("Cannot retry DLQ message {}: Kafka not available", dlqId);
+            return false;
+        }
+        try {
+            kafkaTemplate.send(record.topic(), dlqId.toString(), record.payload().getBytes(StandardCharsets.UTF_8))
+                    .get(SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            deadLetterQueue.remove(dlqId);
+            log.info("DLQ message {} retried successfully to topic={}", dlqId, record.topic());
+            return true;
+        } catch (Exception e) {
+            DLQRecord updated = new DLQRecord(
+                    record.id(), record.topic(), record.payload(),
+                    e.getMessage(), record.retryCount() + 1,
+                    record.createdAt(), OffsetDateTime.now()
+            );
+            deadLetterQueue.put(dlqId, updated);
+            log.error("DLQ retry failed for {}: {}", dlqId, e.getMessage());
+            return false;
+        }
+    }
+
+    public int getDlqCount() {
+        return deadLetterQueue.size();
+    }
+
+    public Map<String, Object> getMqStatus() {
+        return Map.of(
+                "kafkaEnabled", kafkaEnabled,
+                "dlqCount", deadLetterQueue.size(),
+                "status", kafkaEnabled ? "available" : "unavailable"
+        );
     }
 
     private byte[] sendTcp(String endpointUrl, byte[] message) {
@@ -110,18 +170,58 @@ public class MessageHandlerService {
             return "OK".getBytes();
         }
 
-        try {
-            String topic = destination.getEndpointUrl() != null
-                    ? destination.getEndpointUrl() : "switch-mq-" + destination.getCode();
-            String correlationId = java.util.UUID.randomUUID().toString();
+        String topic = destination.getEndpointUrl() != null
+                ? destination.getEndpointUrl() : "switch-mq-" + destination.getCode();
+        String correlationId = UUID.randomUUID().toString();
+        String payloadStr = new String(message, StandardCharsets.UTF_8);
 
-            kafkaTemplate.send(topic, correlationId, message);
-            log.info("MQ Kafka: message sent to topic={}, correlationId={}", topic, correlationId);
-            return "OK".getBytes(StandardCharsets.UTF_8);
-        } catch (Exception e) {
-            log.error("MQ Kafka send failed: {}", e.getMessage());
-            return "ERROR".getBytes(StandardCharsets.UTF_8);
+        Exception lastException = null;
+
+        for (int attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                CompletableFuture<SendResult<String, byte[]>> future =
+                        kafkaTemplate.send(topic, correlationId, message);
+                future.get(SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                log.info("MQ Kafka: message sent to topic={}, correlationId={}, attempt={}",
+                        topic, correlationId, attempt + 1);
+                return "OK".getBytes(StandardCharsets.UTF_8);
+            } catch (TimeoutException e) {
+                lastException = e;
+                log.warn("MQ Kafka send attempt {} timed out for topic={}", attempt + 1, topic);
+            } catch (ExecutionException e) {
+                lastException = e;
+                log.warn("MQ Kafka send attempt {} failed for topic={}: {}",
+                        attempt + 1, topic, e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+            } catch (CancellationException | InterruptedException e) {
+                lastException = e;
+                Thread.currentThread().interrupt();
+                log.warn("MQ Kafka send attempt {} interrupted for topic={}", attempt + 1, topic);
+                break;
+            }
+
+            if (attempt < MAX_RETRIES) {
+                try {
+                    Thread.sleep(RETRY_DELAYS_MS[attempt]);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
         }
+
+        DLQRecord dlq = new DLQRecord(
+                UUID.randomUUID(),
+                topic,
+                payloadStr,
+                lastException != null ? lastException.getMessage() : "Unknown error",
+                MAX_RETRIES,
+                OffsetDateTime.now(),
+                OffsetDateTime.now()
+        );
+        deadLetterQueue.put(dlq.id(), dlq);
+        log.error("MQ Kafka send failed after {} retries, stored in DLQ: id={}, topic={}",
+                MAX_RETRIES, dlq.id(), topic);
+        return "ERROR".getBytes(StandardCharsets.UTF_8);
     }
 
     private byte[] sendFile(Participant destination, byte[] message) {

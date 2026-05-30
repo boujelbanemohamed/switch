@@ -1,8 +1,12 @@
 package com.switchplatform.platform.controller.auth;
 
 import com.switchplatform.platform.config.auth.JwtUtil;
+import com.switchplatform.platform.model.auth.AuditLog;
 import com.switchplatform.platform.model.auth.AuthUser;
+import com.switchplatform.platform.service.auth.AuditService;
 import com.switchplatform.platform.service.auth.AuthUserService;
+import com.switchplatform.platform.service.auth.MfaService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -28,57 +32,136 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final AuthUserService authUserService;
+    private final MfaService mfaService;
+    private final AuditService auditService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest servletRequest) {
+        if (authUserService.isAccountLocked(request.getUsername())) {
+            auditService.record("LOGIN", "AUTH", request.getUsername(), "Account locked", "DENIED", request.getUsername(), null, servletRequest);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Account locked. Try again later."));
+        }
+
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getUsername(), request.getPassword()));
         } catch (BadCredentialsException e) {
+            authUserService.recordFailedAttempt(request.getUsername());
+            auditService.record("LOGIN", "AUTH", request.getUsername(), "Invalid credentials", "DENIED", request.getUsername(), null, servletRequest);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Invalid username or password"));
         }
 
+        authUserService.resetFailedAttempts(request.getUsername());
         AuthUser user = authUserService.findByUsername(request.getUsername());
+
+        if (user.isMfaEnabled()) {
+            auditService.record("LOGIN", "AUTH", request.getUsername(), "MFA required", "MFA_REQUIRED", request.getUsername(), user.getId(), servletRequest);
+            return ResponseEntity.ok(Map.of("mfaRequired", true, "username", user.getUsername()));
+        }
+
         authUserService.recordLogin(request.getUsername());
+        auditService.record("LOGIN", "AUTH", request.getUsername(), "Login successful", "SUCCESS", request.getUsername(), user.getId(), servletRequest);
 
         String accessToken = jwtUtil.generateAccessToken(
                 user.getUsername(), user.getRole().name());
         String refreshToken = jwtUtil.generateRefreshToken(user.getUsername());
 
         return ResponseEntity.ok(new AuthResponse(
-                accessToken,
-                refreshToken,
-                user.getUsername(),
-                user.getRole().name(),
-                user.getDisplayName(),
-                user.getEmail()));
+                accessToken, refreshToken,
+                user.getUsername(), user.getRole().name(),
+                user.getDisplayName(), user.getEmail()));
+    }
+
+    @PostMapping("/mfa/setup")
+    public ResponseEntity<?> setupMfa(@RequestBody Map<String, String> body) {
+        String username = resolveUsername(body.get("username"));
+        if (username == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        try {
+            MfaService.MfaSetupData data = mfaService.setupMfa(username);
+            auditService.record("ENABLE_MFA", "AUTH", username, "MFA setup initiated", "SUCCESS", username, resolveUserId(username), null);
+            return ResponseEntity.ok(Map.of("secret", data.secret(), "uri", data.uri()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/mfa/verify")
+    public ResponseEntity<?> verifyMfa(@RequestBody Map<String, String> body) {
+        String username = body.get("username");
+        String code = body.get("code");
+        if (username == null || code == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "username and code required"));
+        }
+        boolean verified = mfaService.verifyAndEnable(username, code);
+        if (!verified) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid verification code"));
+        }
+        auditService.record("ENABLE_MFA", "AUTH", username, "MFA enabled", username, resolveUserId(username));
+        return ResponseEntity.ok(Map.of("enabled", true));
+    }
+
+    @PostMapping("/mfa/disable")
+    public ResponseEntity<?> disableMfa(@RequestBody Map<String, String> body) {
+        String username = resolveUsername(body.get("username"));
+        String code = body.get("code");
+        if (username == null || code == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "username and code required"));
+        }
+        boolean disabled = mfaService.disableMfa(username, code);
+        if (!disabled) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid verification code"));
+        }
+        auditService.record("DISABLE_MFA", "AUTH", username, "MFA disabled", username, resolveUserId(username));
+        return ResponseEntity.ok(Map.of("disabled", true));
+    }
+
+    @PostMapping("/mfa/authenticate")
+    public ResponseEntity<?> authenticateMfa(@RequestBody Map<String, String> body) {
+        String username = body.get("username");
+        String code = body.get("code");
+        if (username == null || code == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "username and code required"));
+        }
+        if (!mfaService.validateCode(username, code)) {
+            auditService.record("VERIFY_MFA", "AUTH", username, "MFA code invalid", "DENIED", username, resolveUserId(username), null);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid MFA code"));
+        }
+
+        AuthUser user = authUserService.findByUsername(username);
+        authUserService.recordLogin(username);
+        auditService.record("VERIFY_MFA", "AUTH", username, "MFA verified", username, user.getId());
+
+        String accessToken = jwtUtil.generateAccessToken(
+                user.getUsername(), user.getRole().name());
+        String refreshToken = jwtUtil.generateRefreshToken(user.getUsername());
+
+        return ResponseEntity.ok(new AuthResponse(
+                accessToken, refreshToken,
+                user.getUsername(), user.getRole().name(),
+                user.getDisplayName(), user.getEmail()));
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest servletRequest) {
         try {
             AuthUser.Role role = request.getRole() != null
                     ? AuthUser.Role.valueOf(request.getRole().toUpperCase())
                     : AuthUser.Role.OPERATOR;
 
             AuthUser user = authUserService.registerUser(
-                    request.getUsername(),
-                    request.getPassword(),
-                    request.getEmail(),
-                    request.getDisplayName(),
-                    role);
+                    request.getUsername(), request.getPassword(),
+                    request.getEmail(), request.getDisplayName(), role);
+
+            auditService.record("REGISTER", "AUTH", user.getUsername(), "User registered with role: " + role, "SUCCESS", user.getUsername(), user.getId(), servletRequest);
 
             return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(Map.of(
-                            "id", user.getId(),
-                            "username", user.getUsername(),
-                            "email", user.getEmail(),
-                            "role", user.getRole().name()));
+                    .body(Map.of("id", user.getId(), "username", user.getUsername(),
+                            "email", user.getEmail(), "role", user.getRole().name()));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -100,9 +183,7 @@ public class AuthController {
         String newAccessToken = jwtUtil.generateAccessToken(
                 username, user.getRole().name());
 
-        return ResponseEntity.ok(Map.of(
-                "accessToken", newAccessToken,
-                "tokenType", "Bearer"));
+        return ResponseEntity.ok(Map.of("accessToken", newAccessToken, "tokenType", "Bearer"));
     }
 
     @GetMapping("/me")
@@ -124,13 +205,9 @@ public class AuthController {
         }
 
         return ResponseEntity.ok(new UserProfile(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getDisplayName(),
-                user.getRole().name(),
-                user.isEnabled(),
-                user.getLastLogin()));
+                user.getId(), user.getUsername(), user.getEmail(),
+                user.getDisplayName(), user.getRole().name(),
+                user.isEnabled(), user.getLastLogin(), user.isMfaEnabled()));
     }
 
     @GetMapping("/users")
@@ -140,8 +217,7 @@ public class AuthController {
 
     @PutMapping("/users/{id}")
     public ResponseEntity<AuthUser> updateUser(
-            @PathVariable UUID id,
-            @RequestBody UpdateUserRequest request) {
+            @PathVariable UUID id, @RequestBody UpdateUserRequest request) {
         return ResponseEntity.ok(authUserService.updateUser(
                 id, request.getDisplayName(), request.getRole(), request.getEnabled()));
     }
@@ -150,6 +226,27 @@ public class AuthController {
     public ResponseEntity<Void> deleteUser(@PathVariable UUID id) {
         authUserService.deleteUser(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/audit")
+    public ResponseEntity<List<com.switchplatform.platform.model.auth.AuditLog>> listAudit(@RequestParam(defaultValue = "50") int limit) {
+        return ResponseEntity.ok(auditService.listAll(limit));
+    }
+
+    @GetMapping("/audit/user/{userId}")
+    public ResponseEntity<List<com.switchplatform.platform.model.auth.AuditLog>> listAuditByUser(
+            @PathVariable UUID userId, @RequestParam(defaultValue = "20") int limit) {
+        return ResponseEntity.ok(auditService.listByUser(userId, limit));
+    }
+
+    private String resolveUsername(String provided) {
+        if (provided != null) return provided;
+        return null;
+    }
+
+    private UUID resolveUserId(String username) {
+        AuthUser user = authUserService.findByUsername(username);
+        return user != null ? user.getId() : null;
     }
 
     @Data
@@ -192,6 +289,7 @@ public class AuthController {
         private final String role;
         private final boolean enabled;
         private final java.time.OffsetDateTime lastLogin;
+        private final boolean mfaEnabled;
     }
 
     @Data

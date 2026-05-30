@@ -1,9 +1,12 @@
 package com.switchplatform.platform.controller.fraud;
 
 import com.switchplatform.platform.model.fraud.BehavioralProfile;
+import com.switchplatform.platform.model.fraud.DeviceFingerprintRecord;
 import com.switchplatform.platform.model.fraud.FraudAlert;
 import com.switchplatform.platform.model.fraud.FraudRule;
 import com.switchplatform.platform.service.fraud.BehavioralProfileService;
+import com.switchplatform.platform.service.fraud.DeviceFingerprintService;
+import com.switchplatform.platform.service.fraud.DeviceScoreResult;
 import com.switchplatform.platform.service.fraud.FraudEngine;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +24,7 @@ public class FraudController {
 
     private final FraudEngine fraudEngine;
     private final BehavioralProfileService behavioralProfileService;
+    private final DeviceFingerprintService deviceFingerprintService;
 
     @PostMapping("/evaluate")
     public ResponseEntity<FraudEngine.FraudEvaluationResult> evaluate(
@@ -117,4 +121,46 @@ public class FraudController {
         return ResponseEntity.ok(behavioralProfileService.detectAnomalies(
                 cardholderId, amount, merchantCategory, countryCode, null));
     }
+
+    @PostMapping("/devices/register")
+    public ResponseEntity<DeviceFingerprintRecord> registerDevice(
+            @RequestBody RegisterDeviceRequest request) {
+        return ResponseEntity.ok(deviceFingerprintService.registerFingerprint(
+                request.cardId(), request.deviceId(), request.deviceType(),
+                request.os(), request.browser(), request.userAgent(),
+                request.ipAddress(), request.attributes()));
+    }
+
+    @PostMapping("/devices/evaluate")
+    public ResponseEntity<DeviceScoreResult> evaluateDevice(
+            @RequestBody EvaluateDeviceRequest request) {
+        return ResponseEntity.ok(deviceFingerprintService.evaluate(
+                request.cardId(), request.deviceId(), request.deviceType(),
+                request.os(), request.browser(), request.userAgent(),
+                request.ipAddress()));
+    }
+
+    @GetMapping("/devices/by-card/{cardId}")
+    public ResponseEntity<List<DeviceFingerprintRecord>> getDevicesByCard(
+            @PathVariable String cardId) {
+        return ResponseEntity.ok(deviceFingerprintService.getFingerprintsForCard(cardId));
+    }
+
+    @GetMapping("/devices/{deviceId}/known")
+    public ResponseEntity<Map<String, Boolean>> isDeviceKnown(
+            @PathVariable String deviceId,
+            @RequestParam String cardId) {
+        boolean known = deviceFingerprintService.isKnownDevice(cardId, deviceId);
+        return ResponseEntity.ok(Map.of("known", known));
+    }
+
+    public record RegisterDeviceRequest(
+            String cardId, String deviceId, String deviceType,
+            String os, String browser, String userAgent,
+            String ipAddress, Map<String, String> attributes) {}
+
+    public record EvaluateDeviceRequest(
+            String cardId, String deviceId, String deviceType,
+            String os, String browser, String userAgent,
+            String ipAddress) {}
 }

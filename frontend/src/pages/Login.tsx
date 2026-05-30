@@ -2,16 +2,18 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
-import { LogIn, AlertCircle } from 'lucide-react';
+import { LogIn, Shield, AlertCircle } from 'lucide-react';
 
 export function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const { login, completeMfa, isAuthenticated } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [mfaStep, setMfaStep] = useState(false);
 
   if (isAuthenticated) {
     navigate('/', { replace: true });
@@ -23,14 +25,91 @@ export function Login() {
     setError('');
     setSubmitting(true);
     try {
-      await login({ username, password });
-      navigate('/', { replace: true });
+      const mfaRequired = await login({ username, password });
+      if (mfaRequired) setMfaStep(true);
+      else navigate('/', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.loginError'));
     } finally {
       setSubmitting(false);
     }
   };
+
+  const handleMfaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+    try {
+      await completeMfa(mfaCode);
+      navigate('/', { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'MFA verification failed');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (mfaStep) {
+    return (
+      <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
+        <div style={{ width: 400, background: 'var(--surface)', borderRadius: 12, border: '1px solid var(--border)', padding: '2.5rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: 14, background: 'rgba(139,92,246,0.15)',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+            }}>
+              <Shield size={28} color="#8b5cf6" />
+            </div>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{t('auth.mfaTitle')}</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('auth.mfaSubtitle')}</p>
+          </div>
+
+          {error && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
+              background: 'rgba(239,68,68,0.1)', borderRadius: 8, marginBottom: 20,
+              fontSize: 13, color: '#ef4444',
+            }}>
+              <AlertCircle size={16} />
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleMfaSubmit}>
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                {t('auth.mfaCode')}
+              </label>
+              <input
+                value={mfaCode}
+                onChange={e => setMfaCode(e.target.value)}
+                placeholder="000000"
+                maxLength={6}
+                required
+                style={{
+                  width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)',
+                  background: 'var(--bg)', color: 'var(--text)', fontSize: 14, outline: 'none',
+                  boxSizing: 'border-box', textAlign: 'center', letterSpacing: 8, fontWeight: 700,
+                }}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={submitting}
+              style={{
+                width: '100%', padding: '12px', borderRadius: 8, border: 'none',
+                background: submitting ? '#7c3aed' : '#6d28d9', color: '#fff', fontSize: 14,
+                fontWeight: 600, cursor: submitting ? 'not-allowed' : 'pointer', opacity: submitting ? 0.6 : 1,
+              }}
+            >
+              {submitting ? t('common.loading') : t('auth.verify')}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>

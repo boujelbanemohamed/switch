@@ -16,10 +16,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class ClearingServiceTest {
 
     private ClearingService clearingService;
+    private InterchangeService interchangeService;
 
     @BeforeEach
     void setUp() {
-        clearingService = new ClearingService();
+        interchangeService = new InterchangeService();
+        clearingService = new ClearingService(interchangeService);
     }
 
     @Test

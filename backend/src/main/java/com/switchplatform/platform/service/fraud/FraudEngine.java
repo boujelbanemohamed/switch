@@ -26,6 +26,7 @@ public class FraudEngine {
     private final List<FraudAlert> alerts = new CopyOnWriteArrayList<>();
     private final Map<UUID, Deque<VelocityRecord>> velocityCache = new ConcurrentHashMap<>();
     private final BehavioralProfileService profileService;
+    private final DeviceFingerprintService deviceFingerprintService;
 
     private static final long VELOCITY_WINDOW_MINUTES = 60;
 
@@ -86,12 +87,38 @@ public class FraudEngine {
         int velocityScore = checkVelocity(ctx);
         dynamicScore += velocityScore;
 
+        String deviceRecommendation = null;
+        if (ctx.getDeviceId() != null && ctx.getCardId() != null) {
+            try {
+                DeviceScoreResult deviceResult = deviceFingerprintService.evaluate(
+                        ctx.getCardId().toString(),
+                        ctx.getDeviceId(),
+                        ctx.getDeviceType(),
+                        ctx.getOs(),
+                        ctx.getBrowser(),
+                        ctx.getUserAgent(),
+                        ctx.getIpAddress()
+                );
+                int deviceScore = (int) Math.round(deviceResult.getScore() * 100);
+                dynamicScore += deviceScore;
+                deviceRecommendation = deviceResult.getRecommendation();
+                log.info("Device fingerprint score={}, recommendation={}",
+                        deviceScore, deviceRecommendation);
+            } catch (Exception e) {
+                log.warn("Device fingerprint evaluation failed", e);
+            }
+        }
+
         totalScore += dynamicScore;
         totalScore = Math.min(totalScore, 100);
 
         RiskLevel riskLevel;
         FraudAction action;
-        if (totalScore > 80) {
+
+        if ("BLOCK".equals(deviceRecommendation)) {
+            riskLevel = RiskLevel.CRITICAL;
+            action = FraudAction.BLOCK;
+        } else if (totalScore > 80) {
             riskLevel = RiskLevel.CRITICAL;
             action = FraudAction.BLOCK;
         } else if (totalScore > 50) {
@@ -361,6 +388,11 @@ public class FraudEngine {
         private String previousCountryCode;
         private String deviceId;
         private String previousDeviceId;
+        private String deviceType;
+        private String os;
+        private String browser;
+        private String userAgent;
+        private String ipAddress;
         private OffsetDateTime timestamp;
         private String panHash;
     }

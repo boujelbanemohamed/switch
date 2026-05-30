@@ -2,9 +2,13 @@ package com.switchplatform.platform.controller.acquiring;
 
 import com.switchplatform.platform.model.acquiring.Merchant;
 import com.switchplatform.platform.model.acquiring.MerchantSettlement;
+import com.switchplatform.platform.model.acquiring.NettingResult;
+import com.switchplatform.platform.model.acquiring.SettlementRecord;
 import com.switchplatform.platform.model.acquiring.Terminal;
 import com.switchplatform.platform.service.acquiring.MerchantService;
 import com.switchplatform.platform.service.acquiring.MerchantSettlementService;
+import com.switchplatform.platform.service.acquiring.SettlementService;
+import com.switchplatform.platform.service.acquiring.TerminalManagementService;
 import com.switchplatform.platform.service.acquiring.TerminalService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +30,8 @@ public class AcquiringController {
     private final MerchantService merchantService;
     private final TerminalService terminalService;
     private final MerchantSettlementService settlementService;
+    private final SettlementService settlementRecordService;
+    private final TerminalManagementService terminalManagementService;
 
     @PostMapping("/merchants")
     public ResponseEntity<Merchant> onboardMerchant(@RequestBody Merchant merchant) {
@@ -87,9 +93,9 @@ public class AcquiringController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/terminals/by-tid/{terminalId}")
-    public ResponseEntity<Terminal> getTerminalByTid(@PathVariable String terminalId) {
-        return terminalService.getTerminalByTid(terminalId)
+    @GetMapping("/terminals/by-tid/{tid}")
+    public ResponseEntity<Terminal> getTerminalByTid(@PathVariable String tid) {
+        return terminalService.getTerminalByTid(tid)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -149,5 +155,31 @@ public class AcquiringController {
         LocalDate fromDate = LocalDate.parse(from);
         LocalDate toDate = LocalDate.parse(to);
         return ResponseEntity.ok(settlementService.getMerchantSettlements(merchantId, fromDate, toDate));
+    }
+
+    @GetMapping("/merchants/{merchantId}/netting")
+    public ResponseEntity<NettingResult> calculateMerchantNetting(
+            @PathVariable UUID merchantId,
+            @RequestParam(name = "date") String date) {
+        LocalDate localDate = LocalDate.parse(date);
+        return ResponseEntity.ok(settlementRecordService.calculateMerchantNetting(merchantId.toString(), localDate));
+    }
+
+    @PutMapping("/terminals/{tid}/keys")
+    public ResponseEntity<Terminal> updateTerminalKeys(
+            @PathVariable String tid,
+            @RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(terminalManagementService.updateKeys(
+                tid, body.get("mKey"), body.get("pik"), body.get("mak")));
+    }
+
+    @PostMapping("/terminals/{tid}/keys/rotate")
+    public ResponseEntity<Terminal> rotateTerminalKeys(@PathVariable String tid) {
+        return ResponseEntity.ok(terminalManagementService.rotateKeys(tid));
+    }
+
+    @GetMapping("/terminals/{tid}/status")
+    public ResponseEntity<Map<String, Object>> getTerminalStatus(@PathVariable String tid) {
+        return ResponseEntity.ok(terminalManagementService.getStatus(tid));
     }
 }

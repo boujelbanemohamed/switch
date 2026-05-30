@@ -1,0 +1,241 @@
+package com.switchplatform.platform.service.issuing;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import java.security.SecureRandom;
+import java.time.Instant;
+import java.util.HexFormat;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class PinService {
+
+    private static final int PBKDF2_ITERATIONS = 65536;
+    private static final int PBKDF2_KEY_LENGTH = 256;
+
+    private final Map<String, PinRecord> pinStore = new ConcurrentHashMap<>();
+    private final Map<String, String> panStore = new ConcurrentHashMap<>();
+
+    private final CardService cardService;
+
+    public record PinRecord(
+            String cardId,
+            String pinHash,
+            String pinBlockHash,
+            String algorithm,
+            Instant createdAt,
+            Instant updatedAt
+    ) {}
+
+    public String createPin(String cardId, String rawPin, String pinBlock) {
+        if (rawPin == null && pinBlock == null) {
+            throw new IllegalArgumentException("Either rawPin or pinBlock must be provided");
+        }
+
+        String pinHash = null;
+        String pinBlockHash = null;
+        String algorithm = null;
+
+        if (rawPin != null) {
+            if (!rawPin.matches("\\d{4,12}")) {
+                throw new IllegalArgumentException("Raw PIN must be 4-12 digits");
+            }
+            pinHash = hashWithPbkdf2(rawPin);
+            algorithm = "PBKDF2";
+        }
+
+        if (pinBlock != null) {
+            if (!pinBlock.matches("[0-9A-Fa-f]{16}")) {
+                throw new IllegalArgumentException("PIN block must be 16 hex characters (ISO 9564-1 format 0)");
+            }
+            pinBlockHash = pinBlock.toUpperCase();
+            if (algorithm == null) {
+                algorithm = "ISO9564-1";
+            }
+        }
+
+        PinRecord record = new PinRecord(
+                cardId, pinHash, pinBlockHash, algorithm,
+                Instant.now(), Instant.now()
+        );
+
+        pinStore.put(cardId, record);
+        log.info("PIN {} for card {} using algorithm {}", algorithm != null ? "created" : "stored", cardId, algorithm);
+        return "PIN created successfully";
+    }
+
+    public boolean verifyPin(String cardId, String rawPinOrPinBlock) {
+        PinRecord record = pinStore.get(cardId);
+        if (record == null) {
+            log.warn("No PIN record found for card {}", cardId);
+            return false;
+        }
+
+        if (rawPinOrPinBlock.matches("\\d{4,12}")) {
+            return verifyRawPin(record, rawPinOrPinBlock);
+        } else if (rawPinOrPinBlock.matches("[0-9A-Fa-f]{16}")) {
+            return verifyPinBlock(record, cardId, rawPinOrPinBlock.toUpperCase());
+        } else {
+            log.warn("Invalid PIN format for card {}", cardId);
+            return false;
+        }
+    }
+
+    public boolean changePin(String cardId, String oldPinBlock, String newPinBlock) {
+        if (!verifyPin(cardId, oldPinBlock)) {
+            log.warn("PIN change failed for card {} - old PIN verification failed", cardId);
+            return false;
+        }
+
+        PinRecord oldRecord = pinStore.get(cardId);
+        String algorithm = oldRecord != null ? oldRecord.algorithm() : "ISO9564-1";
+        String pinHash = null;
+        String pinBlockHash = newPinBlock.toUpperCase();
+
+        if (oldRecord != null && oldRecord.pinHash() != null) {
+            String extractedPin = extractPinFromPinBlock(cardId, newPinBlock);
+            if (extractedPin != null) {
+                pinHash = hashWithPbkdf2(extractedPin);
+            }
+        }
+
+        PinRecord newRecord = new PinRecord(
+                cardId, pinHash, pinBlockHash, algorithm,
+                oldRecord != null ? oldRecord.createdAt() : Instant.now(),
+                Instant.now()
+        );
+
+        pinStore.put(cardId, newRecord);
+        log.info("PIN changed for card {}", cardId);
+        return true;
+    }
+
+    public void storePan(String cardId, String pan) {
+        panStore.put(cardId, pan);
+    }
+
+    private boolean verifyRawPin(PinRecord record, String rawPin) {
+        if (record.pinHash() == null) {
+            log.warn("No PBKDF2 hash stored for card {}, cannot verify raw PIN", record.cardId());
+            return false;
+        }
+        String computedHash = hashWithPbkdf2(rawPin);
+        boolean matches = computedHash.equals(record.pinHash());
+        log.info("Raw PIN verification for card {}: {}", record.cardId(), matches ? "success" : "failure");
+        return matches;
+    }
+
+    private boolean verifyPinBlock(PinRecord record, String cardId, String incomingPinBlock) {
+        String storedPinBlock = record.pinBlockHash();
+        if (storedPinBlock == null) {
+            log.warn("No PIN block stored for card {}, cannot verify PIN block", cardId);
+            return false;
+        }
+
+        String pan = panStore.get(cardId);
+
+        if (pan == null) {
+            log.warn("No PAN available for card {}, using simplified PIN block comparison", cardId);
+            boolean matches = storedPinBlock.equals(incomingPinBlock);
+            log.info("PIN block comparison for card {}: {}", cardId, matches ? "success" : "failure");
+            return matches;
+        }
+
+        byte[] storedPinBlockBytes = HexFormat.of().parseHex(storedPinBlock);
+        byte[] panBlock = buildPanBlock(pan);
+        byte[] incomingBlock = HexFormat.of().parseHex(incomingPinBlock);
+
+        byte[] storedPinBytes = xor(storedPinBlockBytes, panBlock);
+        byte[] incomingPinBytes = xor(incomingBlock, panBlock);
+
+        for (int i = 0; i < storedPinBytes.length; i++) {
+            if (storedPinBytes[i] != incomingPinBytes[i]) {
+                log.warn("PIN block verification failed for card {}", cardId);
+                return false;
+            }
+        }
+
+        log.info("PIN block verification for card {}: success", cardId);
+        return true;
+    }
+
+    private String extractPinFromPinBlock(String cardId, String pinBlockHex) {
+        String pan = panStore.get(cardId);
+        if (pan == null) {
+            return null;
+        }
+        byte[] pinBlockBytes = HexFormat.of().parseHex(pinBlockHex);
+        byte[] panBlock = buildPanBlock(pan);
+        byte[] decoded = xor(pinBlockBytes, panBlock);
+
+        int pinLength = decoded[0] & 0x0F;
+        if (pinLength < 4 || pinLength > 12) {
+            return null;
+        }
+
+        StringBuilder pin = new StringBuilder();
+        for (int i = 1; i <= (pinLength + 1) / 2; i++) {
+            int upper = (decoded[i] >> 4) & 0x0F;
+            int lower = decoded[i] & 0x0F;
+            if (pin.length() < pinLength) {
+                if (upper <= 9) pin.append(upper);
+                if (pin.length() < pinLength && lower <= 9) pin.append(lower);
+            }
+        }
+        return pin.toString();
+    }
+
+    static byte[] buildPanBlock(String pan) {
+        String cleanPan = pan.replaceAll("\\s", "");
+        String panWithoutCheck = cleanPan.substring(0, cleanPan.length() - 1);
+        String panDigits = panWithoutCheck.length() > 12
+                ? panWithoutCheck.substring(panWithoutCheck.length() - 12)
+                : String.format("%12s", panWithoutCheck).replace(' ', '0');
+
+        byte[] panBlock = new byte[8];
+        for (int i = 0; i < 12; i++) {
+            int digit = panDigits.charAt(i) - '0';
+            int byteIndex = 2 + (i / 2);
+            if (i % 2 == 0) {
+                panBlock[byteIndex] = (byte) ((digit << 4) & 0xF0);
+            } else {
+                panBlock[byteIndex] = (byte) (panBlock[byteIndex] | (digit & 0x0F));
+            }
+        }
+        return panBlock;
+    }
+
+    private static byte[] xor(byte[] a, byte[] b) {
+        int len = Math.min(a.length, b.length);
+        byte[] result = new byte[len];
+        for (int i = 0; i < len; i++) {
+            result[i] = (byte) (a[i] ^ b[i]);
+        }
+        return result;
+    }
+
+    private String hashWithPbkdf2(String pin) {
+        try {
+            SecureRandom random = new SecureRandom();
+            byte[] salt = new byte[16];
+            random.nextBytes(salt);
+
+            PBEKeySpec spec = new PBEKeySpec(pin.toCharArray(), salt, PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH);
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            byte[] hash = factory.generateSecret(spec).getEncoded();
+
+            String saltHex = HexFormat.of().formatHex(salt);
+            String hashHex = HexFormat.of().formatHex(hash);
+            return saltHex + ":" + hashHex;
+        } catch (Exception e) {
+            throw new RuntimeException("PBKDF2 hashing failed", e);
+        }
+    }
+}

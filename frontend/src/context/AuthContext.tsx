@@ -7,7 +7,8 @@ interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (req: LoginRequest) => Promise<void>;
+  login: (req: LoginRequest) => Promise<boolean>;
+  completeMfa: (code: string) => Promise<void>;
   register: (req: RegisterRequest) => Promise<void>;
   logout: () => void;
   refreshAccessToken: () => Promise<void>;
@@ -31,6 +32,7 @@ function decodeTokenPayload(token: string): Record<string, unknown> | null {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('accessToken'));
   const [refreshTokenValue, setRefreshTokenValue] = useState<string | null>(() => localStorage.getItem('refreshToken'));
+  const [mfaUsername, setMfaUsername] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(() => {
     const saved = localStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
@@ -58,17 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, [token]);
 
-  const login = useCallback(async (req: LoginRequest) => {
-    const res = await fetch('/api/v1/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(req),
-    });
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(err || 'Login failed');
-    }
-    const data: LoginResponse = await res.json();
+  const setAuthState = useCallback((data: LoginResponse) => {
     setToken(data.accessToken);
     setRefreshTokenValue(data.refreshToken);
     localStorage.setItem('accessToken', data.accessToken);
@@ -90,6 +82,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const login = useCallback(async (req: LoginRequest): Promise<boolean> => {
+    const res = await fetch('/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err || 'Login failed');
+    }
+    const data: LoginResponse = await res.json();
+    if (data.mfaRequired) {
+      setMfaUsername(data.username);
+      return true;
+    }
+    setAuthState(data);
+    return false;
+  }, [setAuthState]);
+
+  const completeMfa = useCallback(async (code: string) => {
+    if (!mfaUsername) throw new Error('No MFA pending');
+    const res = await fetch('/api/v1/auth/mfa/authenticate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: mfaUsername, code }),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(err || 'MFA verification failed');
+    }
+    const data: LoginResponse = await res.json();
+    setMfaUsername(null);
+    setAuthState(data);
+  }, [mfaUsername, setAuthState]);
+
   const register = useCallback(async (req: RegisterRequest) => {
     const res = await fetch('/api/v1/auth/register', {
       method: 'POST',
@@ -109,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setRefreshTokenValue(null);
     setUser(null);
+    setMfaUsername(null);
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
@@ -180,9 +208,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      token, refreshTokenValue, user, isAuthenticated: !!token,
+      token, refreshTokenValue, user, isAuthenticated: !!token && !mfaUsername,
       loading, login, register, logout, refreshAccessToken,
-      fetchUsers, updateUser, deleteUser,
+      fetchUsers, updateUser, deleteUser, completeMfa,
     }}>
       {children}
     </AuthContext.Provider>

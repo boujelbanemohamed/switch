@@ -3,7 +3,6 @@ package com.switchplatform.platform.model.auth;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.OffsetDateTime;
-import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -46,6 +45,18 @@ public class AuthUser {
     @Column(name = "last_login")
     private OffsetDateTime lastLogin;
 
+    @Column(name = "mfa_secret", length = 64)
+    private String mfaSecret;
+
+    @Column(name = "mfa_enabled", nullable = false)
+    private boolean mfaEnabled = false;
+
+    @Column(name = "failed_attempts", nullable = false)
+    private int failedAttempts = 0;
+
+    @Column(name = "locked_until")
+    private OffsetDateTime lockedUntil;
+
     @Column(nullable = false)
     private OffsetDateTime createdAt;
 
@@ -64,10 +75,6 @@ public class AuthUser {
     }
 
     public enum Role {
-        ADMIN,
-        OPERATOR,
-        ANALYST,
-        AUDITOR,
-        VIEWER
+        ADMIN, OPERATOR, ANALYST, AUDITOR, VIEWER
     }
 }

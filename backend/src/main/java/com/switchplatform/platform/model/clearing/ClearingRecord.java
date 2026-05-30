@@ -62,6 +62,12 @@ public class ClearingRecord {
     @Enumerated(EnumType.STRING)
     private Status status = Status.PENDING;
 
+    @Column(name = "interchange_fee", precision = 18, scale = 3)
+    private BigDecimal interchangeFee;
+
+    @Column(name = "interchange_breakdown", columnDefinition = "TEXT")
+    private String interchangeBreakdown;
+
     @Column(name = "dispute_reason", columnDefinition = "TEXT")
     private String disputeReason;
 

@@ -4,11 +4,7 @@ import com.switchplatform.platform.model.issuing.Card;
 import com.switchplatform.platform.model.issuing.CardAccount;
 import com.switchplatform.platform.model.issuing.Cardholder;
 import com.switchplatform.platform.model.issuing.WalletToken;
-import com.switchplatform.platform.service.issuing.CardAccountService;
-import com.switchplatform.platform.service.issuing.CardService;
-import com.switchplatform.platform.service.issuing.CardholderService;
-import com.switchplatform.platform.service.issuing.NotificationService;
-import com.switchplatform.platform.service.issuing.WalletTokenService;
+import com.switchplatform.platform.service.issuing.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +26,8 @@ public class IssuingController {
     private final WalletTokenService walletTokenService;
     private final CardAccountService cardAccountService;
     private final NotificationService notificationService;
+    private final PinService pinService;
+    private final TokenVaultService tokenVaultService;
 
     // ─── Cardholder endpoints ───────────────────────────────────────────────
 
@@ -255,5 +253,81 @@ public class IssuingController {
     public ResponseEntity<List<NotificationService.Notification>> getNotificationsByCard(
             @PathVariable UUID cardId) {
         return ResponseEntity.ok(notificationService.getNotificationsByCard(cardId));
+    }
+
+    // ─── PIN Vault endpoints ────────────────────────────────────────────────
+
+    @PostMapping("/pins")
+    public ResponseEntity<Map<String, String>> createPin(@RequestBody Map<String, String> body) {
+        String cardId = body.get("cardId");
+        String rawPin = body.get("rawPin");
+        String pinBlock = body.get("pinBlock");
+        String message = pinService.createPin(cardId, rawPin, pinBlock);
+        return ResponseEntity.ok(Map.of("message", message));
+    }
+
+    @PostMapping("/pins/verify")
+    public ResponseEntity<Map<String, Boolean>> verifyPinVault(@RequestBody Map<String, String> body) {
+        String cardId = body.get("cardId");
+        String pinBlock = body.get("pinBlock");
+        boolean verified = pinService.verifyPin(cardId, pinBlock);
+        return ResponseEntity.ok(Map.of("verified", verified));
+    }
+
+    @PutMapping("/pins")
+    public ResponseEntity<Map<String, Boolean>> changePinVault(@RequestBody Map<String, String> body) {
+        String cardId = body.get("cardId");
+        String oldPinBlock = body.get("oldPinBlock");
+        String newPinBlock = body.get("newPinBlock");
+        boolean changed = pinService.changePin(cardId, oldPinBlock, newPinBlock);
+        return ResponseEntity.ok(Map.of("changed", changed));
+    }
+
+    // ─── Token Vault endpoints ──────────────────────────────────────────────
+
+    @PostMapping("/tokens/tokenize")
+    public ResponseEntity<TokenVaultService.TokenRecord> tokenize(@RequestBody Map<String, String> body) {
+        String cardId = body.get("cardId");
+        String walletProvider = body.get("walletProvider");
+        String deviceId = body.get("deviceId");
+        String fpan = body.get("fpan");
+
+        TokenVaultService.TokenRecord record;
+        if (fpan != null && !fpan.isEmpty()) {
+            record = tokenVaultService.tokenizeWithFpan(cardId, fpan, walletProvider, deviceId);
+        } else {
+            record = tokenVaultService.tokenize(cardId, walletProvider, deviceId);
+        }
+        return ResponseEntity.ok(record);
+    }
+
+    @GetMapping("/tokens/uuid/{uuid}")
+    public ResponseEntity<TokenVaultService.TokenRecord> getTokenByUuid(@PathVariable String uuid) {
+        return ResponseEntity.ok(tokenVaultService.getToken(uuid));
+    }
+
+    @GetMapping("/tokens/by-dpan/{dpan}")
+    public ResponseEntity<TokenVaultService.TokenRecord> getByDpan(@PathVariable String dpan) {
+        return ResponseEntity.ok(tokenVaultService.getByDpan(dpan));
+    }
+
+    @PostMapping("/tokens/{dpan}/suspend")
+    public ResponseEntity<TokenVaultService.TokenRecord> suspendTokenVault(@PathVariable String dpan) {
+        return ResponseEntity.ok(tokenVaultService.suspendToken(dpan));
+    }
+
+    @PostMapping("/tokens/{dpan}/activate")
+    public ResponseEntity<TokenVaultService.TokenRecord> activateTokenVault(@PathVariable String dpan) {
+        return ResponseEntity.ok(tokenVaultService.activateToken(dpan));
+    }
+
+    @PostMapping("/tokens/{dpan}/delete")
+    public ResponseEntity<TokenVaultService.TokenRecord> deleteTokenVault(@PathVariable String dpan) {
+        return ResponseEntity.ok(tokenVaultService.deleteToken(dpan));
+    }
+
+    @GetMapping("/tokens/by-card/{cardId}")
+    public ResponseEntity<List<TokenVaultService.TokenRecord>> listByCard(@PathVariable String cardId) {
+        return ResponseEntity.ok(tokenVaultService.listByCard(cardId));
     }
 }

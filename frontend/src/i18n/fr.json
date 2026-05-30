@@ -379,13 +379,29 @@
     "loginSuccess": "Connexion réussie",
     "sectionDescription": "Portail d'authentification et d'autorisation pour la plateforme de switch. Gère les identités, rôles et accès sécurisés à tous les modules de la plateforme via des jetons JWT.",
     "sectionRole": "Contrôle l'accès à la plateforme via une sécurité basée sur les rôles. Chaque utilisateur se voit attribuer un rôle (ADMIN, OPERATOR, ANALYST, AUDITOR, VIEWER) qui détermine les modules et actions accessibles. Toutes les requêtes API doivent inclure un jeton JWT valide obtenu via la connexion.",
-    "sectionUsage": "Naviguez vers Connexion pour vous authentifier avec votre nom d'utilisateur et mot de passe. Après une connexion réussie, un jeton JWT est émis et stocké. Utilisez la section Utilisateurs pour gérer les comptes — les administrateurs peuvent créer, modifier les rôles et supprimer des utilisateurs."
+    "sectionUsage": "Naviguez vers Connexion pour vous authentifier avec votre nom d'utilisateur et mot de passe. Après une connexion réussie, un jeton JWT est émis et stocké. Utilisez la section Utilisateurs pour gérer les comptes — les administrateurs peuvent créer, modifier les rôles et supprimer des utilisateurs.",
+    "subtitle": "Connectez-vous à votre compte",
+    "usernamePlaceholder": "Entrez votre nom d'utilisateur",
+    "loginError": "Nom d'utilisateur ou mot de passe invalide",
+    "lastLogin": "Dernière Connexion",
+    "mfaTitle": "Authentification à Deux Facteurs",
+    "mfaSubtitle": "Entrez le code de vérification de votre application d'authentification",
+    "mfaStatus": "Statut",
+    "mfaEnabled": "Activé",
+    "mfaDisabled": "Désactivé",
+    "mfaCode": "Code de Vérification",
+    "mfaInstructions": "Scannez ce code QR avec votre application d'authentification (Google Authenticator, Authy, etc.) ou entrez la clé secrète manuellement :",
+    "setupMfa": "Activer 2FA",
+    "disableMfa": "Désactiver 2FA",
+    "verify": "Vérifier"
   },
   "common": {
     "loading": "Chargement...",
     "noData": "Aucune donnée disponible",
     "language": "Langue",
     "na": "N/D",
-    "failedToLoad": "Échec du chargement des données"
+    "failedToLoad": "Échec du chargement des données",
+    "copy": "Copier",
+    "copied": "Copié !"
   }
 }

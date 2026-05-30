@@ -80,6 +80,18 @@ public class Terminal {
     @Column(name = "encryption_key_id", length = 64)
     private String encryptionKeyId;
 
+    @Column(name = "m_key", length = 64)
+    private String mKey;
+
+    @Column(length = 64)
+    private String pik;
+
+    @Column(length = 64)
+    private String mak;
+
+    @Column(name = "last_activity_at")
+    private OffsetDateTime lastActivityAt;
+
     @Column(name = "last_contact")
     private OffsetDateTime lastContact;
 

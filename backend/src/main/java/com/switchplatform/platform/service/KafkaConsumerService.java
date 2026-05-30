@@ -6,6 +6,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 
@@ -25,17 +28,28 @@ public class KafkaConsumerService {
             topics = "#{'${switch.mq.inbound-topics:switch-inbound}'.split(',')}",
             containerFactory = "byteArrayKafkaListenerContainerFactory"
     )
-    public void onMessage(@Payload byte[] message) {
+    public void onMessage(
+            @Payload byte[] message,
+            @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+            @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
+            @Header(KafkaHeaders.OFFSET) long offset,
+            @Header(KafkaHeaders.RECEIVED_KEY) String key,
+            Acknowledgment acknowledgment) {
         try {
             String msgStr = new String(message, StandardCharsets.UTF_8);
-            log.info("Kafka received message: {}", msgStr.length() > 200 ? msgStr.substring(0, 200) : msgStr);
+            log.info("Kafka consumed: topic={}, partition={}, offset={}, key={}, length={}",
+                    topic, partition, offset, key, message.length);
 
             String sourceCode = "REMOTE";
             Transaction result = switchCore.processIso8583Message(message, sourceCode);
-            log.info("Kafka processed transaction: id={}, status={}",
-                    result.getTransactionId(), result.getStatus());
+            log.info("Kafka processed transaction: id={}, status={}, responseCode={}",
+                    result.getTransactionId(), result.getStatus(), result.getResponseCode());
+
+            acknowledgment.acknowledge();
         } catch (Exception e) {
-            log.error("Kafka message processing failed: {}", e.getMessage(), e);
+            log.error("Kafka message processing failed: topic={}, partition={}, offset={}, error={}",
+                    topic, partition, offset, e.getMessage(), e);
+            acknowledgment.acknowledge();
         }
     }
 
@@ -43,16 +57,28 @@ public class KafkaConsumerService {
             topics = "#{'${switch.mq.inbound-xml-topics:switch-inbound-xml}'.split(',')}",
             containerFactory = "byteArrayKafkaListenerContainerFactory"
     )
-    public void onXmlMessage(@Payload byte[] message) {
+    public void onXmlMessage(
+            @Payload byte[] message,
+            @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+            @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
+            @Header(KafkaHeaders.OFFSET) long offset,
+            @Header(KafkaHeaders.RECEIVED_KEY) String key,
+            Acknowledgment acknowledgment) {
         try {
             String xmlMessage = new String(message, StandardCharsets.UTF_8);
-            log.info("Kafka received XML message: {}", xmlMessage.length() > 200 ? xmlMessage.substring(0, 200) : xmlMessage);
+            log.info("Kafka consumed XML: topic={}, partition={}, offset={}, key={}, length={}",
+                    topic, partition, offset, key, xmlMessage.length());
+
             String sourceCode = "REMOTE";
             Transaction result = switchCore.processIso20022Message(xmlMessage, sourceCode);
-            log.info("Kafka processed XML transaction: id={}, status={}",
-                    result.getTransactionId(), result.getStatus());
+            log.info("Kafka processed XML transaction: id={}, status={}, responseCode={}",
+                    result.getTransactionId(), result.getStatus(), result.getResponseCode());
+
+            acknowledgment.acknowledge();
         } catch (Exception e) {
-            log.error("Kafka XML message processing failed: {}", e.getMessage(), e);
+            log.error("Kafka XML message processing failed: topic={}, partition={}, offset={}, error={}",
+                    topic, partition, offset, e.getMessage(), e);
+            acknowledgment.acknowledge();
         }
     }
 }

@@ -149,7 +149,11 @@ export interface Terminal {
   id: string;
   terminalId: string;
   merchantId: string;
+  serialNumber?: string;
+  terminalType?: string;
   type?: string;
+  manufacturer?: string;
+  model?: string;
   status: string;
   location?: string;
   createdAt: string;
@@ -161,6 +165,7 @@ export interface MerchantSettlement {
   settlementDate: string;
   totalAmount: number;
   totalFee: number;
+  totalFees?: number;
   netAmount: number;
   currencyCode: string;
   status: string;

@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, Repeat, Building2, Network, GitCompare,
   CreditCard, Store, ShieldCheck, Siren, DollarSign, Settings, ShoppingCart,
-  LogIn, User, Users as UsersIcon,
+  LogIn, User, Users as UsersIcon, Briefcase,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -37,6 +37,7 @@ export function Layout({ children }: LayoutProps) {
     { to: '/clearing', icon: DollarSign, label: t('nav.clearing') },
     { to: '/backoffice', icon: Settings, label: t('nav.backoffice') },
     { to: '/ecommerce', icon: ShoppingCart, label: t('nav.ecommerce') },
+    { to: '/merchant-portal', icon: Briefcase, label: t('nav.merchantPortal') },
     { to: '/profile', icon: User, label: t('nav.auth') },
     { to: '/users', icon: UsersIcon, label: t('nav.users') },
   ];

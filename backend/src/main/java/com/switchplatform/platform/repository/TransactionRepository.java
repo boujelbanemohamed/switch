@@ -42,4 +42,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     @Query("SELECT t.status, COUNT(t) FROM Transaction t " +
            "WHERE t.requestAt >= :since GROUP BY t.status")
     List<Object[]> statusBreakdownSince(@Param("since") OffsetDateTime since);
+
+    List<Transaction> findByMerchantId(String merchantId);
 }

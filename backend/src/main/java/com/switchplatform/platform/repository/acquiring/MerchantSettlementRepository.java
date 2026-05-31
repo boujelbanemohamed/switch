@@ -11,6 +11,7 @@ import java.util.UUID;
 @Repository
 public interface MerchantSettlementRepository extends JpaRepository<MerchantSettlement, UUID> {
     List<MerchantSettlement> findByMerchantId(UUID merchantId);
+    List<MerchantSettlement> findByMerchantIdOrderBySettlementDateDesc(UUID merchantId);
     List<MerchantSettlement> findBySettlementDate(LocalDate date);
     List<MerchantSettlement> findByMerchantIdAndSettlementDate(UUID merchantId, LocalDate date);
 }

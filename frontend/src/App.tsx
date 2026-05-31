@@ -13,6 +13,7 @@ import { Fraud } from './pages/Fraud';
 import { Clearing } from './pages/Clearing';
 import { Backoffice } from './pages/Backoffice';
 import { Ecommerce } from './pages/Ecommerce';
+import { MerchantPortal } from './pages/MerchantPortal';
 import { Login } from './pages/Login';
 import { Profile } from './pages/Profile';
 import { Users } from './pages/Users';
@@ -43,6 +44,7 @@ function AppRoutes() {
       <Route path="/clearing" element={<ProtectedRoute><Layout><Clearing /></Layout></ProtectedRoute>} />
       <Route path="/backoffice" element={<ProtectedRoute><Layout><Backoffice /></Layout></ProtectedRoute>} />
       <Route path="/ecommerce" element={<ProtectedRoute><Layout><Ecommerce /></Layout></ProtectedRoute>} />
+      <Route path="/merchant-portal" element={<ProtectedRoute><Layout><MerchantPortal /></Layout></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
       <Route path="/users" element={<ProtectedRoute><Layout><Users /></Layout></ProtectedRoute>} />
     </Routes>

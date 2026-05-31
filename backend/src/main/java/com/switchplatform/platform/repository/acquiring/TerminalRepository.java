@@ -13,4 +13,6 @@ public interface TerminalRepository extends JpaRepository<Terminal, UUID> {
     Optional<Terminal> findByTerminalId(String terminalId);
     List<Terminal> findByMerchantId(UUID merchantId);
     boolean existsByTerminalId(String terminalId);
+    long countByMerchantId(UUID merchantId);
+    long countByMerchantIdAndStatus(UUID merchantId, Terminal.TerminalStatus status);
 }

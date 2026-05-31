@@ -4,6 +4,7 @@ import com.switchplatform.platform.model.issuing.CardAccount;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -17,6 +18,7 @@ public class CardAccountService {
 
     private final Map<UUID, CardAccount> accounts = new ConcurrentHashMap<>();
 
+    @Transactional
     public CardAccount createAccount(CardAccount account) {
         if (account.getId() == null) {
             account.setId(UUID.randomUUID());
@@ -55,6 +57,7 @@ public class CardAccountService {
                 .toList();
     }
 
+    @Transactional
     public CardAccount debit(UUID accountId, BigDecimal amount, String currencyCode) {
         CardAccount account = getAccount(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
@@ -68,6 +71,7 @@ public class CardAccountService {
         return account;
     }
 
+    @Transactional
     public CardAccount credit(UUID accountId, BigDecimal amount, String currencyCode) {
         CardAccount account = getAccount(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
@@ -78,6 +82,7 @@ public class CardAccountService {
         return account;
     }
 
+    @Transactional
     public CardAccount hold(UUID accountId, BigDecimal amount) {
         CardAccount account = getAccount(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
@@ -92,6 +97,7 @@ public class CardAccountService {
         return account;
     }
 
+    @Transactional
     public CardAccount releaseHold(UUID accountId, BigDecimal amount) {
         CardAccount account = getAccount(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));

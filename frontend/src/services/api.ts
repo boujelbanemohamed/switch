@@ -83,13 +83,19 @@ export const api = {
     cardholders: {
       list: () => request<import('../types').Cardholder[]>('/issuing/cardholders'),
       get: (id: string) => request<import('../types').Cardholder>(`/issuing/cardholders/${id}`),
+      getByEmail: (email: string) => request<import('../types').Cardholder>(`/issuing/cardholders/by-email/${email}`),
       create: (data: Partial<import('../types').Cardholder>) =>
         request<import('../types').Cardholder>('/issuing/cardholders', { method: 'POST', body: JSON.stringify(data) }),
+      update: (id: string, data: Partial<import('../types').Cardholder>) =>
+        request<import('../types').Cardholder>(`/issuing/cardholders/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      updateKyc: (id: string, level: number) =>
+        request<import('../types').Cardholder>(`/issuing/cardholders/${id}/kyc?level=${level}`, { method: 'PUT' }),
       block: (id: string) =>
         request<import('../types').Cardholder>(`/issuing/cardholders/${id}/block`, { method: 'POST' }),
     },
     cards: {
       get: (id: string) => request<import('../types').Card>(`/issuing/cards/${id}`),
+      getBySuffix: (suffix: string) => request<import('../types').Card>(`/issuing/cards/by-suffix/${suffix}`),
       create: (data: Partial<import('../types').Card>) =>
         request<import('../types').Card>('/issuing/cards', { method: 'POST', body: JSON.stringify(data) }),
       activate: (id: string) =>
@@ -119,6 +125,24 @@ export const api = {
       get: (tokenUuid: string) => request<import('../types').WalletToken>(`/issuing/tokens/${tokenUuid}`),
       suspend: (token: string) => request<import('../types').WalletToken>(`/issuing/tokens/${token}/suspend`, { method: 'POST' }),
       listByCard: (cardId: string) => request<import('../types').WalletToken[]>(`/issuing/cards/${cardId}/tokens`),
+    },
+    pins: {
+      setPin: (cardId: string, rawPin?: string, pinBlock?: string) =>
+        request<{ message: string }>('/issuing/pins', { method: 'POST', body: JSON.stringify({ cardId, rawPin, pinBlock }) }),
+      verifyPin: (cardId: string, pinBlock: string) =>
+        request<{ verified: boolean }>('/issuing/pins/verify', { method: 'POST', body: JSON.stringify({ cardId, pinBlock }) }),
+      changePin: (cardId: string, oldPinBlock: string, newPinBlock: string) =>
+        request<{ changed: boolean }>('/issuing/pins', { method: 'PUT', body: JSON.stringify({ cardId, oldPinBlock, newPinBlock }) }),
+    },
+    tokenVault: {
+      tokenize: (cardId: string, walletProvider?: string, deviceId?: string, fpan?: string) =>
+        request<{ uuid: string; dpan: string; status: string }>('/issuing/tokens/tokenize', { method: 'POST', body: JSON.stringify({ cardId, walletProvider, deviceId, fpan }) }),
+      getByUuid: (uuid: string) => request<{ uuid: string; dpan: string; status: string }>(`/issuing/tokens/uuid/${uuid}`),
+      getByDpan: (dpan: string) => request<{ uuid: string; dpan: string; status: string }>(`/issuing/tokens/by-dpan/${dpan}`),
+      suspend: (dpan: string) => request<{ uuid: string; dpan: string; status: string }>(`/issuing/tokens/${dpan}/suspend`, { method: 'POST' }),
+      activate: (dpan: string) => request<{ uuid: string; dpan: string; status: string }>(`/issuing/tokens/${dpan}/activate`, { method: 'POST' }),
+      delete: (dpan: string) => request<{ uuid: string; dpan: string; status: string }>(`/issuing/tokens/${dpan}/delete`, { method: 'POST' }),
+      listByCard: (cardId: string) => request<{ uuid: string; dpan: string; status: string }[]>(`/issuing/tokens/by-card/${cardId}`),
     },
     accounts: {
       list: () => request<import('../types').CardAccount[]>('/issuing/accounts'),
@@ -151,6 +175,8 @@ export const api = {
       getByCode: (code: string) => request<import('../types').Merchant>(`/acquiring/merchants/by-code/${code}`),
       create: (data: Partial<import('../types').Merchant>) =>
         request<import('../types').Merchant>('/acquiring/merchants', { method: 'POST', body: JSON.stringify(data) }),
+      update: (id: string, data: Partial<import('../types').Merchant>) =>
+        request<import('../types').Merchant>(`/acquiring/merchants/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
       approve: (id: string) =>
         request<import('../types').Merchant>(`/acquiring/merchants/${id}/approve`, { method: 'POST' }),
       suspend: (id: string, reason: string) =>
@@ -167,6 +193,10 @@ export const api = {
         request<import('../types').Terminal[]>(`/acquiring/merchants/${merchantId}/terminals`),
       updateStatus: (id: string, status: string) =>
         request<import('../types').Terminal>(`/acquiring/terminals/${id}/status?status=${status}`, { method: 'PUT' }),
+      injectKeys: (tid: string, mKey: string, pik: string, mak: string) =>
+        request<import('../types').Terminal>(`/acquiring/terminals/${tid}/keys`, { method: 'PUT', body: JSON.stringify({ mKey, pik, mak }) }),
+      rotateKeys: (tid: string) =>
+        request<import('../types').Terminal>(`/acquiring/terminals/${tid}/keys/rotate`, { method: 'POST' }),
     },
     settlements: {
       get: (id: string) => request<import('../types').MerchantSettlement>(`/acquiring/settlements/${id}`),
@@ -174,8 +204,14 @@ export const api = {
         request<import('../types').MerchantSettlement>('/acquiring/settlements', { method: 'POST', body: JSON.stringify({ merchantId, settlementDate, currencyCode }) }),
       confirm: (id: string) =>
         request<import('../types').MerchantSettlement>(`/acquiring/settlements/${id}/confirm`, { method: 'POST' }),
+      markPaid: (id: string, paymentRef: string) =>
+        request<import('../types').MerchantSettlement>(`/acquiring/settlements/${id}/pay?paymentRef=${paymentRef}`, { method: 'POST' }),
       listByMerchant: (merchantId: string, from: string, to: string) =>
         request<import('../types').MerchantSettlement[]>(`/acquiring/merchants/${merchantId}/settlements?from=${from}&to=${to}`),
+    },
+    netting: {
+      calculate: (merchantId: string, date: string) =>
+        request<Record<string, unknown>>(`/acquiring/merchants/${merchantId}/netting?date=${date}`),
     },
   },
   authorization: {
@@ -185,11 +221,27 @@ export const api = {
       list: () => request<import('../types').AuthRule[]>('/authorization/rules'),
       create: (data: Partial<import('../types').AuthRule>) =>
         request<import('../types').AuthRule>('/authorization/rules', { method: 'POST', body: JSON.stringify(data) }),
+      update: (id: string, data: Partial<import('../types').AuthRule>) =>
+        request<import('../types').AuthRule>(`/authorization/rules/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     },
     decisions: {
       list: (cardId: string, limit = 10) =>
         request<import('../types').AuthDecision[]>(`/authorization/decisions/${cardId}?limit=${limit}`),
+      getByTransaction: (transactionId: string) =>
+        request<import('../types').AuthDecision>(`/authorization/decisions/by-transaction/${transactionId}`),
     },
+    holds: {
+      listByCard: (cardId: string) =>
+        request<import('../types').HoldRecord[]>(`/authorization/holds/card/${cardId}`),
+      listByAccount: (accountId: string) =>
+        request<import('../types').HoldRecord[]>(`/authorization/holds/account/${accountId}`),
+      release: (holdId: string) =>
+        request<void>(`/authorization/holds/${holdId}/release`, { method: 'POST' }),
+      capture: (holdId: string) =>
+        request<void>(`/authorization/holds/${holdId}/capture`, { method: 'POST' }),
+    },
+    simulate: (data: Record<string, unknown>) =>
+      request<import('../types').AuthDecision>('/authorization/authorize', { method: 'POST', body: JSON.stringify(data) }),
   },
   fraud: {
     evaluate: (data: Record<string, unknown>) =>

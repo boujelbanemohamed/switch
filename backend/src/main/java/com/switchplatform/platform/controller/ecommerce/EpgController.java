@@ -3,8 +3,10 @@ package com.switchplatform.platform.controller.ecommerce;
 import com.switchplatform.platform.model.ecommerce.EpgMerchantConfig;
 import com.switchplatform.platform.model.ecommerce.EpgTransaction;
 import com.switchplatform.platform.service.ecommerce.EpgService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -15,12 +17,13 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/epg")
 @RequiredArgsConstructor
+@Validated
 public class EpgController {
 
     private final EpgService epgService;
 
     @PostMapping("/transactions")
-    public ResponseEntity<EpgTransaction> initiateTransaction(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<EpgTransaction> initiateTransaction(@Valid @RequestBody Map<String, Object> request) {
         EpgTransaction txn = epgService.initiateTransaction(
                 UUID.fromString((String) request.get("merchantId")),
                 (String) request.get("merchantTransactionId"),
@@ -43,7 +46,7 @@ public class EpgController {
 
     @PostMapping("/transactions/{id}/authorize")
     public ResponseEntity<EpgTransaction> authorize(@PathVariable UUID id,
-                                                     @RequestBody Map<String, String> request) {
+                                                     @Valid @RequestBody Map<String, String> request) {
         EpgTransaction txn = epgService.authorizeTransaction(id,
                 request.get("cavv"), request.get("eci"));
         return ResponseEntity.ok(txn);
@@ -57,7 +60,7 @@ public class EpgController {
 
     @PostMapping("/transactions/{id}/fail")
     public ResponseEntity<EpgTransaction> fail(@PathVariable UUID id,
-                                                @RequestBody Map<String, String> request) {
+                                                @Valid @RequestBody Map<String, String> request) {
         EpgTransaction txn = epgService.failTransaction(id,
                 request.get("errorCode"), request.get("errorDescription"));
         return ResponseEntity.ok(txn);
@@ -71,7 +74,7 @@ public class EpgController {
 
     @PostMapping("/transactions/{id}/3ds")
     public ResponseEntity<EpgTransaction> setThreeDs(@PathVariable UUID id,
-                                                       @RequestBody Map<String, Object> request) {
+                                                      @Valid @RequestBody Map<String, Object> request) {
         EpgTransaction txn = epgService.setThreeDsStatus(id,
                 (Boolean) request.get("required"),
                 request.get("acsAuthId") != null
@@ -81,7 +84,7 @@ public class EpgController {
 
     @PostMapping("/merchants/{merchantId}/config")
     public ResponseEntity<EpgMerchantConfig> configureMerchant(@PathVariable UUID merchantId,
-                                                                @RequestBody Map<String, String> request) {
+                                                                @Valid @RequestBody Map<String, String> request) {
         EpgMerchantConfig config = epgService.configureMerchant(merchantId,
                 request.get("apiKeyHash"), request.get("apiSecretHash"));
         return ResponseEntity.ok(config);

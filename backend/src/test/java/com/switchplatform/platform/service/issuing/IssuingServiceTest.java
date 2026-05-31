@@ -1,8 +1,11 @@
 package com.switchplatform.platform.service.issuing;
 
 import com.switchplatform.platform.model.issuing.Card;
+import com.switchplatform.platform.model.issuing.CardOperation;
 import com.switchplatform.platform.model.issuing.Cardholder;
 import com.switchplatform.platform.model.issuing.WalletToken;
+import com.switchplatform.platform.repository.issuing.CardOperationRepository;
+import com.switchplatform.platform.repository.issuing.CardRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,18 +15,61 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class IssuingServiceTest {
 
     private CardService cardService;
     private CardholderService cardholderService;
     private WalletTokenService walletTokenService;
-    private NotificationService notificationService;
+    private IssuingNotificationService notificationService;
+    private CardRepository cardRepository;
+    private CardOperationRepository cardOperationRepository;
+    private final java.util.Map<java.util.UUID, Card> cardStore = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<Long, CardOperation> cardOpStore = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.concurrent.atomic.AtomicLong cardOpIdGen = new java.util.concurrent.atomic.AtomicLong(1);
 
     @BeforeEach
     void setUp() {
-        notificationService = new NotificationService();
-        cardService = new CardService(notificationService);
+        cardStore.clear();
+        cardOpStore.clear();
+        notificationService = new IssuingNotificationService();
+        cardRepository = mock(CardRepository.class);
+        cardOperationRepository = mock(CardOperationRepository.class);
+        when(cardRepository.save(any())).thenAnswer(inv -> {
+            Card c = inv.getArgument(0);
+            if (c.getId() == null) c.setId(java.util.UUID.randomUUID());
+            cardStore.put(c.getId(), c);
+            return c;
+        });
+        when(cardRepository.findById(any())).thenAnswer(inv ->
+                java.util.Optional.ofNullable(cardStore.get(inv.getArgument(0))));
+        when(cardRepository.findByCardNumberSuffix(any())).thenAnswer(inv -> {
+            String suffix = inv.getArgument(0);
+            return cardStore.values().stream()
+                    .filter(c -> suffix.equals(c.getCardNumberSuffix())).findFirst();
+        });
+        when(cardRepository.findByCardholderId(any())).thenAnswer(inv -> {
+            java.util.UUID chId = inv.getArgument(0);
+            return cardStore.values().stream()
+                    .filter(c -> chId.equals(c.getCardholderId())).toList();
+        });
+        when(cardOperationRepository.save(any())).thenAnswer(inv -> {
+            CardOperation op = inv.getArgument(0);
+            if (op.getId() == null) op.setId(cardOpIdGen.getAndIncrement());
+            cardOpStore.put(op.getId(), op);
+            return op;
+        });
+        when(cardOperationRepository.findByCardIdOrderByCreatedAtDesc(any())).thenAnswer(inv -> {
+            java.util.UUID cid = inv.getArgument(0);
+            return cardOpStore.values().stream()
+                    .filter(op -> cid.equals(op.getCardId()))
+                    .sorted((a,b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                    .toList();
+        });
+        cardService = new CardService(cardRepository, cardOperationRepository, notificationService);
         cardholderService = new CardholderService(cardService);
         walletTokenService = new WalletTokenService();
     }

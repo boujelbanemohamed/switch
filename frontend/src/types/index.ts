@@ -168,6 +168,17 @@ export interface MerchantSettlement {
 }
 
 // Authorization
+export interface HoldRecord {
+  id: string;
+  cardId?: string;
+  accountId?: string;
+  amount: number;
+  reason?: string;
+  status: string;
+  expiresAt?: string;
+  createdAt: string;
+}
+
 export interface AuthRule {
   id: string;
   name: string;

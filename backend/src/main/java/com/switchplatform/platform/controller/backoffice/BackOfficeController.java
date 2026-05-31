@@ -4,8 +4,10 @@ import com.switchplatform.platform.model.backoffice.AuditLog;
 import com.switchplatform.platform.model.backoffice.MonitoringEvent;
 import com.switchplatform.platform.model.backoffice.Report;
 import com.switchplatform.platform.service.backoffice.BackOfficeService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,12 +17,13 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/backoffice")
 @RequiredArgsConstructor
+@Validated
 public class BackOfficeController {
 
     private final BackOfficeService backOfficeService;
 
     @PostMapping("/audit")
-    public ResponseEntity<AuditLog> createAuditLog(@RequestBody AuditLog auditLog) {
+    public ResponseEntity<AuditLog> createAuditLog(@Valid @RequestBody AuditLog auditLog) {
         return ResponseEntity.ok(backOfficeService.logAudit(auditLog));
     }
 
@@ -40,7 +43,7 @@ public class BackOfficeController {
     }
 
     @PostMapping("/reports")
-    public ResponseEntity<Report> createReport(@RequestBody Report report) {
+    public ResponseEntity<Report> createReport(@Valid @RequestBody Report report) {
         return ResponseEntity.ok(backOfficeService.createReport(report));
     }
 
@@ -55,7 +58,7 @@ public class BackOfficeController {
     }
 
     @PostMapping("/monitoring/events")
-    public ResponseEntity<MonitoringEvent> createMonitoringEvent(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<MonitoringEvent> createMonitoringEvent(@Valid @RequestBody Map<String, Object> body) {
         String eventType = (String) body.get("eventType");
         String severity = (String) body.get("severity");
         String source = (String) body.get("source");

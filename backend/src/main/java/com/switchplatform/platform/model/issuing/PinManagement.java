@@ -20,15 +20,21 @@ public class PinManagement {
     @Column(name = "card_id", nullable = false)
     private UUID cardId;
 
+    @Column(length = 64)
+    private String pan;
+
+    @Column(name = "pin_hash", columnDefinition = "TEXT")
+    private String pinHash;
+
+    @Column(name = "pin_format", length = 20)
+    private String pinFormat;
+
     @Column(name = "pin_type", length = 20)
     @Enumerated(EnumType.STRING)
     private PinType pinType = PinType.TRANSACTION;
 
     @Column(name = "pin_block", length = 64)
     private String pinBlock;
-
-    @Column(name = "pin_format", length = 10)
-    private String pinFormat;
 
     @Column(name = "pin_attempts")
     private Integer pinAttempts = 0;

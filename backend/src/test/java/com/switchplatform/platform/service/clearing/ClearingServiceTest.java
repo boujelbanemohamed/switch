@@ -3,6 +3,10 @@ package com.switchplatform.platform.service.clearing;
 import com.switchplatform.platform.model.clearing.ClearingRecord;
 import com.switchplatform.platform.model.clearing.NettingRecord;
 import com.switchplatform.platform.model.clearing.ReconciliationRecord;
+import com.switchplatform.platform.repository.clearing.ClearingRecordRepository;
+import com.switchplatform.platform.repository.clearing.InterchangeFeeRepository;
+import com.switchplatform.platform.repository.clearing.NettingRecordRepository;
+import com.switchplatform.platform.repository.clearing.ReconciliationRecordRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,16 +16,75 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class ClearingServiceTest {
 
     private ClearingService clearingService;
     private InterchangeService interchangeService;
+    private ClearingRecordRepository clearingRecordRepository;
+    private NettingRecordRepository nettingRecordRepository;
+    private ReconciliationRecordRepository reconciliationRecordRepository;
+    private final java.util.Map<java.util.UUID, ClearingRecord> clearingStore = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<java.util.UUID, NettingRecord> nettingStore = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<java.util.UUID, ReconciliationRecord> reconciliationStore = new java.util.concurrent.ConcurrentHashMap<>();
 
     @BeforeEach
     void setUp() {
-        interchangeService = new InterchangeService();
-        clearingService = new ClearingService(interchangeService);
+        clearingStore.clear();
+        nettingStore.clear();
+        reconciliationStore.clear();
+        interchangeService = new InterchangeService(mock(InterchangeFeeRepository.class));
+        clearingRecordRepository = mock(ClearingRecordRepository.class);
+        nettingRecordRepository = mock(NettingRecordRepository.class);
+        reconciliationRecordRepository = mock(ReconciliationRecordRepository.class);
+        when(clearingRecordRepository.save(any())).thenAnswer(inv -> {
+            ClearingRecord r = inv.getArgument(0);
+            if (r.getId() == null) r.setId(java.util.UUID.randomUUID());
+            clearingStore.put(r.getId(), r);
+            return r;
+        });
+        when(clearingRecordRepository.findById(any())).thenAnswer(inv ->
+                java.util.Optional.ofNullable(clearingStore.get(inv.getArgument(0))));
+        when(clearingRecordRepository.findByClearingDate(any())).thenAnswer(inv -> {
+                java.time.LocalDate d = inv.getArgument(0);
+                return clearingStore.values().stream()
+                        .filter(r -> d.equals(r.getClearingDate())).toList();
+            });
+        when(clearingRecordRepository.findByClearingDateAndStatus(any(), any())).thenAnswer(inv -> {
+                java.time.LocalDate d = inv.getArgument(0);
+                ClearingRecord.Status s = inv.getArgument(1);
+                return clearingStore.values().stream()
+                        .filter(r -> d.equals(r.getClearingDate()) && s == r.getStatus()).toList();
+            });
+        when(clearingRecordRepository.findByAcquiringParticipantIdOrIssuingParticipantId(any(), any())).thenAnswer(inv -> {
+            java.util.UUID pid1 = inv.getArgument(0);
+            java.util.UUID pid2 = inv.getArgument(1);
+            return clearingStore.values().stream()
+                    .filter(r -> pid1.equals(r.getAcquiringParticipantId())
+                            || pid2.equals(r.getIssuingParticipantId())).toList();
+        });
+        when(nettingRecordRepository.save(any())).thenAnswer(inv -> {
+            NettingRecord r = inv.getArgument(0);
+            if (r.getId() == null) r.setId(java.util.UUID.randomUUID());
+            nettingStore.put(r.getId(), r);
+            return r;
+        });
+        when(nettingRecordRepository.findById(any())).thenAnswer(inv ->
+                java.util.Optional.ofNullable(nettingStore.get(inv.getArgument(0))));
+        when(reconciliationRecordRepository.save(any())).thenAnswer(inv -> {
+            ReconciliationRecord r = inv.getArgument(0);
+            if (r.getId() == null) r.setId(java.util.UUID.randomUUID());
+            reconciliationStore.put(r.getId(), r);
+            return r;
+        });
+        when(reconciliationRecordRepository.findByReconciliationDateAndParticipantIdAndSource(any(), any(), any())).thenAnswer(inv ->
+                java.util.Optional.empty());
+        clearingService = new ClearingService(
+                clearingRecordRepository, nettingRecordRepository,
+                reconciliationRecordRepository, interchangeService);
     }
 
     @Test

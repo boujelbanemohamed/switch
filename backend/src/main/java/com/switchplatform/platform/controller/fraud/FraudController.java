@@ -8,8 +8,10 @@ import com.switchplatform.platform.service.fraud.BehavioralProfileService;
 import com.switchplatform.platform.service.fraud.DeviceFingerprintService;
 import com.switchplatform.platform.service.fraud.DeviceScoreResult;
 import com.switchplatform.platform.service.fraud.FraudEngine;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -20,6 +22,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/fraud")
 @RequiredArgsConstructor
+@Validated
 public class FraudController {
 
     private final FraudEngine fraudEngine;
@@ -28,7 +31,7 @@ public class FraudController {
 
     @PostMapping("/evaluate")
     public ResponseEntity<FraudEngine.FraudEvaluationResult> evaluate(
-            @RequestBody FraudEngine.EvaluationContext context) {
+            @Valid @RequestBody FraudEngine.EvaluationContext context) {
         return ResponseEntity.ok(fraudEngine.evaluateTransaction(context));
     }
 
@@ -38,7 +41,7 @@ public class FraudController {
     }
 
     @PostMapping("/rules")
-    public ResponseEntity<FraudRule> defineRule(@RequestBody FraudRule rule) {
+    public ResponseEntity<FraudRule> defineRule(@Valid @RequestBody FraudRule rule) {
         return ResponseEntity.ok(fraudEngine.defineRule(rule));
     }
 
@@ -103,7 +106,7 @@ public class FraudController {
     @PostMapping("/profiles/{cardholderId}/record")
     public ResponseEntity<Void> recordTransaction(
             @PathVariable UUID cardholderId,
-            @RequestBody BehavioralProfileService.TransactionRequest request) {
+            @Valid @RequestBody BehavioralProfileService.TransactionRequest request) {
         behavioralProfileService.recordTransaction(cardholderId,
                 request.getMerchantCategory(),
                 request.getCountryCode(),
@@ -124,7 +127,7 @@ public class FraudController {
 
     @PostMapping("/devices/register")
     public ResponseEntity<DeviceFingerprintRecord> registerDevice(
-            @RequestBody RegisterDeviceRequest request) {
+            @Valid @RequestBody RegisterDeviceRequest request) {
         return ResponseEntity.ok(deviceFingerprintService.registerFingerprint(
                 request.cardId(), request.deviceId(), request.deviceType(),
                 request.os(), request.browser(), request.userAgent(),
@@ -133,7 +136,7 @@ public class FraudController {
 
     @PostMapping("/devices/evaluate")
     public ResponseEntity<DeviceScoreResult> evaluateDevice(
-            @RequestBody EvaluateDeviceRequest request) {
+            @Valid @RequestBody EvaluateDeviceRequest request) {
         return ResponseEntity.ok(deviceFingerprintService.evaluate(
                 request.cardId(), request.deviceId(), request.deviceType(),
                 request.os(), request.browser(), request.userAgent(),

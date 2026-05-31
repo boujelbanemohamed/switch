@@ -4,6 +4,9 @@ import com.switchplatform.platform.model.auth.AuditLog;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -60,6 +63,16 @@ public class AuditService {
                 .collect(Collectors.toList());
     }
 
+    public Page<AuditLog> listByResource(String resourceType, String resourceId, int page, int size) {
+        List<UUID> ids = resourceIndex.getOrDefault(resourceType + ":" + resourceId, Collections.emptyList());
+        List<AuditLog> all = ids.stream()
+                .map(auditLogs::get)
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(AuditLog::getCreatedAt).reversed())
+                .collect(Collectors.toList());
+        return paginate(all, page, size);
+    }
+
     public List<AuditLog> listByUser(UUID userId, int limit) {
         List<UUID> ids = userIndex.getOrDefault(userId, Collections.emptyList());
         return ids.stream()
@@ -70,11 +83,37 @@ public class AuditService {
                 .collect(Collectors.toList());
     }
 
+    public Page<AuditLog> listByUser(UUID userId, int page, int size) {
+        List<UUID> ids = userIndex.getOrDefault(userId, Collections.emptyList());
+        List<AuditLog> all = ids.stream()
+                .map(auditLogs::get)
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(AuditLog::getCreatedAt).reversed())
+                .collect(Collectors.toList());
+        return paginate(all, page, size);
+    }
+
     public List<AuditLog> listAll(int limit) {
         return auditLogs.values().stream()
                 .sorted(Comparator.comparing(AuditLog::getCreatedAt).reversed())
                 .limit(limit)
                 .collect(Collectors.toList());
+    }
+
+    public Page<AuditLog> listAll(int page, int size) {
+        return listAllFiltered(page, size, null, null, null, null);
+    }
+
+    public Page<AuditLog> listAllFiltered(int page, int size, String action, UUID userId,
+                                           OffsetDateTime dateFrom, OffsetDateTime dateTo) {
+        List<AuditLog> all = auditLogs.values().stream()
+                .filter(a -> action == null || a.getAction().equalsIgnoreCase(action))
+                .filter(a -> userId == null || userId.equals(a.getUserId()))
+                .filter(a -> dateFrom == null || (a.getCreatedAt() != null && !a.getCreatedAt().isBefore(dateFrom)))
+                .filter(a -> dateTo == null || (a.getCreatedAt() != null && !a.getCreatedAt().isAfter(dateTo)))
+                .sorted(Comparator.comparing(AuditLog::getCreatedAt).reversed())
+                .collect(Collectors.toList());
+        return paginate(all, page, size);
     }
 
     public List<AuditLog> listByAction(String action, int limit) {
@@ -89,5 +128,13 @@ public class AuditService {
         return auditLogs.values().stream()
                 .filter(a -> a.getStatus().equalsIgnoreCase(status))
                 .count();
+    }
+
+    private <T> Page<T> paginate(List<T> list, int page, int size) {
+        int total = list.size();
+        int fromIndex = Math.min(page * size, total);
+        int toIndex = Math.min(fromIndex + size, total);
+        List<T> pageContent = fromIndex < total ? list.subList(fromIndex, toIndex) : Collections.emptyList();
+        return new PageImpl<>(pageContent, PageRequest.of(page, size), total);
     }
 }

@@ -3,8 +3,10 @@ package com.switchplatform.platform.controller.ecommerce;
 import com.switchplatform.platform.model.ecommerce.AcsAuthentication;
 import com.switchplatform.platform.model.ecommerce.AcsChallenge;
 import com.switchplatform.platform.service.ecommerce.AcsService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -15,12 +17,13 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/acs")
 @RequiredArgsConstructor
+@Validated
 public class AcsController {
 
     private final AcsService acsService;
 
     @PostMapping("/authentications")
-    public ResponseEntity<AcsAuthentication> createAuthentication(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<AcsAuthentication> createAuthentication(@Valid @RequestBody Map<String, Object> request) {
         UUID cardId = request.get("cardId") != null
                 ? UUID.fromString((String) request.get("cardId")) : null;
         UUID merchantId = request.get("merchantId") != null
@@ -53,7 +56,7 @@ public class AcsController {
 
     @PostMapping("/authentications/{id}/authenticate")
     public ResponseEntity<AcsAuthentication> authenticate(@PathVariable UUID id,
-                                                           @RequestBody Map<String, String> request) {
+                                                           @Valid @RequestBody Map<String, String> request) {
         AcsAuthentication auth = acsService.authenticate(id,
                 request.get("authenticationValue"), request.get("eci"));
         return ResponseEntity.ok(auth);
@@ -66,7 +69,7 @@ public class AcsController {
     }
 
     @PostMapping("/challenges")
-    public ResponseEntity<AcsChallenge> createChallenge(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<AcsChallenge> createChallenge(@Valid @RequestBody Map<String, Object> request) {
         AcsChallenge challenge = acsService.createChallenge(
                 UUID.fromString((String) request.get("authenticationId")),
                 AcsChallenge.ChallengeType.valueOf((String) request.get("challengeType")));

@@ -4,6 +4,8 @@ import com.switchplatform.platform.model.acquiring.MdrPlan;
 import com.switchplatform.platform.model.acquiring.Merchant;
 import com.switchplatform.platform.model.acquiring.MerchantSettlement;
 import com.switchplatform.platform.model.acquiring.Terminal;
+import com.switchplatform.platform.repository.acquiring.MdrPlanRepository;
+import com.switchplatform.platform.repository.acquiring.MerchantRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -14,16 +16,63 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class AcquiringServiceTest {
 
     private MerchantService merchantService;
     private TerminalService terminalService;
     private MerchantSettlementService settlementService;
+    private MerchantRepository merchantRepository;
+    private MdrPlanRepository mdrPlanRepository;
+    private final java.util.Map<java.util.UUID, Merchant> merchantStore = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<java.util.UUID, MdrPlan> mdrPlanStore = new java.util.concurrent.ConcurrentHashMap<>();
 
     @BeforeEach
     void setUp() {
-        merchantService = new MerchantService();
+        merchantStore.clear();
+        mdrPlanStore.clear();
+        merchantRepository = mock(MerchantRepository.class);
+        mdrPlanRepository = mock(MdrPlanRepository.class);
+        when(merchantRepository.existsByMerchantId(any())).thenAnswer(inv -> {
+            String mid = inv.getArgument(0);
+            return merchantStore.values().stream()
+                    .anyMatch(m -> mid.equals(m.getMerchantId()));
+        });
+        when(merchantRepository.save(any())).thenAnswer(inv -> {
+            Merchant m = inv.getArgument(0);
+            merchantStore.put(m.getId(), m);
+            return m;
+        });
+        when(merchantRepository.findById(any())).thenAnswer(inv ->
+                java.util.Optional.ofNullable(merchantStore.get(inv.getArgument(0))));
+        when(merchantRepository.findByMerchantId(any())).thenAnswer(inv -> {
+            String mid = inv.getArgument(0);
+            return merchantStore.values().stream()
+                    .filter(m -> mid.equals(m.getMerchantId())).findFirst();
+        });
+        when(merchantRepository.findAll()).thenAnswer(inv ->
+                java.util.List.copyOf(merchantStore.values()));
+        when(mdrPlanRepository.save(any())).thenAnswer(inv -> {
+            MdrPlan p = inv.getArgument(0);
+            if (p.getId() == null) p.setId(java.util.UUID.randomUUID());
+            mdrPlanStore.put(p.getId(), p);
+            return p;
+        });
+        when(mdrPlanRepository.findByMerchantIdAndCardBrandAndCardType(any(), any(), any()))
+                .thenAnswer(inv -> {
+                    UUID mid = inv.getArgument(0);
+                    String brand = inv.getArgument(1);
+                    String type = inv.getArgument(2);
+                    return mdrPlanStore.values().stream()
+                            .filter(p -> mid.equals(p.getMerchantId())
+                                    && brand.equalsIgnoreCase(p.getCardBrand())
+                                    && (p.getCardType() == null || p.getCardType().equalsIgnoreCase(type)))
+                            .findFirst();
+                });
+        merchantService = new MerchantService(merchantRepository, mdrPlanRepository);
         terminalService = new TerminalService();
         settlementService = new MerchantSettlementService();
     }

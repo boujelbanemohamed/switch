@@ -5,9 +5,11 @@ import com.switchplatform.platform.model.issuing.CardAccount;
 import com.switchplatform.platform.model.issuing.Cardholder;
 import com.switchplatform.platform.model.issuing.WalletToken;
 import com.switchplatform.platform.service.issuing.*;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -19,20 +21,21 @@ import java.util.UUID;
 @RequestMapping("/api/v1/issuing")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class IssuingController {
 
     private final CardholderService cardholderService;
     private final CardService cardService;
     private final WalletTokenService walletTokenService;
     private final CardAccountService cardAccountService;
-    private final NotificationService notificationService;
+    private final IssuingNotificationService notificationService;
     private final PinService pinService;
     private final TokenVaultService tokenVaultService;
 
     // ─── Cardholder endpoints ───────────────────────────────────────────────
 
     @PostMapping("/cardholders")
-    public ResponseEntity<Cardholder> createCardholder(@RequestBody Cardholder cardholder) {
+    public ResponseEntity<Cardholder> createCardholder(@Valid @RequestBody Cardholder cardholder) {
         return ResponseEntity.ok(cardholderService.createCardholder(cardholder));
     }
 
@@ -51,7 +54,7 @@ public class IssuingController {
     }
 
     @PutMapping("/cardholders/{id}")
-    public ResponseEntity<Cardholder> updateCardholder(@PathVariable UUID id, @RequestBody Cardholder cardholder) {
+    public ResponseEntity<Cardholder> updateCardholder(@PathVariable UUID id, @Valid @RequestBody Cardholder cardholder) {
         return ResponseEntity.ok(cardholderService.updateCardholder(id, cardholder));
     }
 
@@ -68,7 +71,7 @@ public class IssuingController {
     // ─── Card endpoints ─────────────────────────────────────────────────────
 
     @PostMapping("/cards")
-    public ResponseEntity<Card> createCard(@RequestBody Card card) {
+    public ResponseEntity<Card> createCard(@Valid @RequestBody Card card) {
         return ResponseEntity.ok(cardService.createCard(card));
     }
 
@@ -92,7 +95,7 @@ public class IssuingController {
     }
 
     @PostMapping("/cards/{id}/block")
-    public ResponseEntity<Card> blockCard(@PathVariable UUID id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<Card> blockCard(@PathVariable UUID id, @Valid @RequestBody Map<String, String> body) {
         String reason = body.getOrDefault("reason", "BLOCKED");
         return ResponseEntity.ok(cardService.blockCard(id, reason));
     }
@@ -118,7 +121,7 @@ public class IssuingController {
     }
 
     @PutMapping("/cards/{id}/limits")
-    public ResponseEntity<Card> updateLimits(@PathVariable UUID id, @RequestBody Map<String, BigDecimal> body) {
+    public ResponseEntity<Card> updateLimits(@PathVariable UUID id, @Valid @RequestBody Map<String, BigDecimal> body) {
         return ResponseEntity.ok(cardService.updateCardLimits(
                 id,
                 body.get("dailyLimit"),
@@ -129,12 +132,12 @@ public class IssuingController {
     }
 
     @PutMapping("/cards/{id}/pin")
-    public ResponseEntity<Card> changePin(@PathVariable UUID id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<Card> changePin(@PathVariable UUID id, @Valid @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(cardService.changePin(id, body.get("pinBlock")));
     }
 
     @PostMapping("/cards/{id}/pin/verify")
-    public ResponseEntity<Map<String, Boolean>> verifyPin(@PathVariable UUID id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, Boolean>> verifyPin(@PathVariable UUID id, @Valid @RequestBody Map<String, String> body) {
         boolean matches = cardService.verifyPin(id, body.get("pinBlock"));
         return ResponseEntity.ok(Map.of("verified", matches));
     }
@@ -147,7 +150,7 @@ public class IssuingController {
     // ─── Wallet token endpoints ─────────────────────────────────────────────
 
     @PostMapping("/tokens")
-    public ResponseEntity<WalletToken> tokenizeCard(@RequestBody Map<String, String> body) {
+    public ResponseEntity<WalletToken> tokenizeCard(@Valid @RequestBody Map<String, String> body) {
         UUID cardId = UUID.fromString(body.get("cardId"));
         return ResponseEntity.ok(walletTokenService.tokenizeCard(
                 cardId,
@@ -185,7 +188,7 @@ public class IssuingController {
     // ─── Card Account endpoints ─────────────────────────────────────────────
 
     @PostMapping("/accounts")
-    public ResponseEntity<CardAccount> createAccount(@RequestBody CardAccount account) {
+    public ResponseEntity<CardAccount> createAccount(@Valid @RequestBody CardAccount account) {
         return ResponseEntity.ok(cardAccountService.createAccount(account));
     }
 
@@ -203,7 +206,7 @@ public class IssuingController {
 
     @PostMapping("/accounts/{id}/debit")
     public ResponseEntity<CardAccount> debitAccount(
-            @PathVariable UUID id, @RequestBody Map<String, Object> body) {
+            @PathVariable UUID id, @Valid @RequestBody Map<String, Object> body) {
         BigDecimal amount = new BigDecimal(body.get("amount").toString());
         String currency = (String) body.get("currencyCode");
         return ResponseEntity.ok(cardAccountService.debit(id, amount, currency));
@@ -211,7 +214,7 @@ public class IssuingController {
 
     @PostMapping("/accounts/{id}/credit")
     public ResponseEntity<CardAccount> creditAccount(
-            @PathVariable UUID id, @RequestBody Map<String, Object> body) {
+            @PathVariable UUID id, @Valid @RequestBody Map<String, Object> body) {
         BigDecimal amount = new BigDecimal(body.get("amount").toString());
         String currency = (String) body.get("currencyCode");
         return ResponseEntity.ok(cardAccountService.credit(id, amount, currency));
@@ -219,14 +222,14 @@ public class IssuingController {
 
     @PostMapping("/accounts/{id}/hold")
     public ResponseEntity<CardAccount> holdAccount(
-            @PathVariable UUID id, @RequestBody Map<String, Object> body) {
+            @PathVariable UUID id, @Valid @RequestBody Map<String, Object> body) {
         BigDecimal amount = new BigDecimal(body.get("amount").toString());
         return ResponseEntity.ok(cardAccountService.hold(id, amount));
     }
 
     @PostMapping("/accounts/{id}/release-hold")
     public ResponseEntity<CardAccount> releaseHold(
-            @PathVariable UUID id, @RequestBody Map<String, Object> body) {
+            @PathVariable UUID id, @Valid @RequestBody Map<String, Object> body) {
         BigDecimal amount = new BigDecimal(body.get("amount").toString());
         return ResponseEntity.ok(cardAccountService.releaseHold(id, amount));
     }
@@ -239,18 +242,18 @@ public class IssuingController {
     // ─── Notification endpoints ─────────────────────────────────────────────
 
     @GetMapping("/notifications")
-    public ResponseEntity<List<NotificationService.Notification>> listNotifications() {
+public ResponseEntity<List<IssuingNotificationService.Notification>> listNotifications() {
         return ResponseEntity.ok(notificationService.listAll());
     }
 
-    @GetMapping("/notifications/by-cardholder/{cardholderId}")
-    public ResponseEntity<List<NotificationService.Notification>> getNotificationsByCardholder(
+    @GetMapping("/notifications/cardholder/{cardholderId}")
+    public ResponseEntity<List<IssuingNotificationService.Notification>> getNotificationsByCardholder(
             @PathVariable UUID cardholderId) {
         return ResponseEntity.ok(notificationService.getNotificationsByCardholder(cardholderId));
     }
 
-    @GetMapping("/notifications/by-card/{cardId}")
-    public ResponseEntity<List<NotificationService.Notification>> getNotificationsByCard(
+    @GetMapping("/notifications/card/{cardId}")
+    public ResponseEntity<List<IssuingNotificationService.Notification>> getNotificationsByCard(
             @PathVariable UUID cardId) {
         return ResponseEntity.ok(notificationService.getNotificationsByCard(cardId));
     }
@@ -258,7 +261,7 @@ public class IssuingController {
     // ─── PIN Vault endpoints ────────────────────────────────────────────────
 
     @PostMapping("/pins")
-    public ResponseEntity<Map<String, String>> createPin(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, String>> createPin(@Valid @RequestBody Map<String, String> body) {
         String cardId = body.get("cardId");
         String rawPin = body.get("rawPin");
         String pinBlock = body.get("pinBlock");
@@ -267,7 +270,7 @@ public class IssuingController {
     }
 
     @PostMapping("/pins/verify")
-    public ResponseEntity<Map<String, Boolean>> verifyPinVault(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, Boolean>> verifyPinVault(@Valid @RequestBody Map<String, String> body) {
         String cardId = body.get("cardId");
         String pinBlock = body.get("pinBlock");
         boolean verified = pinService.verifyPin(cardId, pinBlock);
@@ -275,7 +278,7 @@ public class IssuingController {
     }
 
     @PutMapping("/pins")
-    public ResponseEntity<Map<String, Boolean>> changePinVault(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, Boolean>> changePinVault(@Valid @RequestBody Map<String, String> body) {
         String cardId = body.get("cardId");
         String oldPinBlock = body.get("oldPinBlock");
         String newPinBlock = body.get("newPinBlock");
@@ -286,7 +289,7 @@ public class IssuingController {
     // ─── Token Vault endpoints ──────────────────────────────────────────────
 
     @PostMapping("/tokens/tokenize")
-    public ResponseEntity<TokenVaultService.TokenRecord> tokenize(@RequestBody Map<String, String> body) {
+    public ResponseEntity<TokenVaultService.TokenRecord> tokenize(@Valid @RequestBody Map<String, String> body) {
         String cardId = body.get("cardId");
         String walletProvider = body.get("walletProvider");
         String deviceId = body.get("deviceId");

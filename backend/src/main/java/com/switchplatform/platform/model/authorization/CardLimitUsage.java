@@ -58,6 +58,11 @@ public class CardLimitUsage {
         createdAt = OffsetDateTime.now();
     }
 
+    public void incrementUsage(java.math.BigDecimal amount) {
+        this.usedAmount = (this.usedAmount != null ? this.usedAmount : java.math.BigDecimal.ZERO).add(amount);
+        this.countUsed = (this.countUsed != null ? this.countUsed : 0) + 1;
+    }
+
     public enum LimitType {
         DAILY, WEEKLY, MONTHLY, SINGLE, CONSECUTIVE
     }

@@ -1,18 +1,17 @@
 spring:
-  jpa:
-    show-sql: true
-    hibernate:
-      ddl-auto: none
-  flyway:
-    enabled: true
+  datasource:
+    url: jdbc:postgresql://localhost:5432/switch_db
+    username: switch_user
+    password: switch_pass
+  kafka:
+    bootstrap-servers: localhost:9092
+
+switch:
+  auth:
+    jwt:
+      secret: ${JWT_SECRET:6c156d8b6c9e8a3f4d2e5f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7}
 
 logging:
   level:
     com.switch: DEBUG
     org.springframework: INFO
-
-switch:
-  threads:
-    core-pool-size: 5
-    max-pool-size: 10
-    queue-capacity: 50

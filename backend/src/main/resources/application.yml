@@ -57,8 +57,22 @@ switch:
     core-pool-size: 10
     max-pool-size: 50
     queue-capacity: 100
+  pin:
+    encryption-key: ${PIN_ENCRYPTION_KEY:}
+
+  notification:
+    enabled: false
+
+  mq:
+    request-timeout: 5000
+    retry-backoff: 100,500,2000
+
+  fraud:
+    time-window-hours: 24
+    velocity-max-per-hour: 10
+
   auth:
     jwt:
-      secret: "6c156d8b6c9e8a3f4d2e5f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7"
+      secret: ${JWT_SECRET:6c156d8b6c9e8a3f4d2e5f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7}
       access-token-expiration: 3600000
       refresh-token-expiration: 86400000

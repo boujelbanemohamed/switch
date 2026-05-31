@@ -2,6 +2,8 @@ package com.switchplatform.platform.service.acquiring;
 
 import com.switchplatform.platform.model.acquiring.MdrPlan;
 import com.switchplatform.platform.model.acquiring.Merchant;
+import com.switchplatform.platform.repository.acquiring.MdrPlanRepository;
+import com.switchplatform.platform.repository.acquiring.MerchantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -12,9 +14,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,10 +21,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MerchantService {
 
-    private final ConcurrentMap<UUID, Merchant> merchantStore = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, UUID> merchantCodeIndex = new ConcurrentHashMap<>();
-    private final ConcurrentMap<UUID, MdrPlan> mdrPlanStore = new ConcurrentHashMap<>();
-    private final AtomicLong mdrPlanIdCounter = new AtomicLong(1);
+    private final MerchantRepository merchantRepository;
+    private final MdrPlanRepository mdrPlanRepository;
 
     @Transactional
     public Merchant onboardMerchant(Merchant merchant) {
@@ -35,7 +32,7 @@ public class MerchantService {
         if (merchant.getMerchantId() == null || merchant.getMerchantId().isBlank()) {
             throw new IllegalArgumentException("merchantId is required");
         }
-        if (merchantCodeIndex.containsKey(merchant.getMerchantId())) {
+        if (merchantRepository.existsByMerchantId(merchant.getMerchantId())) {
             throw new IllegalArgumentException("merchantId already exists: " + merchant.getMerchantId());
         }
         if (merchant.getId() == null) {
@@ -48,8 +45,7 @@ public class MerchantService {
         merchant.setCreatedAt(OffsetDateTime.now());
         merchant.setUpdatedAt(OffsetDateTime.now());
 
-        merchantStore.put(merchant.getId(), merchant);
-        merchantCodeIndex.put(merchant.getMerchantId(), merchant.getId());
+        merchant = merchantRepository.save(merchant);
         log.info("Onboarded merchant {} ({})", merchant.getId(), merchant.getLegalName());
         return merchant;
     }
@@ -63,6 +59,7 @@ public class MerchantService {
         merchant.setStatus(Merchant.MerchantStatus.ACTIVE);
         merchant.setActivationDate(LocalDate.now());
         merchant.setUpdatedAt(OffsetDateTime.now());
+        merchant = merchantRepository.save(merchant);
         log.info("Approved merchant {}", merchantId);
         return merchant;
     }
@@ -72,6 +69,7 @@ public class MerchantService {
         Merchant merchant = getMerchantOrThrow(merchantId);
         merchant.setStatus(Merchant.MerchantStatus.SUSPENDED);
         merchant.setUpdatedAt(OffsetDateTime.now());
+        merchant = merchantRepository.save(merchant);
         log.info("Suspended merchant {} reason: {}", merchantId, reason);
         return merchant;
     }
@@ -82,24 +80,24 @@ public class MerchantService {
         merchant.setStatus(Merchant.MerchantStatus.TERMINATED);
         merchant.setTerminationDate(LocalDate.now());
         merchant.setUpdatedAt(OffsetDateTime.now());
+        merchant = merchantRepository.save(merchant);
         log.info("Terminated merchant {}", merchantId);
         return merchant;
     }
 
     @Transactional(readOnly = true)
     public Optional<Merchant> getMerchant(UUID merchantId) {
-        return Optional.ofNullable(merchantStore.get(merchantId));
+        return merchantRepository.findById(merchantId);
     }
 
     @Transactional(readOnly = true)
     public Optional<Merchant> getMerchantByCode(String code) {
-        return Optional.ofNullable(merchantCodeIndex.get(code))
-                .map(merchantStore::get);
+        return merchantRepository.findByMerchantId(code);
     }
 
     @Transactional(readOnly = true)
     public List<Merchant> listMerchantsByStatus(String status) {
-        return merchantStore.values().stream()
+        return merchantRepository.findAll().stream()
                 .filter(m -> m.getStatus().name().equals(status))
                 .collect(Collectors.toList());
     }
@@ -129,6 +127,7 @@ public class MerchantService {
         if (update.getMdrFixedFee() != null) existing.setMdrFixedFee(update.getMdrFixedFee());
         if (update.getMdrPlanId() != null) existing.setMdrPlanId(update.getMdrPlanId());
         existing.setUpdatedAt(OffsetDateTime.now());
+        existing = merchantRepository.save(existing);
         log.info("Updated merchant {}", id);
         return existing;
     }
@@ -137,11 +136,7 @@ public class MerchantService {
     public BigDecimal calculateMdr(UUID merchantId, BigDecimal amount, String cardBrand, String cardType) {
         Merchant merchant = getMerchantOrThrow(merchantId);
 
-        Optional<MdrPlan> matchingPlan = mdrPlanStore.values().stream()
-                .filter(p -> p.getMerchantId() != null && p.getMerchantId().equals(merchantId))
-                .filter(p -> p.getCardBrand() != null && p.getCardBrand().equalsIgnoreCase(cardBrand))
-                .filter(p -> p.getCardType() == null || p.getCardType().equalsIgnoreCase(cardType))
-                .findFirst();
+        Optional<MdrPlan> matchingPlan = mdrPlanRepository.findByMerchantIdAndCardBrandAndCardType(merchantId, cardBrand, cardType);
 
         BigDecimal rate;
         BigDecimal fixedFee;
@@ -166,18 +161,16 @@ public class MerchantService {
         return fee;
     }
 
-    void addMdrPlan(MdrPlan plan) {
+    @Transactional
+    public void addMdrPlan(MdrPlan plan) {
         if (plan.getId() == null) {
             plan.setId(UUID.randomUUID());
         }
-        mdrPlanStore.put(plan.getId(), plan);
+        mdrPlanRepository.save(plan);
     }
 
     private Merchant getMerchantOrThrow(UUID merchantId) {
-        Merchant merchant = merchantStore.get(merchantId);
-        if (merchant == null) {
-            throw new IllegalArgumentException("Merchant not found: " + merchantId);
-        }
-        return merchant;
+        return merchantRepository.findById(merchantId)
+                .orElseThrow(() -> new IllegalArgumentException("Merchant not found: " + merchantId));
     }
 }

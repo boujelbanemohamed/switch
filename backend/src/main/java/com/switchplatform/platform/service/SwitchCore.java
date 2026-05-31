@@ -13,7 +13,9 @@ import com.switchplatform.platform.repository.TransactionRepository;
 import com.switchplatform.platform.router.RoutingContext;
 import com.switchplatform.platform.router.RoutingResult;
 import com.switchplatform.platform.service.acquiring.MerchantService;
+import com.switchplatform.platform.service.acquiring.SettlementService;
 import com.switchplatform.platform.service.clearing.ClearingService;
+import com.switchplatform.platform.service.clearing.InterchangeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -40,6 +42,8 @@ public class SwitchCore {
     private final ObjectMapper objectMapper;
     private final MerchantService merchantService;
     private final ClearingService clearingService;
+    private final SettlementService settlementService;
+    private final InterchangeService interchangeService;
 
     public Transaction processIso8583Message(byte[] rawMessage, String sourceCode) {
         IsoMessage isoMsg = iso8583Engine.parse(rawMessage);
@@ -262,6 +266,35 @@ public class SwitchCore {
                         });
             } catch (Exception e) {
                 log.warn("MDR calculation failed for transaction {}: {}",
+                        transaction.getTransactionId(), e.getMessage());
+            }
+        }
+
+        // Module B1: Record transaction for settlement
+        if (transaction.getMerchantId() != null && transaction.getAmount() != null) {
+            try {
+                settlementService.recordTransactionForSettlement(
+                        transaction.getMerchantId(),
+                        transaction.getAmount(),
+                        "VISA",
+                        "DEBIT");
+            } catch (Exception e) {
+                log.warn("Settlement recording failed for transaction {}: {}",
+                        transaction.getTransactionId(), e.getMessage());
+            }
+        }
+
+        // Module E1: Auto-calculate interchange fee
+        if (transaction.getAmount() != null && transaction.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+            try {
+                var interchangeResult = interchangeService.calculateInterchange(
+                        "VISA", "DEBIT", "TN", "*",
+                        transaction.getAmount(),
+                        transaction.getCurrencyCode() != null ? transaction.getCurrencyCode() : "TND");
+                log.info("Interchange calculated for transaction {}: fee={}, breakdown={}",
+                        transaction.getTransactionId(), interchangeResult.totalFee(), interchangeResult.breakdown());
+            } catch (Exception e) {
+                log.warn("Interchange calculation failed for transaction {}: {}",
                         transaction.getTransactionId(), e.getMessage());
             }
         }

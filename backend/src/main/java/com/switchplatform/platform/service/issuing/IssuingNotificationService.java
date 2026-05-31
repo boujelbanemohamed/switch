@@ -12,9 +12,9 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-@Service
+@Service("issuingNotificationService")
 @Slf4j
-public class NotificationService {
+public class IssuingNotificationService {
 
     private final List<Notification> notifications = new CopyOnWriteArrayList<>();
 

@@ -10,6 +10,7 @@ import com.switchplatform.platform.service.acquiring.MerchantSettlementService;
 import com.switchplatform.platform.service.acquiring.SettlementService;
 import com.switchplatform.platform.service.acquiring.TerminalManagementService;
 import com.switchplatform.platform.service.acquiring.TerminalService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +35,7 @@ public class AcquiringController {
     private final TerminalManagementService terminalManagementService;
 
     @PostMapping("/merchants")
-    public ResponseEntity<Merchant> onboardMerchant(@RequestBody Merchant merchant) {
+    public ResponseEntity<Merchant> onboardMerchant(@Valid @RequestBody Merchant merchant) {
         return ResponseEntity.ok(merchantService.onboardMerchant(merchant));
     }
 
@@ -62,7 +63,7 @@ public class AcquiringController {
     }
 
     @PutMapping("/merchants/{id}")
-    public ResponseEntity<Merchant> updateMerchant(@PathVariable UUID id, @RequestBody Merchant merchant) {
+    public ResponseEntity<Merchant> updateMerchant(@PathVariable UUID id, @Valid @RequestBody Merchant merchant) {
         return ResponseEntity.ok(merchantService.updateMerchant(id, merchant));
     }
 
@@ -72,7 +73,7 @@ public class AcquiringController {
     }
 
     @PostMapping("/merchants/{id}/suspend")
-    public ResponseEntity<Merchant> suspendMerchant(@PathVariable UUID id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<Merchant> suspendMerchant(@PathVariable UUID id, @Valid @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(merchantService.suspendMerchant(id, body.get("reason")));
     }
 
@@ -82,7 +83,7 @@ public class AcquiringController {
     }
 
     @PostMapping("/terminals")
-    public ResponseEntity<Terminal> registerTerminal(@RequestBody Terminal terminal) {
+    public ResponseEntity<Terminal> registerTerminal(@Valid @RequestBody Terminal terminal) {
         return ResponseEntity.ok(terminalService.registerTerminal(terminal));
     }
 
@@ -113,7 +114,7 @@ public class AcquiringController {
 
     @PostMapping("/merchants/{id}/mdr/calculate")
     public ResponseEntity<Map<String, BigDecimal>> calculateMdr(
-            @PathVariable UUID id, @RequestBody Map<String, Object> body) {
+            @PathVariable UUID id, @Valid @RequestBody Map<String, Object> body) {
         BigDecimal amount = new BigDecimal(body.get("amount").toString());
         String cardBrand = (String) body.get("cardBrand");
         String cardType = (String) body.get("cardType");
@@ -122,7 +123,7 @@ public class AcquiringController {
     }
 
     @PostMapping("/settlements")
-    public ResponseEntity<MerchantSettlement> createSettlement(@RequestBody Map<String, String> body) {
+    public ResponseEntity<MerchantSettlement> createSettlement(@Valid @RequestBody Map<String, String> body) {
         UUID merchantId = UUID.fromString(body.get("merchantId"));
         LocalDate date = LocalDate.parse(body.get("settlementDate"));
         String currencyCode = body.get("currencyCode");
@@ -168,7 +169,7 @@ public class AcquiringController {
     @PutMapping("/terminals/{tid}/keys")
     public ResponseEntity<Terminal> updateTerminalKeys(
             @PathVariable String tid,
-            @RequestBody Map<String, String> body) {
+            @Valid @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(terminalManagementService.updateKeys(
                 tid, body.get("mKey"), body.get("pik"), body.get("mak")));
     }

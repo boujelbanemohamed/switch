@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
+@Validated
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -78,7 +80,7 @@ public class AuthController {
     }
 
     @PostMapping("/mfa/setup")
-    public ResponseEntity<?> setupMfa(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> setupMfa(@Valid @RequestBody Map<String, String> body) {
         String username = resolveUsername(body.get("username"));
         if (username == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         try {
@@ -91,7 +93,7 @@ public class AuthController {
     }
 
     @PostMapping("/mfa/verify")
-    public ResponseEntity<?> verifyMfa(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> verifyMfa(@Valid @RequestBody Map<String, String> body) {
         String username = body.get("username");
         String code = body.get("code");
         if (username == null || code == null) {
@@ -106,7 +108,7 @@ public class AuthController {
     }
 
     @PostMapping("/mfa/disable")
-    public ResponseEntity<?> disableMfa(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> disableMfa(@Valid @RequestBody Map<String, String> body) {
         String username = resolveUsername(body.get("username"));
         String code = body.get("code");
         if (username == null || code == null) {
@@ -121,7 +123,7 @@ public class AuthController {
     }
 
     @PostMapping("/mfa/authenticate")
-    public ResponseEntity<?> authenticateMfa(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> authenticateMfa(@Valid @RequestBody Map<String, String> body) {
         String username = body.get("username");
         String code = body.get("code");
         if (username == null || code == null) {
@@ -168,7 +170,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> refresh(@Valid @RequestBody Map<String, String> body) {
         String refreshToken = body.get("refreshToken");
         if (refreshToken == null || !jwtUtil.validateToken(refreshToken)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -223,7 +225,7 @@ public class AuthController {
 
     @PutMapping("/users/{id}")
     public ResponseEntity<AuthUser> updateUser(
-            @PathVariable UUID id, @RequestBody UpdateUserRequest request) {
+            @PathVariable UUID id, @Valid @RequestBody UpdateUserRequest request) {
         return ResponseEntity.ok(authUserService.updateUser(
                 id, request.getDisplayName(), request.getRole(), request.getEnabled()));
     }

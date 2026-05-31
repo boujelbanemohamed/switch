@@ -3,9 +3,11 @@ package com.switchplatform.platform.service.acquiring;
 import com.switchplatform.platform.model.acquiring.Merchant;
 import com.switchplatform.platform.model.acquiring.NettingResult;
 import com.switchplatform.platform.model.acquiring.SettlementRecord;
+import com.switchplatform.platform.repository.acquiring.SettlementRecordRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,8 +23,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class SettlementService {
 
-    private final ConcurrentMap<UUID, SettlementRecord> settlementStore = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, List<UUID>> merchantSettlementIndex = new ConcurrentHashMap<>();
+    private final SettlementRecordRepository settlementRecordRepository;
     private final ConcurrentMap<String, List<TransactionEntry>> transactionStore = new ConcurrentHashMap<>();
     private final MerchantService merchantService;
 
@@ -34,6 +35,13 @@ public class SettlementService {
         log.debug("Recorded transaction for merchant {}: amount={}", merchantId, amount);
     }
 
+    public void recordTransactionForSettlement(String merchantId, BigDecimal amount, String cardBrand, String cardType) {
+        recordTransaction(merchantId, amount, cardBrand, cardType);
+        log.info("Transaction recorded for settlement: merchantId={}, amount={}, brand={}, type={}",
+                merchantId, amount, cardBrand, cardType);
+    }
+
+    @Transactional
     public SettlementRecord createSettlement(String merchantId, LocalDate settlementDate, String currencyCode) {
         Merchant merchant = merchantService.getMerchantByCode(merchantId)
                 .orElseThrow(() -> new IllegalArgumentException("Merchant not found: " + merchantId));
@@ -67,8 +75,7 @@ public class SettlementService {
                 .createdAt(OffsetDateTime.now())
                 .build();
 
-        settlementStore.put(record.getId(), record);
-        merchantSettlementIndex.computeIfAbsent(merchantId, k -> new CopyOnWriteArrayList<>()).add(record.getId());
+        record = settlementRecordRepository.save(record);
 
         transactionStore.remove(merchantId);
 
@@ -77,6 +84,7 @@ public class SettlementService {
         return record;
     }
 
+    @Transactional
     public SettlementRecord confirmSettlement(UUID settlementId) {
         SettlementRecord record = getSettlementOrThrow(settlementId);
         if (!"PENDING".equals(record.getStatus())) {
@@ -85,24 +93,22 @@ public class SettlementService {
         record.setStatus("CONFIRMED");
         record.setPaymentRef("STL-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         record.setConfirmedAt(OffsetDateTime.now());
+        record = settlementRecordRepository.save(record);
         log.info("Confirmed settlement {} with ref {}", settlementId, record.getPaymentRef());
         return record;
     }
 
+    @Transactional(readOnly = true)
     public SettlementRecord getSettlement(UUID settlementId) {
         return getSettlementOrThrow(settlementId);
     }
 
+    @Transactional(readOnly = true)
     public List<SettlementRecord> getSettlementsByMerchant(String merchantId, LocalDate from, LocalDate to) {
-        List<UUID> ids = merchantSettlementIndex.getOrDefault(merchantId, List.of());
-        return ids.stream()
-                .map(settlementStore::get)
-                .filter(Objects::nonNull)
-                .filter(s -> !s.getSettlementDate().isBefore(from))
-                .filter(s -> !s.getSettlementDate().isAfter(to))
-                .collect(Collectors.toList());
+        return settlementRecordRepository.findByMerchantIdAndSettlementDateBetween(merchantId, from, to);
     }
 
+    @Transactional(readOnly = true)
     public NettingResult calculateMerchantNetting(String merchantId, LocalDate date) {
         List<SettlementRecord> settlements = getSettlementsByMerchant(merchantId, date, date);
 
@@ -118,14 +124,20 @@ public class SettlementService {
         int count = settlements.size();
         String currency = settlements.isEmpty() ? "TND" : settlements.get(0).getCurrencyCode();
 
-        return new NettingResult(merchantId, date, grossAmount, totalFees, netAmount, count, currency);
+        return NettingResult.builder()
+                .merchantId(merchantId)
+                .date(date)
+                .grossAmount(grossAmount)
+                .totalFees(totalFees)
+                .netAmount(netAmount)
+                .transactionCount(count)
+                .currencyCode(currency)
+                .createdAt(OffsetDateTime.now())
+                .build();
     }
 
     private SettlementRecord getSettlementOrThrow(UUID id) {
-        SettlementRecord record = settlementStore.get(id);
-        if (record == null) {
-            throw new IllegalArgumentException("Settlement not found: " + id);
-        }
-        return record;
+        return settlementRecordRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Settlement not found: " + id));
     }
 }

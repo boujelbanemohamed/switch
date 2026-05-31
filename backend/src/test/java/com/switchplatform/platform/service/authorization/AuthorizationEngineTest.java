@@ -9,10 +9,15 @@ import com.switchplatform.platform.model.authorization.VelocityCheck;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.switchplatform.platform.repository.fraud.BehavioralProfileRepository;
+import com.switchplatform.platform.repository.fraud.DeviceFingerprintRecordRepository;
+import com.switchplatform.platform.repository.fraud.FraudAlertRepository;
+import com.switchplatform.platform.repository.fraud.FraudRuleRepository;
 import com.switchplatform.platform.service.fraud.BehavioralProfileService;
 import com.switchplatform.platform.service.fraud.DeviceFingerprintService;
 import com.switchplatform.platform.service.fraud.FraudEngine;
 import com.switchplatform.platform.service.issuing.CardAccountService;
+import com.switchplatform.platform.service.issuing.CardService;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.List;
@@ -22,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 class AuthorizationEngineTest {
 
@@ -29,10 +35,14 @@ class AuthorizationEngineTest {
 
     @BeforeEach
     void setUp() {
+        CardAccountService cardAccountService = new CardAccountService();
         authEngine = new AuthorizationEngine(
-                new FraudEngine(new BehavioralProfileService(), new DeviceFingerprintService()),
-                new CardAccountService(),
-                new HoldService(new CardAccountService()));
+                new FraudEngine(new BehavioralProfileService(mock(BehavioralProfileRepository.class)),
+                        new DeviceFingerprintService(mock(DeviceFingerprintRecordRepository.class)),
+                        mock(FraudRuleRepository.class), mock(FraudAlertRepository.class)),
+                cardAccountService,
+                mock(CardService.class),
+                new HoldService(cardAccountService));
     }
 
     private void setField(Object target, String fieldName, Object value) {

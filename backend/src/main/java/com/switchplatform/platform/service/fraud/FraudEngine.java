@@ -2,11 +2,15 @@ package com.switchplatform.platform.service.fraud;
 
 import com.switchplatform.platform.model.fraud.FraudAlert;
 import com.switchplatform.platform.model.fraud.FraudRule;
+import com.switchplatform.platform.repository.fraud.FraudAlertRepository;
+import com.switchplatform.platform.repository.fraud.FraudRuleRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,8 +31,68 @@ public class FraudEngine {
     private final Map<UUID, Deque<VelocityRecord>> velocityCache = new ConcurrentHashMap<>();
     private final BehavioralProfileService profileService;
     private final DeviceFingerprintService deviceFingerprintService;
+    private final FraudRuleRepository fraudRuleRepository;
+    private final FraudAlertRepository fraudAlertRepository;
 
     private static final long VELOCITY_WINDOW_MINUTES = 60;
+
+    @PostConstruct
+    public void loadRules() {
+        try {
+            List<FraudRule> dbRules = fraudRuleRepository.findAll();
+            if (!dbRules.isEmpty()) {
+                for (FraudRule rule : dbRules) {
+                    rules.put(rule.getId(), rule);
+                }
+                log.info("Loaded {} fraud rules from database", dbRules.size());
+                return;
+            }
+        } catch (Exception e) {
+            log.warn("Could not load fraud rules from database, using defaults: {}", e.getMessage());
+        }
+        initDefaultRules();
+        initHighRiskPatterns();
+    }
+
+    @Transactional
+    protected void initDefaultRules() {
+        if (!rules.isEmpty()) return;
+
+        FraudRule highAmountRule = FraudRule.builder()
+                .id(UUID.randomUUID())
+                .name("High Amount Default")
+                .description("Decline transactions over 10000")
+                .ruleCategory(FraudRule.RuleCategory.AMOUNT)
+                .severity(FraudRule.Severity.HIGH)
+                .action(FraudRule.Action.FLAG)
+                .conditionExpression("amount > 10000")
+                .scoreWeight(30)
+                .status(FraudRule.Status.ACTIVE)
+                .createdAt(OffsetDateTime.now())
+                .updatedAt(OffsetDateTime.now())
+                .build();
+        rules.put(highAmountRule.getId(), highAmountRule);
+
+        FraudRule foreignTxnRule = FraudRule.builder()
+                .id(UUID.randomUUID())
+                .name("Foreign Transaction Default")
+                .description("Flag foreign transactions")
+                .ruleCategory(FraudRule.RuleCategory.GEO)
+                .severity(FraudRule.Severity.MEDIUM)
+                .action(FraudRule.Action.FLAG)
+                .conditionExpression("is_foreign")
+                .scoreWeight(20)
+                .status(FraudRule.Status.ACTIVE)
+                .createdAt(OffsetDateTime.now())
+                .updatedAt(OffsetDateTime.now())
+                .build();
+        rules.put(foreignTxnRule.getId(), foreignTxnRule);
+
+        log.info("Initialized {} default fraud rules", rules.size());
+    }
+
+    protected void initHighRiskPatterns() {
+    }
 
     public FraudEvaluationResult evaluateTransaction(EvaluationContext ctx) {
         log.info("Fraud evaluation: cardId={}, txnId={}, amount={}",

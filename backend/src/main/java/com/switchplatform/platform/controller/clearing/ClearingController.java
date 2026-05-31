@@ -6,8 +6,10 @@ import com.switchplatform.platform.model.clearing.InterchangeResult;
 import com.switchplatform.platform.model.clearing.NettingRecord;
 import com.switchplatform.platform.service.clearing.ClearingService;
 import com.switchplatform.platform.service.clearing.InterchangeService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -19,13 +21,14 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/clearing")
 @RequiredArgsConstructor
+@Validated
 public class ClearingController {
 
     private final ClearingService clearingService;
     private final InterchangeService interchangeService;
 
     @PostMapping("/process")
-    public ResponseEntity<ClearingRecord> process(@RequestBody ClearingService.ClearingData data) {
+    public ResponseEntity<ClearingRecord> process(@Valid @RequestBody ClearingService.ClearingData data) {
         return ResponseEntity.ok(clearingService.processClearing(data));
     }
 
@@ -35,7 +38,7 @@ public class ClearingController {
     }
 
     @PostMapping("/{id}/dispute")
-    public ResponseEntity<ClearingRecord> dispute(@PathVariable UUID id, @RequestBody Map<String, String> body) {
+    public ResponseEntity<ClearingRecord> dispute(@PathVariable UUID id, @Valid @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(clearingService.disputeClearing(id, body.get("reason")));
     }
 
@@ -61,12 +64,12 @@ public class ClearingController {
 
     @PostMapping("/netting/{id}/settle")
     public ResponseEntity<NettingRecord> settleNetting(
-            @PathVariable UUID id, @RequestBody Map<String, String> body) {
+            @PathVariable UUID id, @Valid @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(clearingService.settleNetting(id, body.get("reference")));
     }
 
     @PostMapping("/interchange/configure")
-    public ResponseEntity<Void> configureInterchange(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<Void> configureInterchange(@Valid @RequestBody Map<String, Object> body) {
         String brand = (String) body.get("brand");
         String cardType = (String) body.get("cardType");
         String region = (String) body.get("region");

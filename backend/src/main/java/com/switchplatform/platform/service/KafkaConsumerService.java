@@ -33,7 +33,7 @@ public class KafkaConsumerService {
             @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
             @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
             @Header(KafkaHeaders.OFFSET) long offset,
-            @Header(KafkaHeaders.RECEIVED_KEY) String key,
+            @Header(name = KafkaHeaders.RECEIVED_KEY, required = false) String key,
             Acknowledgment acknowledgment) {
         try {
             String msgStr = new String(message, StandardCharsets.UTF_8);
@@ -45,6 +45,7 @@ public class KafkaConsumerService {
             log.info("Kafka processed transaction: id={}, status={}, responseCode={}",
                     result.getTransactionId(), result.getStatus(), result.getResponseCode());
 
+            acknowledgment.acknowledge();
         } catch (Exception e) {
             log.error("Kafka message processing failed: topic={}, partition={}, offset={}, error={}",
                     topic, partition, offset, e.getMessage(), e);
@@ -60,7 +61,7 @@ public class KafkaConsumerService {
             @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
             @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
             @Header(KafkaHeaders.OFFSET) long offset,
-            @Header(KafkaHeaders.RECEIVED_KEY) String key,
+            @Header(name = KafkaHeaders.RECEIVED_KEY, required = false) String key,
             Acknowledgment acknowledgment) {
         try {
             String xmlMessage = new String(message, StandardCharsets.UTF_8);

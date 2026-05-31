@@ -1,9 +1,12 @@
 package com.switchplatform.platform.service.fraud;
 
 import com.switchplatform.platform.model.fraud.DeviceFingerprintRecord;
+import com.switchplatform.platform.repository.fraud.DeviceFingerprintRecordRepository;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -12,11 +15,10 @@ import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class DeviceFingerprintService {
 
-    private final Map<UUID, DeviceFingerprintRecord> fingerprints = new ConcurrentHashMap<>();
-    private final Map<String, Set<UUID>> cardIndex = new ConcurrentHashMap<>();
-    private final Map<String, Set<UUID>> deviceIndex = new ConcurrentHashMap<>();
+    private final DeviceFingerprintRecordRepository deviceFingerprintRecordRepository;
 
     private final Set<String> highRiskUserAgents = ConcurrentHashMap.newKeySet();
 
@@ -27,12 +29,13 @@ public class DeviceFingerprintService {
         ));
     }
 
+    @Transactional
     public DeviceFingerprintRecord registerFingerprint(
             String cardId, String deviceId, String deviceType, String os,
             String browser, String userAgent, String ipAddress,
             Map<String, String> attributes) {
 
-        Optional<DeviceFingerprintRecord> existing = findByCardAndDevice(cardId, deviceId);
+        Optional<DeviceFingerprintRecord> existing = deviceFingerprintRecordRepository.findByCardIdAndDeviceId(cardId, deviceId);
         if (existing.isPresent()) {
             DeviceFingerprintRecord record = existing.get();
             record.setIpAddress(ipAddress);
@@ -45,6 +48,7 @@ public class DeviceFingerprintService {
             }
             record.setUsageCount(record.getUsageCount() + 1);
             record.setLastSeen(OffsetDateTime.now());
+            record = deviceFingerprintRecordRepository.save(record);
             log.debug("Updated device fingerprint: cardId={}, deviceId={}, usageCount={}",
                     cardId, deviceId, record.getUsageCount());
             return record;
@@ -68,31 +72,26 @@ public class DeviceFingerprintService {
                 .lastSeen(OffsetDateTime.now())
                 .build();
 
-        fingerprints.put(record.getId(), record);
-        cardIndex.computeIfAbsent(cardId, k -> ConcurrentHashMap.newKeySet()).add(record.getId());
-        deviceIndex.computeIfAbsent(deviceId, k -> ConcurrentHashMap.newKeySet()).add(record.getId());
+        record = deviceFingerprintRecordRepository.save(record);
 
         log.info("Registered device fingerprint: cardId={}, deviceId={}, type={}, country={}",
                 cardId, deviceId, deviceType, country);
         return record;
     }
 
+    @Transactional(readOnly = true)
     public List<DeviceFingerprintRecord> getFingerprintsForCard(String cardId) {
-        Set<UUID> ids = cardIndex.get(cardId);
-        if (ids == null || ids.isEmpty()) return List.of();
-        return ids.stream()
-                .map(fingerprints::get)
-                .filter(Objects::nonNull)
-                .sorted(Comparator.comparing(DeviceFingerprintRecord::getLastSeen).reversed())
-                .collect(Collectors.toList());
+        return deviceFingerprintRecordRepository.findByCardIdOrderByLastSeenDesc(cardId);
     }
 
+    @Transactional(readOnly = true)
     public boolean isKnownDevice(String cardId, String deviceId) {
-        return findByCardAndDevice(cardId, deviceId).isPresent();
+        return deviceFingerprintRecordRepository.existsByCardIdAndDeviceId(cardId, deviceId);
     }
 
+    @Transactional(readOnly = true)
     public double scoreDevice(String cardId, String deviceId, String ipAddress) {
-        Optional<DeviceFingerprintRecord> knownOpt = findByCardAndDevice(cardId, deviceId);
+        Optional<DeviceFingerprintRecord> knownOpt = deviceFingerprintRecordRepository.findByCardIdAndDeviceId(cardId, deviceId);
 
         if (knownOpt.isPresent()) {
             DeviceFingerprintRecord known = knownOpt.get();
@@ -101,23 +100,21 @@ public class DeviceFingerprintService {
             return 0.3;
         }
 
-        boolean deviceUsedByOtherCard = deviceIndex.containsKey(deviceId)
-                && deviceIndex.get(deviceId).stream()
-                        .map(fingerprints::get)
-                        .filter(Objects::nonNull)
-                        .anyMatch(r -> !r.getCardId().equals(cardId));
+        boolean deviceUsedByOtherCard = deviceFingerprintRecordRepository.findByDeviceId(deviceId)
+                .stream()
+                .anyMatch(r -> !r.getCardId().equals(cardId));
         if (deviceUsedByOtherCard) return 0.5;
 
         String country = resolveCountryFromIp(ipAddress);
-        boolean knownCountry = cardIndex.getOrDefault(cardId, Set.of()).stream()
-                .map(fingerprints::get)
-                .filter(Objects::nonNull)
+        boolean knownCountry = deviceFingerprintRecordRepository.findByCardIdOrderByLastSeenDesc(cardId)
+                .stream()
                 .anyMatch(r -> r.getCountry() != null && r.getCountry().equals(country));
         if (knownCountry) return 0.7;
 
         return 0.9;
     }
 
+    @Transactional
     public DeviceScoreResult evaluate(
             String cardId, String deviceId, String deviceType, String os,
             String browser, String userAgent, String ipAddress) {
@@ -172,13 +169,11 @@ public class DeviceFingerprintService {
                 .build();
     }
 
-    private Optional<DeviceFingerprintRecord> findByCardAndDevice(String cardId, String deviceId) {
-        Set<UUID> ids = cardIndex.get(cardId);
-        if (ids == null) return Optional.empty();
-        return ids.stream()
-                .map(fingerprints::get)
-                .filter(r -> r != null && r.getDeviceId().equals(deviceId))
-                .findFirst();
+    private boolean isNewCountryForCard(String cardId, String country) {
+        if (country == null) return false;
+        return deviceFingerprintRecordRepository.findByCardIdOrderByLastSeenDesc(cardId)
+                .stream()
+                .noneMatch(r -> country.equals(r.getCountry()));
     }
 
     private boolean isSuspiciousUserAgent(String userAgent) {
@@ -186,14 +181,6 @@ public class DeviceFingerprintService {
         String ua = userAgent.toLowerCase();
         return highRiskUserAgents.stream().anyMatch(pattern ->
                 ua.contains(pattern.toLowerCase()));
-    }
-
-    private boolean isNewCountryForCard(String cardId, String country) {
-        if (country == null) return false;
-        return cardIndex.getOrDefault(cardId, Set.of()).stream()
-                .map(fingerprints::get)
-                .filter(Objects::nonNull)
-                .noneMatch(r -> country.equals(r.getCountry()));
     }
 
     String resolveCountryFromIp(String ipAddress) {

@@ -7,8 +7,10 @@ import com.switchplatform.platform.repository.BinTableRepository;
 import com.switchplatform.platform.repository.RoutingRuleRepository;
 import com.switchplatform.platform.service.MonitoringService;
 import com.switchplatform.platform.service.ParticipantService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +20,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
+@Validated
 public class AdminController {
 
     private final ParticipantService participantService;
@@ -36,7 +39,7 @@ public class AdminController {
     }
 
     @PostMapping("/participants")
-    public ResponseEntity<Participant> createParticipant(@RequestBody Participant participant) {
+    public ResponseEntity<Participant> createParticipant(@Valid @RequestBody Participant participant) {
         return ResponseEntity.ok(participantService.create(participant));
     }
 
@@ -47,7 +50,7 @@ public class AdminController {
 
     @PutMapping("/participants/{id}")
     public ResponseEntity<Participant> updateParticipant(
-            @PathVariable UUID id, @RequestBody Participant participant) {
+            @PathVariable UUID id, @Valid @RequestBody Participant participant) {
         return ResponseEntity.ok(participantService.update(id, participant));
     }
 
@@ -63,7 +66,7 @@ public class AdminController {
     }
 
     @PostMapping("/routing-rules")
-    public ResponseEntity<RoutingRule> createRoutingRule(@RequestBody RoutingRule rule) {
+    public ResponseEntity<RoutingRule> createRoutingRule(@Valid @RequestBody RoutingRule rule) {
         return ResponseEntity.ok(routingRuleRepository.save(rule));
     }
 
@@ -76,7 +79,7 @@ public class AdminController {
 
     @PutMapping("/routing-rules/{id}")
     public ResponseEntity<RoutingRule> updateRoutingRule(
-            @PathVariable UUID id, @RequestBody RoutingRule rule) {
+            @PathVariable UUID id, @Valid @RequestBody RoutingRule rule) {
         rule.setId(id);
         return ResponseEntity.ok(routingRuleRepository.save(rule));
     }
@@ -93,7 +96,7 @@ public class AdminController {
     }
 
     @PostMapping("/bin-tables")
-    public ResponseEntity<BinTable> createBinTable(@RequestBody BinTable binTable) {
+    public ResponseEntity<BinTable> createBinTable(@Valid @RequestBody BinTable binTable) {
         return ResponseEntity.ok(binTableRepository.save(binTable));
     }
 }

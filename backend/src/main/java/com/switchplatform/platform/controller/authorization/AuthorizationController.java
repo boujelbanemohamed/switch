@@ -5,8 +5,10 @@ import com.switchplatform.platform.model.authorization.AuthRule;
 import com.switchplatform.platform.model.authorization.HoldRecord;
 import com.switchplatform.platform.service.authorization.AuthorizationEngine;
 import com.switchplatform.platform.service.authorization.HoldService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,6 +17,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/authorization")
 @RequiredArgsConstructor
+@Validated
 public class AuthorizationController {
 
     private final AuthorizationEngine authorizationEngine;
@@ -22,17 +25,17 @@ public class AuthorizationController {
 
     @PostMapping("/authorize")
     public ResponseEntity<AuthorizationEngine.AuthorizationResponse> authorize(
-            @RequestBody AuthorizationEngine.AuthorizationRequest request) {
+            @Valid @RequestBody AuthorizationEngine.AuthorizationRequest request) {
         return ResponseEntity.ok(authorizationEngine.authorize(request));
     }
 
     @PostMapping("/rules")
-    public ResponseEntity<AuthRule> defineRule(@RequestBody AuthRule rule) {
+    public ResponseEntity<AuthRule> defineRule(@Valid @RequestBody AuthRule rule) {
         return ResponseEntity.ok(authorizationEngine.defineRule(rule));
     }
 
     @PutMapping("/rules/{id}")
-    public ResponseEntity<AuthRule> updateRule(@PathVariable UUID id, @RequestBody AuthRule rule) {
+    public ResponseEntity<AuthRule> updateRule(@PathVariable UUID id, @Valid @RequestBody AuthRule rule) {
         return ResponseEntity.ok(authorizationEngine.updateRule(id, rule));
     }
 

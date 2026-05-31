@@ -4,6 +4,7 @@ import com.switchplatform.platform.model.DLQRecord;
 import com.switchplatform.platform.model.Participant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
@@ -35,7 +36,13 @@ public class MessageHandlerService {
     private final ConcurrentHashMap<UUID, DLQRecord> deadLetterQueue = new ConcurrentHashMap<>();
     private final boolean kafkaEnabled;
 
-    private static final long[] RETRY_DELAYS_MS = {100L, 500L, 2000L};
+    @Value("${switch.mq.request-timeout:5000}")
+    private long requestTimeoutMs;
+
+    @Value("${switch.mq.retry-backoff:100,500,2000}")
+    private String retryBackoffConfig;
+
+    private long[] retryDelaysMs;
     private static final int MAX_RETRIES = 3;
     private static final long SEND_TIMEOUT_SECONDS = 5;
 
@@ -47,6 +54,18 @@ public class MessageHandlerService {
         } else {
             log.warn("KafkaTemplate not available — MQ transport will use stub responses");
         }
+    }
+
+    private long[] parseRetryBackoff() {
+        if (retryBackoffConfig == null || retryBackoffConfig.isBlank()) {
+            return new long[]{100L, 500L, 2000L};
+        }
+        String[] parts = retryBackoffConfig.split(",");
+        long[] delays = new long[parts.length];
+        for (int i = 0; i < parts.length; i++) {
+            delays[i] = Long.parseLong(parts[i].trim());
+        }
+        return delays;
     }
 
     public byte[] sendAndReceive(Participant destination, byte[] message) {
@@ -79,7 +98,7 @@ public class MessageHandlerService {
         }
         try {
             kafkaTemplate.send(record.topic(), dlqId.toString(), record.payload().getBytes(StandardCharsets.UTF_8))
-                    .get(SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                    .get(requestTimeoutMs > 0 ? requestTimeoutMs / 1000 : SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             deadLetterQueue.remove(dlqId);
             log.info("DLQ message {} retried successfully to topic={}", dlqId, record.topic());
             return true;
@@ -177,17 +196,24 @@ public class MessageHandlerService {
 
         Exception lastException = null;
 
+        long[] delays = retryDelaysMs;
+        if (delays == null) {
+            delays = parseRetryBackoff();
+            retryDelaysMs = delays;
+        }
+        long timeoutSeconds = requestTimeoutMs > 0 ? requestTimeoutMs / 1000 : SEND_TIMEOUT_SECONDS;
+
         for (int attempt = 0; attempt <= MAX_RETRIES; attempt++) {
             try {
                 CompletableFuture<SendResult<String, byte[]>> future =
                         kafkaTemplate.send(topic, correlationId, message);
-                future.get(SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+                future.get(timeoutSeconds, TimeUnit.SECONDS);
                 log.info("MQ Kafka: message sent to topic={}, correlationId={}, attempt={}",
                         topic, correlationId, attempt + 1);
                 return "OK".getBytes(StandardCharsets.UTF_8);
             } catch (TimeoutException e) {
                 lastException = e;
-                log.warn("MQ Kafka send attempt {} timed out for topic={}", attempt + 1, topic);
+                log.warn("MQ Kafka send attempt {} timed out for topic={}, timeout={}s", attempt + 1, topic, timeoutSeconds);
             } catch (ExecutionException e) {
                 lastException = e;
                 log.warn("MQ Kafka send attempt {} failed for topic={}: {}",
@@ -199,9 +225,9 @@ public class MessageHandlerService {
                 break;
             }
 
-            if (attempt < MAX_RETRIES) {
+            if (attempt < MAX_RETRIES && attempt < delays.length) {
                 try {
-                    Thread.sleep(RETRY_DELAYS_MS[attempt]);
+                    Thread.sleep(delays[attempt]);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     break;

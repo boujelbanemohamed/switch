@@ -2,6 +2,10 @@ package com.switchplatform.platform.service.fraud;
 
 import com.switchplatform.platform.model.fraud.FraudAlert;
 import com.switchplatform.platform.model.fraud.FraudRule;
+import com.switchplatform.platform.repository.fraud.BehavioralProfileRepository;
+import com.switchplatform.platform.repository.fraud.DeviceFingerprintRecordRepository;
+import com.switchplatform.platform.repository.fraud.FraudAlertRepository;
+import com.switchplatform.platform.repository.fraud.FraudRuleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 class FraudEngineTest {
 
@@ -19,9 +24,10 @@ class FraudEngineTest {
 
     @BeforeEach
     void setUp() {
-        profileService = new BehavioralProfileService();
-        deviceFingerprintService = new DeviceFingerprintService();
-        fraudEngine = new FraudEngine(profileService, deviceFingerprintService);
+        profileService = new BehavioralProfileService(mock(BehavioralProfileRepository.class));
+        deviceFingerprintService = new DeviceFingerprintService(mock(DeviceFingerprintRecordRepository.class));
+        fraudEngine = new FraudEngine(profileService, deviceFingerprintService,
+                mock(FraudRuleRepository.class), mock(FraudAlertRepository.class));
     }
 
     @Test

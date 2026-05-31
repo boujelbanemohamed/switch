@@ -2,8 +2,9 @@ package com.switchplatform.platform.service.issuing;
 
 import com.switchplatform.platform.model.issuing.Card;
 import com.switchplatform.platform.model.issuing.CardOperation;
+import com.switchplatform.platform.repository.issuing.CardRepository;
+import com.switchplatform.platform.repository.issuing.CardOperationRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Lazy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,21 +16,15 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class CardService {
 
-    private final ConcurrentMap<UUID, Card> cardStore = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, UUID> suffixIndex = new ConcurrentHashMap<>();
-    private final ConcurrentMap<UUID, List<CardOperation>> operationStore = new ConcurrentHashMap<>();
-    private final AtomicLong operationIdCounter = new AtomicLong(1);
-
-    private final NotificationService notificationService;
+    private final CardRepository cardRepository;
+    private final CardOperationRepository cardOperationRepository;
+    private final IssuingNotificationService notificationService;
 
     @Transactional
     public Card createCard(Card card) {
@@ -48,8 +43,7 @@ public class CardService {
         card.setCreatedAt(OffsetDateTime.now());
         card.setUpdatedAt(OffsetDateTime.now());
 
-        cardStore.put(card.getId(), card);
-        suffixIndex.put(card.getCardNumberSuffix(), card.getId());
+        card = cardRepository.save(card);
 
         recordOperation(card.getId(), "CREATE", null, card.getStatus().name(), "Card created");
         log.info("Created card {} with suffix {}", card.getId(), card.getCardNumberSuffix());
@@ -65,6 +59,7 @@ public class CardService {
         card.setUpdatedAt(OffsetDateTime.now());
         recordOperation(cardId, "ACTIVATE", oldStatus.name(), card.getStatus().name(), "Card activated");
         notificationService.notifyCardActivation(card);
+        cardRepository.save(card);
         log.info("Activated card {}", cardId);
         return card;
     }
@@ -79,6 +74,7 @@ public class CardService {
         card.setUpdatedAt(OffsetDateTime.now());
         recordOperation(cardId, "BLOCK", oldStatus.name(), card.getStatus().name(), reason);
         notificationService.notifyCardBlocked(card, reason);
+        cardRepository.save(card);
         log.info("Blocked card {} reason: {}", cardId, reason);
         return card;
     }
@@ -93,6 +89,7 @@ public class CardService {
         card.setUpdatedAt(OffsetDateTime.now());
         recordOperation(cardId, "UNBLOCK", oldStatus.name(), card.getStatus().name(), "Card unblocked");
         notificationService.notifyCardUnblocked(card);
+        cardRepository.save(card);
         log.info("Unblocked card {}", cardId);
         return card;
     }
@@ -107,6 +104,7 @@ public class CardService {
         card.setUpdatedAt(OffsetDateTime.now());
         recordOperation(cardId, "REPORT_LOST", oldStatus.name(), card.getStatus().name(), "Card reported lost");
         notificationService.notifyCardLost(card);
+        cardRepository.save(card);
         log.info("Card {} reported as lost", cardId);
         return card;
     }
@@ -121,6 +119,7 @@ public class CardService {
         card.setUpdatedAt(OffsetDateTime.now());
         recordOperation(cardId, "REPORT_STOLEN", oldStatus.name(), card.getStatus().name(), "Card reported stolen");
         notificationService.notifyCardStolen(card);
+        cardRepository.save(card);
         log.info("Card {} reported as stolen", cardId);
         return card;
     }
@@ -133,6 +132,7 @@ public class CardService {
         oldCard.setRenewalDate(LocalDate.now());
         oldCard.setUpdatedAt(OffsetDateTime.now());
         recordOperation(cardId, "RENEW_OLD", null, Card.CardStatus.RENEWED.name(), "Card renewed, old card closed");
+        cardRepository.save(oldCard);
 
         Card renewed = Card.builder()
                 .id(UUID.randomUUID())
@@ -169,8 +169,7 @@ public class CardService {
         renewed.setCardNumberHash(hashCardNumber(newCardNumber));
         renewed.setCardNumberSuffix(newCardNumber.substring(newCardNumber.length() - 4));
 
-        cardStore.put(renewed.getId(), renewed);
-        suffixIndex.put(renewed.getCardNumberSuffix(), renewed.getId());
+        renewed = cardRepository.save(renewed);
         recordOperation(renewed.getId(), "CREATE", null, renewed.getStatus().name(), "Renewed card");
         notificationService.notifyCardRenewed(oldCard, renewed);
         log.info("Renewed card {} -> new card {}", cardId, renewed.getId());
@@ -179,13 +178,12 @@ public class CardService {
 
     @Transactional(readOnly = true)
     public Optional<Card> getCard(UUID cardId) {
-        return Optional.ofNullable(cardStore.get(cardId));
+        return cardRepository.findById(cardId);
     }
 
     @Transactional(readOnly = true)
     public Optional<Card> getCardBySuffix(String suffix) {
-        return Optional.ofNullable(suffixIndex.get(suffix))
-                .map(cardStore::get);
+        return cardRepository.findByCardNumberSuffix(suffix);
     }
 
     @Transactional
@@ -199,6 +197,7 @@ public class CardService {
         recordOperation(cardId, "UPDATE_LIMITS", null, null,
                 "Limits updated - daily: " + daily + " weekly: " + weekly +
                 " monthly: " + monthly + " single: " + single);
+        cardRepository.save(card);
         log.info("Updated limits for card {}", cardId);
         return card;
     }
@@ -212,6 +211,7 @@ public class CardService {
         card.setUpdatedAt(OffsetDateTime.now());
         recordOperation(cardId, "CHANGE_PIN", null, null, "PIN changed");
         notificationService.notifyPinChanged(card);
+        cardRepository.save(card);
         log.info("PIN changed for card {}", cardId);
         return card;
     }
@@ -233,6 +233,7 @@ public class CardService {
             recordOperation(cardId, "BLOCK", card.getStatus().name(), Card.CardStatus.BLOCKED.name(),
                     "Blocked after " + card.getPinAttempts() + " failed PIN attempts");
             notificationService.notifyCardBlocked(card, "MAX_PIN_ATTEMPTS_EXCEEDED");
+            cardRepository.save(card);
             log.warn("Card {} blocked after max PIN attempts", cardId);
             return false;
         }
@@ -262,32 +263,27 @@ public class CardService {
                 log.warn("Card {} blocked after max PIN attempts", cardId);
             }
         }
+        cardRepository.save(card);
         return matches;
     }
 
     @Transactional(readOnly = true)
     public List<Card> getCardsByCardholderId(UUID cardholderId) {
-        return cardStore.values().stream()
-                .filter(c -> c.getCardholderId().equals(cardholderId))
-                .collect(Collectors.toList());
+        return cardRepository.findByCardholderId(cardholderId);
     }
 
     @Transactional(readOnly = true)
     public List<CardOperation> getOperationsForCard(UUID cardId) {
-        return operationStore.getOrDefault(cardId, Collections.emptyList());
+        return cardOperationRepository.findByCardIdOrderByCreatedAtDesc(cardId);
     }
 
     private Card getCardOrThrow(UUID cardId) {
-        Card card = cardStore.get(cardId);
-        if (card == null) {
-            throw new IllegalArgumentException("Card not found: " + cardId);
-        }
-        return card;
+        return cardRepository.findById(cardId)
+                .orElseThrow(() -> new IllegalArgumentException("Card not found: " + cardId));
     }
 
     private void recordOperation(UUID cardId, String type, String oldStatus, String newStatus, String reason) {
         CardOperation op = CardOperation.builder()
-                .id(operationIdCounter.getAndIncrement())
                 .cardId(cardId)
                 .operationType(type)
                 .oldStatus(oldStatus)
@@ -295,7 +291,7 @@ public class CardService {
                 .reason(reason)
                 .createdAt(OffsetDateTime.now())
                 .build();
-        operationStore.computeIfAbsent(cardId, k -> Collections.synchronizedList(new ArrayList<>())).add(op);
+        cardOperationRepository.save(op);
     }
 
     private String generateCardNumber() {

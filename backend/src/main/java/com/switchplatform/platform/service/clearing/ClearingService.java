@@ -4,6 +4,9 @@ import com.switchplatform.platform.model.clearing.ClearingRecord;
 import com.switchplatform.platform.model.clearing.InterchangeResult;
 import com.switchplatform.platform.model.clearing.NettingRecord;
 import com.switchplatform.platform.model.clearing.ReconciliationRecord;
+import com.switchplatform.platform.repository.clearing.ClearingRecordRepository;
+import com.switchplatform.platform.repository.clearing.NettingRecordRepository;
+import com.switchplatform.platform.repository.clearing.ReconciliationRecordRepository;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -15,9 +18,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-
 import java.util.stream.Collectors;
 
 @Service
@@ -26,10 +26,9 @@ import java.util.stream.Collectors;
 @Transactional
 public class ClearingService {
 
-    private final Map<UUID, ClearingRecord> clearingRecords = new ConcurrentHashMap<>();
-    private final Map<UUID, NettingRecord> nettingRecords = new ConcurrentHashMap<>();
-    private final Map<UUID, ReconciliationRecord> reconciliationRecords = new ConcurrentHashMap<>();
-    private final AtomicLong reconciliationIdSeq = new AtomicLong(0);
+    private final ClearingRecordRepository clearingRecordRepository;
+    private final NettingRecordRepository nettingRecordRepository;
+    private final ReconciliationRecordRepository reconciliationRecordRepository;
 
     private final InterchangeService interchangeService;
 
@@ -110,7 +109,7 @@ public class ClearingService {
         if (record.getId() == null) {
             record.setId(UUID.randomUUID());
         }
-        clearingRecords.put(record.getId(), record);
+        record = clearingRecordRepository.save(record);
         log.info("Processed clearing record {} for transaction {}",
                 record.getId(), data.getTransactionId());
         return record;
@@ -176,49 +175,44 @@ public class ClearingService {
         return totalFee;
     }
 
+    @Transactional
     public ClearingRecord clearTransaction(UUID clearingId) {
-        ClearingRecord record = clearingRecords.get(clearingId);
-        if (record == null) {
-            throw new IllegalArgumentException("Clearing record not found: " + clearingId);
-        }
+        ClearingRecord record = clearingRecordRepository.findById(clearingId)
+                .orElseThrow(() -> new IllegalArgumentException("Clearing record not found: " + clearingId));
         if (record.getStatus() != ClearingRecord.Status.PENDING) {
             throw new IllegalStateException(
                     "Clearing record " + clearingId + " is in state " + record.getStatus());
         }
         record.setStatus(ClearingRecord.Status.CLEARED);
+        record = clearingRecordRepository.save(record);
         log.info("Clearing record {} cleared", clearingId);
         return record;
     }
 
+    @Transactional
     public ClearingRecord disputeClearing(UUID clearingId, String reason) {
-        ClearingRecord record = clearingRecords.get(clearingId);
-        if (record == null) {
-            throw new IllegalArgumentException("Clearing record not found: " + clearingId);
-        }
+        ClearingRecord record = clearingRecordRepository.findById(clearingId)
+                .orElseThrow(() -> new IllegalArgumentException("Clearing record not found: " + clearingId));
         record.setStatus(ClearingRecord.Status.DISPUTED);
         record.setDisputeReason(reason);
+        record = clearingRecordRepository.save(record);
         log.info("Clearing record {} disputed: {}", clearingId, reason);
         return record;
     }
 
+    @Transactional(readOnly = true)
     public List<ClearingRecord> getClearingByDate(LocalDate date) {
-        return clearingRecords.values().stream()
-                .filter(r -> r.getClearingDate().equals(date))
-                .collect(Collectors.toList());
+        return clearingRecordRepository.findByClearingDate(date);
     }
 
+    @Transactional(readOnly = true)
     public List<ClearingRecord> getClearingByParticipant(UUID participantId) {
-        return clearingRecords.values().stream()
-                .filter(r -> r.getAcquiringParticipantId().equals(participantId)
-                        || r.getIssuingParticipantId().equals(participantId))
-                .collect(Collectors.toList());
+        return clearingRecordRepository.findByAcquiringParticipantIdOrIssuingParticipantId(participantId, participantId);
     }
 
+    @Transactional
     public List<NettingRecord> calculateNetting(LocalDate date) {
-        List<ClearingRecord> cleared = clearingRecords.values().stream()
-                .filter(r -> r.getClearingDate().equals(date)
-                        && r.getStatus() == ClearingRecord.Status.CLEARED)
-                .collect(Collectors.toList());
+        List<ClearingRecord> cleared = clearingRecordRepository.findByClearingDateAndStatus(date, ClearingRecord.Status.CLEARED);
 
         Map<String, List<ClearingRecord>> grouped = cleared.stream()
                 .collect(Collectors.groupingBy(r -> {
@@ -266,7 +260,7 @@ public class ClearingService {
             if (netting.getId() == null) {
                 netting.setId(UUID.randomUUID());
             }
-            nettingRecords.put(netting.getId(), netting);
+            netting = nettingRecordRepository.save(netting);
             results.add(netting);
         }
 
@@ -274,43 +268,40 @@ public class ClearingService {
         return results;
     }
 
+    @Transactional
     public NettingRecord confirmNetting(UUID nettingId) {
-        NettingRecord record = nettingRecords.get(nettingId);
-        if (record == null) {
-            throw new IllegalArgumentException("Netting record not found: " + nettingId);
-        }
+        NettingRecord record = nettingRecordRepository.findById(nettingId)
+                .orElseThrow(() -> new IllegalArgumentException("Netting record not found: " + nettingId));
         record.setStatus(NettingRecord.Status.CONFIRMED);
+        record = nettingRecordRepository.save(record);
         log.info("Netting record {} confirmed", nettingId);
         return record;
     }
 
+    @Transactional
     public NettingRecord settleNetting(UUID nettingId, String reference) {
-        NettingRecord record = nettingRecords.get(nettingId);
-        if (record == null) {
-            throw new IllegalArgumentException("Netting record not found: " + nettingId);
-        }
+        NettingRecord record = nettingRecordRepository.findById(nettingId)
+                .orElseThrow(() -> new IllegalArgumentException("Netting record not found: " + nettingId));
         record.setStatus(NettingRecord.Status.SETTLED);
         record.setSettlementReference(reference);
         record.setSettledAt(OffsetDateTime.now());
+        record = nettingRecordRepository.save(record);
         log.info("Netting record {} settled: {}", nettingId, reference);
         return record;
     }
 
+    @Transactional
     public ReconciliationRecord getReconciliationReport(LocalDate date, UUID participantId) {
-        Optional<ReconciliationRecord> existing = reconciliationRecords.values().stream()
-                .filter(r -> r.getReconciliationDate().equals(date)
-                        && r.getParticipantId().equals(participantId)
-                        && r.getSource() == ReconciliationRecord.Source.SWITCH)
-                .findFirst();
+        Optional<ReconciliationRecord> existing = reconciliationRecordRepository
+                .findByReconciliationDateAndParticipantIdAndSource(date, participantId, ReconciliationRecord.Source.SWITCH);
 
         if (existing.isPresent()) {
             return existing.get();
         }
 
-        List<ClearingRecord> records = clearingRecords.values().stream()
-                .filter(r -> r.getClearingDate().equals(date)
-                        && (r.getAcquiringParticipantId().equals(participantId)
-                        || r.getIssuingParticipantId().equals(participantId)))
+        List<ClearingRecord> records = clearingRecordRepository.findByAcquiringParticipantIdOrIssuingParticipantId(participantId, participantId)
+                .stream()
+                .filter(r -> r.getClearingDate().equals(date))
                 .collect(Collectors.toList());
 
         int totalCount = records.size();
@@ -338,7 +329,7 @@ public class ClearingService {
         if (report.getId() == null) {
             report.setId(UUID.randomUUID());
         }
-        reconciliationRecords.put(report.getId(), report);
+        report = reconciliationRecordRepository.save(report);
         log.info("Created reconciliation report for participant {} on {}", participantId, date);
         return report;
     }

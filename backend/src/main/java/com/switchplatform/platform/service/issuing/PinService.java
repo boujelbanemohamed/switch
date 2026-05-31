@@ -2,12 +2,17 @@ package com.switchplatform.platform.service.issuing;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.crypto.Cipher;
 import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,6 +24,12 @@ public class PinService {
 
     private static final int PBKDF2_ITERATIONS = 65536;
     private static final int PBKDF2_KEY_LENGTH = 256;
+    private static final int AES_KEY_SIZE = 128;
+    private static final int GCM_IV_LENGTH = 12;
+    private static final int GCM_TAG_LENGTH = 16;
+
+    @Value("${switch.pin.encryption-key:}")
+    private String encryptionKey;
 
     private final Map<String, PinRecord> pinStore = new ConcurrentHashMap<>();
     private final Map<String, String> panStore = new ConcurrentHashMap<>();
@@ -55,7 +66,7 @@ public class PinService {
             if (!pinBlock.matches("[0-9A-Fa-f]{16}")) {
                 throw new IllegalArgumentException("PIN block must be 16 hex characters (ISO 9564-1 format 0)");
             }
-            pinBlockHash = pinBlock.toUpperCase();
+            pinBlockHash = encryptAes(pinBlock.toUpperCase());
             if (algorithm == null) {
                 algorithm = "ISO9564-1";
             }
@@ -97,7 +108,7 @@ public class PinService {
         PinRecord oldRecord = pinStore.get(cardId);
         String algorithm = oldRecord != null ? oldRecord.algorithm() : "ISO9564-1";
         String pinHash = null;
-        String pinBlockHash = newPinBlock.toUpperCase();
+        String pinBlockHash = encryptAes(newPinBlock.toUpperCase());
 
         if (oldRecord != null && oldRecord.pinHash() != null) {
             String extractedPin = extractPinFromPinBlock(cardId, newPinBlock);
@@ -150,7 +161,7 @@ public class PinService {
     }
 
     private boolean verifyPinBlock(PinRecord record, String cardId, String incomingPinBlock) {
-        String storedPinBlock = record.pinBlockHash();
+        String storedPinBlock = decryptAes(record.pinBlockHash());
         if (storedPinBlock == null) {
             log.warn("No PIN block stored for card {}, cannot verify PIN block", cardId);
             return false;
@@ -253,6 +264,64 @@ public class PinService {
             return saltHex + ":" + hashHex;
         } catch (Exception e) {
             throw new RuntimeException("PBKDF2 hashing failed", e);
+        }
+    }
+
+    private String encryptAes(String plaintext) {
+        if (encryptionKey == null || encryptionKey.isBlank()) {
+            return plaintext;
+        }
+        try {
+            byte[] keyBytes = deriveKey(encryptionKey);
+            SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            byte[] iv = new byte[GCM_IV_LENGTH];
+            SecureRandom random = new SecureRandom();
+            random.nextBytes(iv);
+            GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, iv);
+            cipher.init(Cipher.ENCRYPT_MODE, key, spec);
+            byte[] ciphertext = cipher.doFinal(plaintext.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            byte[] combined = new byte[GCM_IV_LENGTH + ciphertext.length];
+            System.arraycopy(iv, 0, combined, 0, GCM_IV_LENGTH);
+            System.arraycopy(ciphertext, 0, combined, GCM_IV_LENGTH, ciphertext.length);
+            return Base64.getEncoder().encodeToString(combined);
+        } catch (Exception e) {
+            log.error("AES encryption failed", e);
+            return plaintext;
+        }
+    }
+
+    private String decryptAes(String ciphertext) {
+        if (encryptionKey == null || encryptionKey.isBlank() || ciphertext == null) {
+            return ciphertext;
+        }
+        try {
+            byte[] keyBytes = deriveKey(encryptionKey);
+            SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            byte[] decoded = Base64.getDecoder().decode(ciphertext);
+            byte[] iv = new byte[GCM_IV_LENGTH];
+            byte[] encrypted = new byte[decoded.length - GCM_IV_LENGTH];
+            System.arraycopy(decoded, 0, iv, 0, GCM_IV_LENGTH);
+            System.arraycopy(decoded, GCM_IV_LENGTH, encrypted, 0, encrypted.length);
+            GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, iv);
+            cipher.init(Cipher.DECRYPT_MODE, key, spec);
+            byte[] plaintext = cipher.doFinal(encrypted);
+            return new String(plaintext, java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            log.error("AES decryption failed", e);
+            return null;
+        }
+    }
+
+    private byte[] deriveKey(String password) {
+        try {
+            byte[] salt = "PinServiceSalt".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 10000, AES_KEY_SIZE);
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+            return factory.generateSecret(spec).getEncoded();
+        } catch (Exception e) {
+            throw new RuntimeException("Key derivation failed", e);
         }
     }
 }

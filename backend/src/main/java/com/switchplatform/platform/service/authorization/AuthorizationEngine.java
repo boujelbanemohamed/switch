@@ -7,9 +7,11 @@ import com.switchplatform.platform.model.authorization.AuthRule.ActionType;
 import com.switchplatform.platform.model.authorization.AuthRule.RuleStatus;
 import com.switchplatform.platform.model.authorization.CardLimitUsage;
 import com.switchplatform.platform.model.authorization.VelocityCheck;
+import com.switchplatform.platform.model.issuing.Card;
 import com.switchplatform.platform.model.issuing.CardAccount;
 import com.switchplatform.platform.service.fraud.FraudEngine;
 import com.switchplatform.platform.service.issuing.CardAccountService;
+import com.switchplatform.platform.service.issuing.CardService;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ public class AuthorizationEngine {
 
     private final FraudEngine fraudEngine;
     private final CardAccountService cardAccountService;
+    private final CardService cardService;
     private final HoldService holdService;
 
     public AuthorizationResponse authorize(AuthorizationRequest request) {
@@ -80,6 +83,27 @@ public class AuthorizationEngine {
                     decision.setResponseCode("51");
                     log.warn("Insufficient balance: account={}, available={}, required={}",
                             account.getId(), account.getAvailableBalance(), request.getAmount());
+                }
+            }
+        }
+
+        // 2a. Check card-specific account balance via cardAccountId
+        if (decision.getDecision() == null && request.getCardId() != null) {
+            Optional<Card> cardOpt = cardService.getCard(request.getCardId());
+            if (cardOpt.isPresent()) {
+                UUID cardAccountId = cardOpt.get().getCardAccountId();
+                if (cardAccountId != null) {
+                    cardAccountService.getAccount(cardAccountId).ifPresent(account -> {
+                        decision.setCardBalanceBefore(account.getAvailableBalance());
+                        if (request.getAmount() != null
+                                && account.getAvailableBalance().compareTo(request.getAmount()) < 0) {
+                            decision.setDecision(AuthDecision.Decision.DECLINED);
+                            decision.setResponseReason("Insufficient balance (card account)");
+                            decision.setResponseCode("51");
+                            log.warn("Insufficient balance via cardAccountId: account={}, available={}, required={}",
+                                    account.getId(), account.getAvailableBalance(), request.getAmount());
+                        }
+                    });
                 }
             }
         }

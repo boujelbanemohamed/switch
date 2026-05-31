@@ -12,5 +12,5 @@ import java.util.UUID;
 public interface BinTableRepository extends JpaRepository<BinTable, UUID> {
     Optional<BinTable> findByBinAndIsActiveTrue(String bin);
     List<BinTable> findByParticipantId(UUID participantId);
-    List<BinTable> findByCardBrand(String cardBrand);
+    List<BinTable> findByCardBrand(BinTable.CardBrand cardBrand);
 }

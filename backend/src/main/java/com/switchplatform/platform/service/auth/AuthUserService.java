@@ -1,6 +1,7 @@
 package com.switchplatform.platform.service.auth;
 
 import com.switchplatform.platform.model.auth.AuthUser;
+import com.switchplatform.platform.repository.auth.AuthUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -10,11 +11,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.PostConstruct;
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,13 +26,12 @@ public class AuthUserService implements UserDetailsService {
     private static final int MAX_FAILED_ATTEMPTS = 5;
     private static final int LOCK_DURATION_MINUTES = 15;
 
-    private final Map<UUID, AuthUser> users = new ConcurrentHashMap<>();
-    private final Map<String, UUID> usernameIndex = new ConcurrentHashMap<>();
+    private final AuthUserRepository authUserRepository;
     private final PasswordEncoder passwordEncoder;
 
     @PostConstruct
     public void seedDefaultUsers() {
-        if (!users.isEmpty()) return;
+        if (authUserRepository.count() > 0) return;
         log.info("Seeding default auth users");
         registerUser("admin", "admin123", "admin@switch.local", "Administrator", AuthUser.Role.ADMIN);
         registerUser("operator", "operator123", "operator@switch.local", "Operator", AuthUser.Role.OPERATOR);
@@ -56,6 +56,7 @@ public class AuthUserService implements UserDetailsService {
                 List.of(new SimpleGrantedAuthority("ROLE_" + authUser.getRole().name())));
     }
 
+    @Transactional(readOnly = true)
     public boolean isAccountLocked(String username) {
         AuthUser user = findByUsername(username);
         if (user == null) return false;
@@ -63,11 +64,13 @@ public class AuthUserService implements UserDetailsService {
         if (user.getLockedUntil().isBefore(OffsetDateTime.now())) {
             user.setLockedUntil(null);
             user.setFailedAttempts(0);
+            authUserRepository.save(user);
             return false;
         }
         return true;
     }
 
+    @Transactional
     public void recordFailedAttempt(String username) {
         AuthUser user = findByUsername(username);
         if (user == null) return;
@@ -77,16 +80,20 @@ public class AuthUserService implements UserDetailsService {
             log.warn("Account locked after {} failed attempts: {}", MAX_FAILED_ATTEMPTS, username);
         }
         user.setUpdatedAt(OffsetDateTime.now());
+        authUserRepository.save(user);
     }
 
+    @Transactional
     public void resetFailedAttempts(String username) {
         AuthUser user = findByUsername(username);
         if (user == null) return;
         user.setFailedAttempts(0);
         user.setLockedUntil(null);
         user.setUpdatedAt(OffsetDateTime.now());
+        authUserRepository.save(user);
     }
 
+    @Transactional
     public AuthUser registerUser(String username, String password, String email,
                                   String displayName, AuthUser.Role role) {
         if (findByUsername(username) != null) {
@@ -112,47 +119,47 @@ public class AuthUserService implements UserDetailsService {
                 .updatedAt(OffsetDateTime.now())
                 .build();
 
-        users.put(user.getId(), user);
-        usernameIndex.put(username.toLowerCase(), user.getId());
+        user = authUserRepository.save(user);
         log.info("User registered: username={}, role={}", username, role);
         return user;
     }
 
+    @Transactional(readOnly = true)
     public Optional<AuthUser> findById(UUID id) {
-        return Optional.ofNullable(users.get(id));
+        return authUserRepository.findById(id);
     }
 
+    @Transactional(readOnly = true)
     public AuthUser findByUsername(String username) {
-        UUID id = usernameIndex.get(username.toLowerCase());
-        return id != null ? users.get(id) : null;
+        return authUserRepository.findByUsernameIgnoreCase(username).orElse(null);
     }
 
+    @Transactional(readOnly = true)
     public AuthUser findByEmail(String email) {
-        return users.values().stream()
-                .filter(u -> u.getEmail().equalsIgnoreCase(email))
-                .findFirst()
-                .orElse(null);
+        return authUserRepository.findByEmailIgnoreCase(email).orElse(null);
     }
 
+    @Transactional(readOnly = true)
     public List<AuthUser> listAllUsers() {
-        return users.values().stream()
+        return authUserRepository.findAll().stream()
                 .sorted(Comparator.comparing(AuthUser::getCreatedAt).reversed())
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public AuthUser updateUser(UUID id, String displayName, AuthUser.Role role, Boolean enabled) {
-        AuthUser user = users.get(id);
-        if (user == null) {
-            throw new IllegalArgumentException("User not found: " + id);
-        }
+        AuthUser user = authUserRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + id));
         if (displayName != null) user.setDisplayName(displayName);
         if (role != null) user.setRole(role);
         if (enabled != null) user.setEnabled(enabled);
         user.setUpdatedAt(OffsetDateTime.now());
+        authUserRepository.save(user);
         log.info("User updated: id={}, role={}, enabled={}", id, role, enabled);
         return user;
     }
 
+    @Transactional
     public void recordLogin(String username) {
         AuthUser user = findByUsername(username);
         if (user != null) {
@@ -160,14 +167,13 @@ public class AuthUserService implements UserDetailsService {
             user.setFailedAttempts(0);
             user.setLockedUntil(null);
             user.setUpdatedAt(OffsetDateTime.now());
+            authUserRepository.save(user);
         }
     }
 
+    @Transactional
     public void deleteUser(UUID id) {
-        AuthUser user = users.remove(id);
-        if (user != null) {
-            usernameIndex.remove(user.getUsername().toLowerCase());
-            log.info("User deleted: id={}", id);
-        }
+        authUserRepository.deleteById(id);
+        log.info("User deleted: id={}", id);
     }
 }

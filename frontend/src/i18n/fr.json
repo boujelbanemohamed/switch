@@ -559,7 +559,19 @@
     "cardholderName": "Porteur",
     "customerEmail": "Email",
     "enterCode": "Entrez un code marchand",
-    "noData": "Aucune donnée disponible pour ce marchand"
+    "noData": "Aucune donnée disponible pour ce marchand",
+    "info": "Infos",
+    "legalName": "Raison Sociale",
+    "merchantCategoryCode": "Code MCC",
+    "registrationNumber": "Registre",
+    "taxId": "N° Fiscal",
+    "riskLevel": "Niveau Risque",
+    "activationDate": "Date Activation",
+    "settlementMethod": "Méthode Règlement",
+    "settlementAccountIban": "IBAN",
+    "settlementCycle": "Cycle Règlement",
+    "mdrPercentage": "MDR %",
+    "mdrFixedFee": "Frais Fixe MDR"
   },
   "common": {
     "loading": "Chargement...",

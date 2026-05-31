@@ -222,4 +222,34 @@ public class MerchantPortalService {
 
         return report;
     }
+
+    public Map<String, Object> getInfo(String merchantCode) {
+        Merchant merchant = getMerchantByCode(merchantCode);
+        Map<String, Object> info = new LinkedHashMap<>();
+        info.put("merchantCode", merchant.getMerchantId());
+        info.put("legalName", merchant.getLegalName());
+        info.put("tradingName", merchant.getTradingName());
+        info.put("merchantCategoryCode", merchant.getMerchantCategoryCode());
+        info.put("registrationNumber", merchant.getRegistrationNumber());
+        info.put("taxId", merchant.getTaxId());
+        info.put("email", merchant.getEmail());
+        info.put("phone", merchant.getPhone());
+        info.put("website", merchant.getWebsite());
+        info.put("addressLine1", merchant.getAddressLine1());
+        info.put("addressLine2", merchant.getAddressLine2());
+        info.put("city", merchant.getCity());
+        info.put("postalCode", merchant.getPostalCode());
+        info.put("countryCode", merchant.getCountryCode());
+        info.put("status", merchant.getStatus());
+        info.put("riskLevel", merchant.getRiskLevel());
+        info.put("onboardingDate", merchant.getOnboardingDate());
+        info.put("activationDate", merchant.getActivationDate());
+        info.put("settlementMethod", merchant.getSettlementMethod());
+        info.put("settlementCurrency", merchant.getSettlementCurrency());
+        info.put("settlementAccountIban", merchant.getSettlementAccountIban());
+        info.put("settlementCycle", merchant.getSettlementCycle());
+        info.put("mdrPercentage", merchant.getMdrPercentage());
+        info.put("mdrFixedFee", merchant.getMdrFixedFee());
+        return info;
+    }
 }

@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { request } from '../services/api';
 
-type MerchantTab = 'dashboard' | 'transactions' | 'terminals' | 'settlements' | 'refunds' | 'reports';
+type MerchantTab = 'dashboard' | 'transactions' | 'terminals' | 'settlements' | 'refunds' | 'reports' | 'info';
 
 interface DashboardData {
   merchantCode: string;
@@ -94,22 +94,25 @@ export function MerchantPortal() {
   const [reportTo, setReportTo] = useState('');
   const [refundEpgId, setRefundEpgId] = useState('');
   const [refundMsg, setRefundMsg] = useState('');
+  const [merchantInfo, setMerchantInfo] = useState<Record<string, any> | null>(null);
 
   const login = useCallback(async () => {
     if (!merchantCode.trim()) return;
     setLoading(true);
     setError('');
     try {
-      const [dashData, txnData, termData, settData] = await Promise.all([
+      const [dashData, txnData, termData, settData, infoData] = await Promise.all([
         request<DashboardData>(`/merchant-portal/dashboard/${merchantCode}`),
         request<TransactionItem[]>(`/merchant-portal/transactions/${merchantCode}`),
         request<TerminalItem[]>(`/merchant-portal/terminals/${merchantCode}`),
         request<SettlementItem[]>(`/merchant-portal/settlements/${merchantCode}`),
+        request<Record<string, any>>(`/merchant-portal/info/${merchantCode}`),
       ]);
       setDashboard(dashData);
       setTransactions(txnData);
       setTerminals(termData);
       setSettlements(settData);
+      setMerchantInfo(infoData);
       setLoggedIn(true);
     } catch (e) {
       setError(t('common.failedToLoad'));
@@ -201,6 +204,7 @@ export function MerchantPortal() {
     { key: 'settlements', label: t('merchantPortal.settlements') },
     { key: 'refunds', label: t('merchantPortal.refunds') },
     { key: 'reports', label: t('merchantPortal.reports') },
+    { key: 'info', label: t('merchantPortal.info') },
   ];
 
   const btnStyle: React.CSSProperties = {
@@ -266,6 +270,7 @@ export function MerchantPortal() {
           loading={loading}
         />
       )}
+      {tab === 'info' && merchantInfo && <InfoTab data={merchantInfo} t={t} />}
     </div>
   );
 }
@@ -504,6 +509,57 @@ function ReportCard({ label, value }: { label: string; value: string }) {
     <div style={{ padding: 16, background: 'var(--bg)', borderRadius: 8 }}>
       <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 500, marginBottom: 4 }}>{label}</div>
       <div style={{ fontSize: 18, fontWeight: 700 }}>{value}</div>
+    </div>
+  );
+}
+
+function InfoTab({ data, t }: { data: Record<string, any>; t: (key: string) => string }) {
+  const fields: { key: string; label: string }[] = [
+    { key: 'legalName', label: t('merchantPortal.legalName') },
+    { key: 'merchantCategoryCode', label: t('merchantPortal.merchantCategoryCode') },
+    { key: 'registrationNumber', label: t('merchantPortal.registrationNumber') },
+    { key: 'taxId', label: t('merchantPortal.taxId') },
+    { key: 'email', label: 'Email' },
+    { key: 'phone', label: 'Téléphone' },
+    { key: 'website', label: 'Site Web' },
+    { key: 'addressLine1', label: 'Adresse' },
+    { key: 'city', label: 'Ville' },
+    { key: 'postalCode', label: 'Code Postal' },
+    { key: 'countryCode', label: 'Pays' },
+    { key: 'riskLevel', label: t('merchantPortal.riskLevel') },
+    { key: 'activationDate', label: t('merchantPortal.activationDate') },
+    { key: 'settlementMethod', label: t('merchantPortal.settlementMethod') },
+    { key: 'settlementCurrency', label: 'Devise Règlement' },
+    { key: 'settlementAccountIban', label: t('merchantPortal.settlementAccountIban') },
+    { key: 'settlementCycle', label: t('merchantPortal.settlementCycle') },
+    { key: 'mdrPercentage', label: t('merchantPortal.mdrPercentage') },
+    { key: 'mdrFixedFee', label: t('merchantPortal.mdrFixedFee') },
+  ];
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
+        <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500, marginBottom: 12 }}>
+          {t('merchantPortal.merchantName')}
+        </div>
+        <div style={{ fontSize: 20, fontWeight: 700 }}>{data.tradingName}</div>
+        <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+          {data.merchantCode}
+        </div>
+        <div style={{ marginTop: 12 }}>
+          <StatusBadge status={data.status} />
+        </div>
+      </div>
+      {fields.map(f => (
+        <div key={f.key} style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500, marginBottom: 4 }}>
+            {f.label}
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 600, wordBreak: 'break-word' }}>
+            {data[f.key] != null ? String(data[f.key]) : '-'}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

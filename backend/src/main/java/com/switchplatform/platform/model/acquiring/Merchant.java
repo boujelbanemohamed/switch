@@ -46,10 +46,10 @@ public class Merchant {
     @Column(length = 255)
     private String website;
 
-    @Column(name = "address_line_1", length = 255)
+    @Column(name = "address_line1", length = 255)
     private String addressLine1;
 
-    @Column(name = "address_line_2", length = 255)
+    @Column(name = "address_line2", length = 255)
     private String addressLine2;
 
     @Column(length = 100)

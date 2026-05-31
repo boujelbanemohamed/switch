@@ -35,9 +35,6 @@ public class MerchantService {
         if (merchantRepository.existsByMerchantId(merchant.getMerchantId())) {
             throw new IllegalArgumentException("merchantId already exists: " + merchant.getMerchantId());
         }
-        if (merchant.getId() == null) {
-            merchant.setId(UUID.randomUUID());
-        }
         merchant.setStatus(Merchant.MerchantStatus.PENDING_ONBOARDING);
         if (merchant.getOnboardingDate() == null) {
             merchant.setOnboardingDate(LocalDate.now());

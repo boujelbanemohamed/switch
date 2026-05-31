@@ -559,7 +559,19 @@
     "cardholderName": "Cardholder",
     "customerEmail": "Email",
     "enterCode": "Enter merchant code",
-    "noData": "No data available for this merchant"
+    "noData": "No data available for this merchant",
+    "info": "Info",
+    "legalName": "Legal Name",
+    "merchantCategoryCode": "MCC Code",
+    "registrationNumber": "Registration",
+    "taxId": "Tax ID",
+    "riskLevel": "Risk Level",
+    "activationDate": "Activation Date",
+    "settlementMethod": "Settlement Method",
+    "settlementAccountIban": "IBAN",
+    "settlementCycle": "Settlement Cycle",
+    "mdrPercentage": "MDR %",
+    "mdrFixedFee": "MDR Fixed Fee"
   },
   "common": {
     "loading": "Loading...",

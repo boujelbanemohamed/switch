@@ -56,4 +56,9 @@ public class MerchantPortalController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         return ResponseEntity.ok(merchantPortalService.getReportData(merchantCode, from, to));
     }
+
+    @GetMapping("/info/{merchantCode}")
+    public ResponseEntity<Map<String, Object>> getInfo(@PathVariable String merchantCode) {
+        return ResponseEntity.ok(merchantPortalService.getInfo(merchantCode));
+    }
 }

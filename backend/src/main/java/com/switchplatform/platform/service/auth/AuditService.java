@@ -30,7 +30,6 @@ public class AuditService {
                            String details, String status, String username, UUID userId,
                            HttpServletRequest request) {
         AuditLog logEntry = AuditLog.builder()
-                .id(UUID.randomUUID())
                 .userId(userId)
                 .username(username)
                 .action(action)

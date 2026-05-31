@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { Participant } from '../types';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Pencil } from 'lucide-react';
 import { SectionHeader } from '../components/SectionHeader';
 
 const typeColors: Record<string, string> = {
@@ -42,6 +42,7 @@ export function Participants() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<{
     name: string; code: string; type: string; status: string;
@@ -61,12 +62,25 @@ export function Participants() {
 
   useEffect(() => { load(); }, []);
 
+  const openEdit = (p: Participant) => {
+    setEditingId(p.id);
+    setForm({
+      name: p.name,
+      code: p.code,
+      type: p.type,
+      status: p.status,
+      endpointUrl: p.endpointUrl || '',
+      supportedProtocols: (p.supportedProtocols || []).join(', '),
+    });
+    setShowModal(true);
+  };
+
   const handleSubmit = async () => {
     setSaving(true);
     try {
       const pType = form.type as Participant['type'];
       const pStatus = form.status as Participant['status'];
-      await api.participants.create({
+      const data = {
         name: form.name,
         code: form.code,
         type: pType,
@@ -75,8 +89,14 @@ export function Participants() {
         supportedProtocols: form.supportedProtocols
           ? form.supportedProtocols.split(',').map(s => s.trim())
           : [],
-      });
+      };
+      if (editingId) {
+        await api.participants.update(editingId, data);
+      } else {
+        await api.participants.create(data);
+      }
       setShowModal(false);
+      setEditingId(null);
       setForm({ name: '', code: '', type: 'ISSUER', status: 'ACTIVE', endpointUrl: '', supportedProtocols: '' });
       load();
     } catch (e) {
@@ -84,6 +104,12 @@ export function Participants() {
       alert(e instanceof Error ? e.message : t('participants.createError'));
     }
     setSaving(false);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingId(null);
+    setForm({ name: '', code: '', type: 'ISSUER', status: 'ACTIVE', endpointUrl: '', supportedProtocols: '' });
   };
 
   return (
@@ -116,12 +142,20 @@ export function Participants() {
                   <p style={{ fontSize: 16, fontWeight: 600 }}>{p.name}</p>
                   <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{p.code}</p>
                 </div>
-                <span style={{
-                  background: `${typeColors[p.type]}22`, color: typeColors[p.type],
-                  padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
-                }}>
-                  {p.type}
-                </span>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <span style={{
+                    background: `${typeColors[p.type]}22`, color: typeColors[p.type],
+                    padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                  }}>
+                    {p.type}
+                  </span>
+                  <button onClick={() => openEdit(p)} title={t('participants.edit')} style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: 'var(--text-secondary)', padding: 4, display: 'flex',
+                  }}>
+                    <Pencil size={14} />
+                  </button>
+                </div>
               </div>
               <div style={{ display: 'flex', gap: 16, fontSize: 13, color: 'var(--text-secondary)' }}>
                 <span>{t('participants.status')}: <span style={{ color: statusColors[p.status], fontWeight: 600 }}>{p.status}</span></span>
@@ -145,11 +179,11 @@ export function Participants() {
       )}
 
       {showModal && (
-        <div style={OVERLAY} onClick={() => setShowModal(false)}>
+        <div style={OVERLAY} onClick={closeModal}>
           <div style={MODAL} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 700 }}>{t('participants.addParticipant')}</h3>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700 }}>{editingId ? t('participants.editParticipant') : t('participants.addParticipant')}</h3>
+              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
                 <X size={20} />
               </button>
             </div>
@@ -185,7 +219,7 @@ export function Participants() {
             </div>
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
-              <button onClick={() => setShowModal(false)} style={{
+              <button onClick={closeModal} style={{
                 padding: '10px 20px', borderRadius: 8, border: '1px solid var(--border)',
                 background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 13, fontWeight: 600,
               }}>
@@ -197,7 +231,7 @@ export function Participants() {
                 color: 'white', cursor: saving || !form.name || !form.code ? 'not-allowed' : 'pointer',
                 fontSize: 13, fontWeight: 600,
               }}>
-                {saving ? t('participants.creating') : t('participants.save')}
+                {saving ? t('participants.saving') : editingId ? t('participants.update') : t('participants.save')}
               </button>
             </div>
           </div>

@@ -43,9 +43,11 @@ public class ParticipantService {
     public Participant update(UUID id, Participant participant) {
         Participant existing = findById(id);
         existing.setName(participant.getName());
+        existing.setType(participant.getType());
         existing.setStatus(participant.getStatus());
         existing.setEndpointUrl(participant.getEndpointUrl());
         existing.setEndpointType(participant.getEndpointType());
+        existing.setSupportedProtocols(participant.getSupportedProtocols());
         existing.setMetadata(participant.getMetadata());
         return participantRepository.save(existing);
     }

@@ -438,6 +438,10 @@
     "endpoint": "Endpoint",
     "placeholderUrl": "https://...",
     "placeholderProtocols": "ISO8583, ISO20022",
+    "edit": "Modifier",
+    "editParticipant": "Modifier le Participant",
+    "update": "Mettre à jour",
+    "saving": "Enregistrement...",
     "sectionDescription": "Annuaire de tous les participants connectés au réseau de switch. Les participants sont des institutions financières (émetteurs, acquéreurs), des switches ou des processeurs qui échangent des transactions de paiement via la plateforme.",
     "sectionRole": "Registre central qui définit quelles entités peuvent envoyer et recevoir des transactions sur le réseau. Chaque participant se voit attribuer un type (ÉMETTEUR / ACQUÉREUR / SWITCH / PROCESSEUR), un statut, une URL d'endpoint et des protocoles supportés pour le routage.",
     "sectionUsage": "La page affiche des cartes participantes montrant le nom, le code, le type (codé par couleur), le statut, l'URL d'endpoint et les protocoles supportés. Cliquez sur 'Ajouter un Participant' pour ouvrir un formulaire modal — remplissez le nom, le code, sélectionnez le type et le statut, fournissez optionnellement une URL d'endpoint et des protocoles supportés (séparés par des virgules), puis cliquez sur Enregistrer. La liste des participants se rafraîchit automatiquement après la création."

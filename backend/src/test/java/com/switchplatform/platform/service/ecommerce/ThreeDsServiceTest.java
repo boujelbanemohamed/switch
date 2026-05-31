@@ -1,20 +1,45 @@
 package com.switchplatform.platform.service.ecommerce;
 
 import com.switchplatform.platform.model.ecommerce.ThreeDsSession;
+import com.switchplatform.platform.repository.ecommerce.ThreeDsSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class ThreeDsServiceTest {
 
     private ThreeDsService threeDsService;
+    private final ConcurrentHashMap<UUID, ThreeDsSession> sessionStore = new ConcurrentHashMap<>();
 
     @BeforeEach
     void setUp() {
-        threeDsService = new ThreeDsService();
+        sessionStore.clear();
+
+        ThreeDsSessionRepository threeDsSessionRepository = mock(ThreeDsSessionRepository.class);
+
+        when(threeDsSessionRepository.save(any())).thenAnswer(inv -> {
+            ThreeDsSession s = inv.getArgument(0);
+            if (s.getId() == null) s.setId(UUID.randomUUID());
+            sessionStore.put(s.getId(), s);
+            return s;
+        });
+        when(threeDsSessionRepository.findById(any())).thenAnswer(inv ->
+                java.util.Optional.ofNullable(sessionStore.get(inv.getArgument(0))));
+        when(threeDsSessionRepository.findByTransactionId(any())).thenAnswer(inv -> {
+            String txnId = inv.getArgument(0);
+            return sessionStore.values().stream()
+                    .filter(s -> txnId.equals(s.getTransactionId()))
+                    .findFirst();
+        });
+
+        threeDsService = new ThreeDsService(threeDsSessionRepository);
     }
 
     @Test

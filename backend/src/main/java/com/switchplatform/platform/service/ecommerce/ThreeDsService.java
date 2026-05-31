@@ -1,21 +1,23 @@
 package com.switchplatform.platform.service.ecommerce;
 
 import com.switchplatform.platform.model.ecommerce.ThreeDsSession;
+import com.switchplatform.platform.repository.ecommerce.ThreeDsSessionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ThreeDsService {
 
-    private final Map<UUID, ThreeDsSession> sessions = new ConcurrentHashMap<>();
+    private final ThreeDsSessionRepository threeDsSessionRepository;
 
+    @Transactional
     public ThreeDsSession createSession(String transactionId, UUID epgTransactionId,
                                          UUID cardId, String notificationUrl) {
         ThreeDsSession session = ThreeDsSession.builder()
@@ -40,23 +42,23 @@ public class ThreeDsService {
             session.setDsReferenceNumber("DS-" + UUID.randomUUID().toString().substring(0, 8));
         }
 
-        sessions.put(session.getId(), session);
+        threeDsSessionRepository.save(session);
         log.info("3DS session created: id={}, txn={}, version={}",
                 session.getId(), transactionId, session.getThreeDsVersion());
         return session;
     }
 
+    @Transactional(readOnly = true)
     public ThreeDsSession getSession(UUID sessionId) {
-        return sessions.get(sessionId);
+        return threeDsSessionRepository.findById(sessionId).orElse(null);
     }
 
+    @Transactional(readOnly = true)
     public ThreeDsSession getSessionByTransactionId(String transactionId) {
-        return sessions.values().stream()
-                .filter(s -> transactionId.equals(s.getTransactionId()))
-                .findFirst()
-                .orElse(null);
+        return threeDsSessionRepository.findByTransactionId(transactionId).orElse(null);
     }
 
+    @Transactional
     public ThreeDsSession sendAuthenticationRequest(UUID sessionId, String acsUrl, String creq) {
         ThreeDsSession session = getOrThrow(sessionId);
         session.setAcsUrl(acsUrl);
@@ -66,6 +68,7 @@ public class ThreeDsService {
         return session;
     }
 
+    @Transactional
     public ThreeDsSession receiveAuthenticationResponse(UUID sessionId, String acsTransId,
                                                           String dsTransId, String authenticationValue) {
         ThreeDsSession session = getOrThrow(sessionId);
@@ -77,6 +80,7 @@ public class ThreeDsService {
         return session;
     }
 
+    @Transactional
     public ThreeDsSession initiateChallenge(UUID sessionId, String challengeRequest, String acsUrl) {
         ThreeDsSession session = getOrThrow(sessionId);
         session.setChallengeRequest(challengeRequest);
@@ -86,6 +90,7 @@ public class ThreeDsService {
         return session;
     }
 
+    @Transactional
     public ThreeDsSession completeChallenge(UUID sessionId, String challengeResponse,
                                              String cres, String eci) {
         ThreeDsSession session = getOrThrow(sessionId);
@@ -97,6 +102,7 @@ public class ThreeDsService {
         return session;
     }
 
+    @Transactional
     public ThreeDsSession completeSession(UUID sessionId, String authenticationValue) {
         ThreeDsSession session = getOrThrow(sessionId);
         session.setAuthenticationValue(authenticationValue);
@@ -107,6 +113,7 @@ public class ThreeDsService {
         return session;
     }
 
+    @Transactional
     public ThreeDsSession failSession(UUID sessionId, String errorDescription) {
         ThreeDsSession session = getOrThrow(sessionId);
         session.setErrorDescription(errorDescription);
@@ -116,10 +123,7 @@ public class ThreeDsService {
     }
 
     private ThreeDsSession getOrThrow(UUID sessionId) {
-        ThreeDsSession session = sessions.get(sessionId);
-        if (session == null) {
-            throw new IllegalArgumentException("3DS session not found: " + sessionId);
-        }
-        return session;
+        return threeDsSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("3DS session not found: " + sessionId));
     }
 }

@@ -2,6 +2,8 @@ package com.switchplatform.platform.service.fraud;
 
 import com.switchplatform.platform.model.fraud.FraudAlert;
 import com.switchplatform.platform.model.fraud.FraudRule;
+import com.switchplatform.platform.model.authorization.VelocityCheck;
+import com.switchplatform.platform.repository.authorization.VelocityCheckRepository;
 import com.switchplatform.platform.repository.fraud.FraudAlertRepository;
 import com.switchplatform.platform.repository.fraud.FraudRuleRepository;
 import jakarta.annotation.PostConstruct;
@@ -17,7 +19,6 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -28,8 +29,8 @@ public class FraudEngine {
 
     private final Map<UUID, FraudRule> rules = new ConcurrentHashMap<>();
     private final List<FraudAlert> alerts = new CopyOnWriteArrayList<>();
-    private final Map<UUID, Deque<VelocityRecord>> velocityCache = new ConcurrentHashMap<>();
     private final BehavioralProfileService profileService;
+    private final VelocityCheckRepository velocityCheckRepository;
     private final DeviceFingerprintService deviceFingerprintService;
     private final FraudRuleRepository fraudRuleRepository;
     private final FraudAlertRepository fraudAlertRepository;
@@ -284,18 +285,10 @@ public class FraudEngine {
     private int checkVelocity(EvaluationContext ctx) {
         if (ctx.getCardId() == null) return 0;
 
-        Deque<VelocityRecord> records = velocityCache.get(ctx.getCardId());
-        if (records == null || records.isEmpty()) return 0;
-
-        OffsetDateTime cutoff = OffsetDateTime.now().minusMinutes(VELOCITY_WINDOW_MINUTES);
-        List<VelocityRecord> recent = records.stream()
-                .filter(r -> r.timestamp.isAfter(cutoff))
-                .toList();
-
-        if (recent.isEmpty()) return 0;
+        int count = countRecentTransactions(ctx.getCardId(), VELOCITY_WINDOW_MINUTES);
+        if (count == 0) return 0;
 
         int score = 0;
-        int count = recent.size();
 
         if (count > 10) {
             score += 30;
@@ -305,8 +298,11 @@ public class FraudEngine {
             score += 5;
         }
 
+        List<VelocityCheck> recent = velocityCheckRepository.findByCardIdAndCreatedAtAfter(
+                ctx.getCardId(), OffsetDateTime.now().minusMinutes(VELOCITY_WINDOW_MINUTES));
+
         BigDecimal totalAmount = recent.stream()
-                .map(r -> r.amount)
+                .map(VelocityCheck::getCurrentAmount)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
@@ -316,33 +312,27 @@ public class FraudEngine {
             score += 10;
         }
 
-        if (recent.size() >= 3) {
-            Set<String> uniqueCountries = recent.stream()
-                    .map(r -> r.countryCode)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toSet());
-            if (uniqueCountries.size() >= 3) {
-                score += 25;
-            } else if (uniqueCountries.size() >= 2) {
-                score += 10;
-            }
-        }
-
         return score;
     }
 
     private void recordVelocity(EvaluationContext ctx) {
         if (ctx.getCardId() == null) return;
+        recordForVelocity(ctx.getCardId(), ctx.getAmount());
+    }
 
-        Deque<VelocityRecord> records = velocityCache
-                .computeIfAbsent(ctx.getCardId(), k -> new ConcurrentLinkedDeque<>());
+    private void recordForVelocity(UUID cardId, BigDecimal amount) {
+        VelocityCheck vc = VelocityCheck.builder()
+                .cardId(cardId)
+                .currentAmount(amount)
+                .velocityType(VelocityCheck.VelocityType.TXNS_PER_HOUR)
+                .createdAt(OffsetDateTime.now())
+                .build();
+        velocityCheckRepository.save(vc);
+    }
 
-        records.addFirst(new VelocityRecord(ctx.getAmount(), ctx.getCountryCode(),
-                OffsetDateTime.now()));
-
-        while (records.size() > 100) {
-            records.removeLast();
-        }
+    private int countRecentTransactions(UUID cardId, long windowMinutes) {
+        OffsetDateTime since = OffsetDateTime.now().minusMinutes(windowMinutes);
+        return (int) velocityCheckRepository.countByCardIdAndCreatedAtAfter(cardId, since);
     }
 
     public List<FraudRule> listRules() {

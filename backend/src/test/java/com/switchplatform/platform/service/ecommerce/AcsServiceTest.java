@@ -2,22 +2,69 @@ package com.switchplatform.platform.service.ecommerce;
 
 import com.switchplatform.platform.model.ecommerce.AcsAuthentication;
 import com.switchplatform.platform.model.ecommerce.AcsChallenge;
+import com.switchplatform.platform.repository.ecommerce.AcsAuthenticationRepository;
+import com.switchplatform.platform.repository.ecommerce.AcsChallengeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class AcsServiceTest {
 
     private AcsService acsService;
+    private final ConcurrentHashMap<UUID, AcsAuthentication> authStore = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, AcsChallenge> challengeStore = new ConcurrentHashMap<>();
 
     @BeforeEach
     void setUp() {
-        acsService = new AcsService();
+        authStore.clear();
+        challengeStore.clear();
+
+        AcsAuthenticationRepository authRepository = mock(AcsAuthenticationRepository.class);
+        AcsChallengeRepository challengeRepository = mock(AcsChallengeRepository.class);
+
+        when(authRepository.save(any())).thenAnswer(inv -> {
+            AcsAuthentication a = inv.getArgument(0);
+            if (a.getId() == null) a.setId(UUID.randomUUID());
+            authStore.put(a.getId(), a);
+            return a;
+        });
+        when(authRepository.findById(any())).thenAnswer(inv ->
+                java.util.Optional.ofNullable(authStore.get(inv.getArgument(0))));
+        when(authRepository.findByCardId(any())).thenAnswer(inv -> {
+            UUID cardId = inv.getArgument(0);
+            return authStore.values().stream()
+                    .filter(a -> cardId.equals(a.getCardId()))
+                    .sorted(Comparator.comparing(AcsAuthentication::getCreatedAt).reversed())
+                    .toList();
+        });
+
+        when(challengeRepository.save(any())).thenAnswer(inv -> {
+            AcsChallenge c = inv.getArgument(0);
+            if (c.getId() == null) c.setId(UUID.randomUUID());
+            challengeStore.put(c.getId(), c);
+            return c;
+        });
+        when(challengeRepository.findById(any())).thenAnswer(inv ->
+                java.util.Optional.ofNullable(challengeStore.get(inv.getArgument(0))));
+        when(challengeRepository.findByAuthenticationId(any())).thenAnswer(inv -> {
+            UUID authId = inv.getArgument(0);
+            return challengeStore.values().stream()
+                    .filter(c -> authId.equals(c.getAuthenticationId()))
+                    .sorted(Comparator.comparing(AcsChallenge::getCreatedAt).reversed())
+                    .toList();
+        });
+
+        acsService = new AcsService(authRepository, challengeRepository);
     }
 
     @Test

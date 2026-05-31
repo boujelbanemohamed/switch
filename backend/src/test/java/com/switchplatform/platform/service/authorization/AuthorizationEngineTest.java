@@ -6,6 +6,7 @@ import com.switchplatform.platform.model.authorization.AuthRule.ActionType;
 import com.switchplatform.platform.model.authorization.AuthRule.RuleStatus;
 import com.switchplatform.platform.model.authorization.CardLimitUsage;
 import com.switchplatform.platform.model.authorization.VelocityCheck;
+import com.switchplatform.platform.repository.authorization.CardLimitUsageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +19,8 @@ import com.switchplatform.platform.service.fraud.DeviceFingerprintService;
 import com.switchplatform.platform.service.fraud.FraudEngine;
 import com.switchplatform.platform.service.issuing.CardAccountService;
 import com.switchplatform.platform.service.issuing.CardService;
+import com.switchplatform.platform.repository.issuing.CardAccountRepository;
+import com.switchplatform.platform.repository.authorization.HoldRecordRepository;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.List;
@@ -27,22 +30,26 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 class AuthorizationEngineTest {
 
     private AuthorizationEngine authEngine;
+    private CardLimitUsageRepository cardLimitUsageRepository;
 
     @BeforeEach
     void setUp() {
-        CardAccountService cardAccountService = new CardAccountService();
+        cardLimitUsageRepository = mock(CardLimitUsageRepository.class);
+        CardAccountService cardAccountService = new CardAccountService(mock(CardAccountRepository.class));
         authEngine = new AuthorizationEngine(
                 new FraudEngine(new BehavioralProfileService(mock(BehavioralProfileRepository.class)),
+                        mock(com.switchplatform.platform.repository.authorization.VelocityCheckRepository.class),
                         new DeviceFingerprintService(mock(DeviceFingerprintRecordRepository.class)),
                         mock(FraudRuleRepository.class), mock(FraudAlertRepository.class)),
                 cardAccountService,
                 mock(CardService.class),
-                new HoldService(cardAccountService));
+                new HoldService(mock(HoldRecordRepository.class), cardAccountService),
+                cardLimitUsageRepository);
     }
 
     private void setField(Object target, String fieldName, Object value) {
@@ -111,8 +118,7 @@ class AuthorizationEngineTest {
                 .usedAmount(BigDecimal.ZERO)
                 .build();
 
-        setField(authEngine, "cardLimits",
-                new ConcurrentHashMap<>(Map.of(cardId, new CopyOnWriteArrayList<>(List.of(limit)))));
+        when(cardLimitUsageRepository.findByCardId(cardId)).thenReturn(List.of(limit));
 
         AuthorizationEngine.AuthorizationRequest request = AuthorizationEngine.AuthorizationRequest.builder()
                 .cardId(cardId)

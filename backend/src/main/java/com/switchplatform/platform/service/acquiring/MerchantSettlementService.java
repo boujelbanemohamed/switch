@@ -1,6 +1,7 @@
 package com.switchplatform.platform.service.acquiring;
 
 import com.switchplatform.platform.model.acquiring.MerchantSettlement;
+import com.switchplatform.platform.repository.acquiring.MerchantSettlementRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -9,17 +10,16 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class MerchantSettlementService {
 
-    private final ConcurrentMap<UUID, MerchantSettlement> settlementStore = new ConcurrentHashMap<>();
+    private final MerchantSettlementRepository merchantSettlementRepository;
 
     @Transactional
     public MerchantSettlement createSettlement(UUID merchantId, LocalDate date, String currency) {
@@ -37,7 +37,7 @@ public class MerchantSettlementService {
                 .createdAt(OffsetDateTime.now())
                 .build();
 
-        settlementStore.put(settlement.getId(), settlement);
+        merchantSettlementRepository.save(settlement);
         log.info("Created settlement {} for merchant {} on {}", settlement.getId(), merchantId, date);
         return settlement;
     }
@@ -51,7 +51,7 @@ public class MerchantSettlementService {
         settlement.setTotalCommission(settlement.getTotalCommission().add(commission));
         log.debug("Added transaction to settlement {}: amount={}, fee={}, commission={}",
                 settlementId, amount, fee, commission);
-        return settlement;
+        return merchantSettlementRepository.save(settlement);
     }
 
     @Transactional
@@ -59,7 +59,7 @@ public class MerchantSettlementService {
         MerchantSettlement settlement = getSettlementOrThrow(settlementId);
         settlement.setStatus(MerchantSettlement.SettlementStatus.CONFIRMED);
         log.info("Confirmed settlement {}", settlementId);
-        return settlement;
+        return merchantSettlementRepository.save(settlement);
     }
 
     @Transactional
@@ -69,21 +69,20 @@ public class MerchantSettlementService {
         settlement.setPaymentReference(paymentRef);
         settlement.setPaidAt(OffsetDateTime.now());
         log.info("Marked settlement {} as paid (ref: {})", settlementId, paymentRef);
-        return settlement;
+        return merchantSettlementRepository.save(settlement);
     }
 
     @Transactional(readOnly = true)
     public Optional<MerchantSettlement> getSettlement(UUID id) {
-        return Optional.ofNullable(settlementStore.get(id));
+        return merchantSettlementRepository.findById(id);
     }
 
     @Transactional(readOnly = true)
     public List<MerchantSettlement> getMerchantSettlements(UUID merchantId, LocalDate from, LocalDate to) {
-        return settlementStore.values().stream()
-                .filter(s -> s.getMerchantId().equals(merchantId))
+        return merchantSettlementRepository.findByMerchantId(merchantId).stream()
                 .filter(s -> !s.getSettlementDate().isBefore(from))
                 .filter(s -> !s.getSettlementDate().isAfter(to))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -97,10 +96,7 @@ public class MerchantSettlementService {
     }
 
     private MerchantSettlement getSettlementOrThrow(UUID id) {
-        MerchantSettlement settlement = settlementStore.get(id);
-        if (settlement == null) {
-            throw new IllegalArgumentException("Settlement not found: " + id);
-        }
-        return settlement;
+        return merchantSettlementRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Settlement not found: " + id));
     }
 }

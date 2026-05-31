@@ -1,17 +1,18 @@
 package com.switchplatform.platform.service.authorization;
 
 import com.switchplatform.platform.model.authorization.HoldRecord;
+import com.switchplatform.platform.repository.authorization.HoldRecordRepository;
 import com.switchplatform.platform.service.issuing.CardAccountService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,22 +20,19 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class HoldService {
 
-    private final Map<UUID, HoldRecord> holds = new ConcurrentHashMap<>();
-    private final Map<String, List<UUID>> cardIndex = new ConcurrentHashMap<>();
-    private final Map<String, List<UUID>> accountIndex = new ConcurrentHashMap<>();
-
+    private final HoldRecordRepository holdRecordRepository;
     private final CardAccountService cardAccountService;
 
+    @Transactional
     public HoldRecord placeHold(String transactionId, String cardId, String cardAccountId,
                                 BigDecimal amount, String currencyCode, Duration expiryDuration) {
-        UUID holdId = UUID.randomUUID();
         Instant now = Instant.now();
         Instant expiresAt = now.plus(expiryDuration != null ? expiryDuration : Duration.ofMinutes(30));
 
         cardAccountService.hold(UUID.fromString(cardAccountId), amount);
 
         HoldRecord record = HoldRecord.builder()
-                .id(holdId)
+                .id(UUID.randomUUID())
                 .transactionId(transactionId)
                 .cardId(cardId)
                 .cardAccountId(cardAccountId)
@@ -45,16 +43,14 @@ public class HoldService {
                 .expiresAt(expiresAt)
                 .build();
 
-        holds.put(holdId, record);
-        cardIndex.computeIfAbsent(cardId, k -> new CopyOnWriteArrayList<>()).add(holdId);
-        accountIndex.computeIfAbsent(cardAccountId, k -> new CopyOnWriteArrayList<>()).add(holdId);
-
-        log.info("Hold placed: id={}, cardId={}, amount={}, expiresAt={}", holdId, cardId, amount, expiresAt);
-        return record;
+        HoldRecord saved = holdRecordRepository.save(record);
+        log.info("Hold placed: id={}, cardId={}, amount={}, expiresAt={}", saved.getId(), cardId, amount, expiresAt);
+        return saved;
     }
 
+    @Transactional
     public boolean releaseHold(UUID holdId) {
-        HoldRecord record = holds.get(holdId);
+        HoldRecord record = holdRecordRepository.findById(holdId).orElse(null);
         if (record == null || !"ACTIVE".equals(record.getStatus())) {
             log.warn("Cannot release hold: id={}, found={}, status={}", holdId, record != null, record != null ? record.getStatus() : "N/A");
             return false;
@@ -64,6 +60,7 @@ public class HoldService {
             cardAccountService.releaseHold(UUID.fromString(record.getCardAccountId()), record.getAmount());
             record.setStatus("RELEASED");
             record.setReleasedAt(Instant.now());
+            holdRecordRepository.save(record);
             log.info("Hold released: id={}, accountId={}, amount={}", holdId, record.getCardAccountId(), record.getAmount());
             return true;
         } catch (Exception e) {
@@ -72,8 +69,9 @@ public class HoldService {
         }
     }
 
+    @Transactional
     public boolean captureHold(UUID holdId) {
-        HoldRecord record = holds.get(holdId);
+        HoldRecord record = holdRecordRepository.findById(holdId).orElse(null);
         if (record == null || !"ACTIVE".equals(record.getStatus())) {
             log.warn("Cannot capture hold: id={}, found={}, status={}", holdId, record != null, record != null ? record.getStatus() : "N/A");
             return false;
@@ -85,6 +83,7 @@ public class HoldService {
             cardAccountService.debit(accountId, record.getAmount(), record.getCurrencyCode());
             record.setStatus("CAPTURED");
             record.setReleasedAt(Instant.now());
+            holdRecordRepository.save(record);
             log.info("Hold captured: id={}, accountId={}, amount={}", holdId, accountId, record.getAmount());
             return true;
         } catch (Exception e) {
@@ -93,22 +92,21 @@ public class HoldService {
         }
     }
 
+    @Scheduled(fixedRateString = "${switch.holds.expiry-check-ms:60000}")
+    @Transactional
     public void expireHolds() {
         Instant now = Instant.now();
-        List<UUID> expired = holds.values().stream()
-                .filter(r -> "ACTIVE".equals(r.getStatus()) && r.getExpiresAt().isBefore(now))
-                .map(HoldRecord::getId)
-                .toList();
+        List<HoldRecord> expired = holdRecordRepository.findByStatusAndExpiresAtBefore("ACTIVE", now);
 
-        for (UUID id : expired) {
+        for (HoldRecord record : expired) {
             try {
-                HoldRecord record = holds.get(id);
                 cardAccountService.releaseHold(UUID.fromString(record.getCardAccountId()), record.getAmount());
                 record.setStatus("EXPIRED");
                 record.setReleasedAt(Instant.now());
-                log.info("Hold expired: id={}, accountId={}, amount={}", id, record.getCardAccountId(), record.getAmount());
+                holdRecordRepository.save(record);
+                log.info("Hold expired: id={}, accountId={}, amount={}", record.getId(), record.getCardAccountId(), record.getAmount());
             } catch (Exception e) {
-                log.error("Failed to expire hold: id={}, error={}", id, e.getMessage());
+                log.error("Failed to expire hold: id={}, error={}", record.getId(), e.getMessage());
             }
         }
 
@@ -117,27 +115,18 @@ public class HoldService {
         }
     }
 
+    @Transactional(readOnly = true)
     public Optional<HoldRecord> getHold(UUID holdId) {
-        return Optional.ofNullable(holds.get(holdId));
+        return holdRecordRepository.findById(holdId);
     }
 
+    @Transactional(readOnly = true)
     public List<HoldRecord> getActiveHoldsForCard(String cardId) {
-        List<UUID> ids = cardIndex.get(cardId);
-        if (ids == null) return List.of();
-        return ids.stream()
-                .map(holds::get)
-                .filter(Objects::nonNull)
-                .filter(r -> "ACTIVE".equals(r.getStatus()))
-                .collect(Collectors.toList());
+        return holdRecordRepository.findByCardIdAndStatus(cardId, "ACTIVE");
     }
 
+    @Transactional(readOnly = true)
     public List<HoldRecord> getActiveHoldsForAccount(String accountId) {
-        List<UUID> ids = accountIndex.get(accountId);
-        if (ids == null) return List.of();
-        return ids.stream()
-                .map(holds::get)
-                .filter(Objects::nonNull)
-                .filter(r -> "ACTIVE".equals(r.getStatus()))
-                .collect(Collectors.toList());
+        return holdRecordRepository.findByCardAccountIdAndStatus(accountId, "ACTIVE");
     }
 }

@@ -169,12 +169,35 @@ public class SwitchCore {
 
     public Transaction processIso20022Message(String xmlMessage, String sourceCode) {
         Document doc = iso20022Engine.parse(xmlMessage);
+        String msgType = iso20022Engine.detectMessageType(doc);
         Map<String, String> details = iso20022Engine.extractPaymentDetails(doc);
 
+        return switch (msgType) {
+            case "pacs.008" -> processIso20022CreditTransfer(doc, details, xmlMessage, sourceCode);
+            case "pacs.004" -> processIso20022Return(doc, details, xmlMessage, sourceCode);
+            case "camt.056" -> processIso20022Claim(doc, details, xmlMessage, sourceCode);
+            case "pacs.002" -> processIso20022StatusReport(doc, details, xmlMessage, sourceCode);
+            default -> {
+                log.warn("Unsupported ISO 20022 message type: {}", msgType);
+                Transaction tx = Transaction.builder()
+                        .transactionId(UUID.randomUUID().toString().replace("-", "").substring(0, 30))
+                        .messageType(msgType)
+                        .protocol(Transaction.Protocol.ISO20022)
+                        .status(Transaction.TransactionStatus.REJECTED)
+                        .responseCode("RJCT")
+                        .originalMessage(xmlMessage)
+                        .build();
+                yield transactionRepository.save(tx);
+            }
+        };
+    }
+
+    private Transaction processIso20022CreditTransfer(Document doc, Map<String, String> details,
+                                                       String xmlMessage, String sourceCode) {
         String msgId = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
         String pan = details.getOrDefault("IBAN", "UNKNOWN");
         String amount = details.getOrDefault("IntrBkSttlmAmt", "0");
-        String currency = "EUR";
+        String currency = details.getOrDefault("Ccy", "EUR");
         String merchantId = details.getOrDefault("BICFI", "");
 
         String bin = pan.length() >= 6 ? pan.substring(0, 6) : pan;
@@ -225,31 +248,91 @@ public class SwitchCore {
 
         try {
             Participant destination = routing.getDestinationParticipant();
-
-            String responseXml = messageHandlerService.sendAndReceiveXml(
-                    destination, xmlMessage);
-
+            String responseXml = messageHandlerService.sendAndReceiveXml(destination, xmlMessage);
             Document responseDoc = iso20022Engine.parse(responseXml);
             String status = "ACCP";
-
             transaction.setResponseCode(status);
             transaction.setResponseMessage(responseXml);
             transaction.setStatus("ACCP".equals(status) ?
-                    Transaction.TransactionStatus.COMPLETED :
-                    Transaction.TransactionStatus.FAILED);
+                    Transaction.TransactionStatus.COMPLETED : Transaction.TransactionStatus.FAILED);
             transaction.setResponseAt(OffsetDateTime.now());
-
             if (transaction.getStatus() == Transaction.TransactionStatus.COMPLETED) {
                 postProcessTransaction(transaction, pan, "pacs.008");
             }
-
         } catch (Exception e) {
-            log.error("ISO 20022 transaction failed: {}", e.getMessage());
+            log.error("ISO 20022 credit transfer failed: {}", e.getMessage());
             transaction.setResponseCode("RJCT");
             transaction.setStatus(Transaction.TransactionStatus.FAILED);
             transaction.setResponseAt(OffsetDateTime.now());
         }
+        return transactionRepository.save(transaction);
+    }
 
+    private Transaction processIso20022Return(Document doc, Map<String, String> details,
+                                               String xmlMessage, String sourceCode) {
+        String msgId = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+        String amount = details.getOrDefault("RtrdIntrBkSttlmAmt", "0");
+        Participant source = participantService.findByCode(sourceCode);
+
+        Transaction transaction = Transaction.builder()
+                .transactionId(msgId)
+                .messageType("pacs.004")
+                .protocol(Transaction.Protocol.ISO20022)
+                .amount(new BigDecimal(amount))
+                .sourceParticipant(source)
+                .status(Transaction.TransactionStatus.PENDING)
+                .originalMessage(xmlMessage)
+                .parsedMessage(details.toString())
+                .build();
+        transaction = transactionRepository.save(transaction);
+        transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
+        transaction.setResponseCode("ACCP");
+        transaction.setResponseAt(OffsetDateTime.now());
+        log.info("Payment return processed: msgId={}, amount={}", msgId, amount);
+        return transactionRepository.save(transaction);
+    }
+
+    private Transaction processIso20022Claim(Document doc, Map<String, String> details,
+                                              String xmlMessage, String sourceCode) {
+        String msgId = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+        String amount = details.getOrDefault("ClmAmt", "0");
+        Participant source = participantService.findByCode(sourceCode);
+
+        Transaction transaction = Transaction.builder()
+                .transactionId(msgId)
+                .messageType("camt.056")
+                .protocol(Transaction.Protocol.ISO20022)
+                .amount(new BigDecimal(amount))
+                .sourceParticipant(source)
+                .status(Transaction.TransactionStatus.PENDING)
+                .originalMessage(xmlMessage)
+                .parsedMessage(details.toString())
+                .build();
+        transaction = transactionRepository.save(transaction);
+        transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
+        transaction.setResponseCode("ACCP");
+        transaction.setResponseAt(OffsetDateTime.now());
+        log.info("Claim non-receipt processed: msgId={}, amount={}", msgId, amount);
+        return transactionRepository.save(transaction);
+    }
+
+    private Transaction processIso20022StatusReport(Document doc, Map<String, String> details,
+                                                     String xmlMessage, String sourceCode) {
+        String msgId = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+        Participant source = participantService.findByCode(sourceCode);
+
+        Transaction transaction = Transaction.builder()
+                .transactionId(msgId)
+                .messageType("pacs.002")
+                .protocol(Transaction.Protocol.ISO20022)
+                .sourceParticipant(source)
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .originalMessage(xmlMessage)
+                .parsedMessage(details.toString())
+                .responseCode("ACCP")
+                .build();
+        log.info("Payment status report received: msgId={}, status={}",
+                details.get("OrgnlMsgId"), details.get("GrpSts"));
         return transactionRepository.save(transaction);
     }
 

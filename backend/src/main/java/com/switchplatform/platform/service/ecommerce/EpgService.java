@@ -2,33 +2,33 @@ package com.switchplatform.platform.service.ecommerce;
 
 import com.switchplatform.platform.model.ecommerce.EpgMerchantConfig;
 import com.switchplatform.platform.model.ecommerce.EpgTransaction;
+import com.switchplatform.platform.repository.ecommerce.EpgMerchantConfigRepository;
+import com.switchplatform.platform.repository.ecommerce.EpgTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class EpgService {
 
-    private final Map<UUID, EpgTransaction> transactions = new ConcurrentHashMap<>();
-    private final Map<UUID, EpgMerchantConfig> merchantConfigs = new ConcurrentHashMap<>();
+    private final EpgTransactionRepository epgTransactionRepository;
+    private final EpgMerchantConfigRepository epgMerchantConfigRepository;
 
+    @Transactional
     public EpgTransaction initiateTransaction(UUID merchantId, String merchantTxnId,
                                                 BigDecimal amount, String currencyCode) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Amount must be positive");
         }
 
-        boolean exists = transactions.values().stream()
-                .anyMatch(t -> merchantId.equals(t.getMerchantId())
-                        && merchantTxnId.equals(t.getMerchantTransactionId()));
-        if (exists) {
+        if (epgTransactionRepository.findByMerchantIdAndMerchantTransactionId(merchantId, merchantTxnId).isPresent()) {
             throw new IllegalArgumentException("Duplicate merchant transaction ID: " + merchantTxnId);
         }
 
@@ -47,31 +47,31 @@ public class EpgService {
             txn.setId(UUID.randomUUID());
         }
 
-        transactions.put(txn.getId(), txn);
+        epgTransactionRepository.save(txn);
         log.info("EPG transaction initiated: id={}, merchant={}, txn={}, amount={}",
                 txn.getId(), merchantId, merchantTxnId, amount);
         return txn;
     }
 
+    @Transactional(readOnly = true)
     public EpgTransaction getTransaction(UUID txnId) {
-        return transactions.get(txnId);
+        return epgTransactionRepository.findById(txnId).orElse(null);
     }
 
+    @Transactional(readOnly = true)
     public EpgTransaction getByMerchantTransaction(UUID merchantId, String merchantTxnId) {
-        return transactions.values().stream()
-                .filter(t -> merchantId.equals(t.getMerchantId())
-                        && merchantTxnId.equals(t.getMerchantTransactionId()))
-                .findFirst()
+        return epgTransactionRepository.findByMerchantIdAndMerchantTransactionId(merchantId, merchantTxnId)
                 .orElse(null);
     }
 
+    @Transactional(readOnly = true)
     public List<EpgTransaction> getTransactionsByMerchant(UUID merchantId) {
-        return transactions.values().stream()
-                .filter(t -> merchantId.equals(t.getMerchantId()))
+        return epgTransactionRepository.findByMerchantId(merchantId).stream()
                 .sorted(Comparator.comparing(EpgTransaction::getCreatedAt).reversed())
                 .toList();
     }
 
+    @Transactional
     public EpgTransaction authorizeTransaction(UUID txnId, String cavv, String eci) {
         EpgTransaction txn = getOrThrow(txnId);
         txn.setStatus(EpgTransaction.Status.AUTHORIZED);
@@ -82,6 +82,7 @@ public class EpgService {
         return txn;
     }
 
+    @Transactional
     public EpgTransaction captureTransaction(UUID txnId) {
         EpgTransaction txn = getOrThrow(txnId);
         if (txn.getStatus() != EpgTransaction.Status.AUTHORIZED) {
@@ -93,6 +94,7 @@ public class EpgService {
         return txn;
     }
 
+    @Transactional
     public EpgTransaction failTransaction(UUID txnId, String errorCode, String errorDescription) {
         EpgTransaction txn = getOrThrow(txnId);
         txn.setStatus(EpgTransaction.Status.FAILED);
@@ -102,6 +104,7 @@ public class EpgService {
         return txn;
     }
 
+    @Transactional
     public EpgTransaction refundTransaction(UUID txnId) {
         EpgTransaction txn = getOrThrow(txnId);
         if (txn.getStatus() != EpgTransaction.Status.CAPTURED) {
@@ -112,6 +115,7 @@ public class EpgService {
         return txn;
     }
 
+    @Transactional
     public EpgTransaction setThreeDsStatus(UUID txnId, Boolean required, UUID acsAuthId) {
         EpgTransaction txn = getOrThrow(txnId);
         txn.setThreeDsRequired(required);
@@ -120,6 +124,7 @@ public class EpgService {
         return txn;
     }
 
+    @Transactional
     public EpgMerchantConfig configureMerchant(UUID merchantId, String apiKeyHash, String apiSecretHash) {
         EpgMerchantConfig config = EpgMerchantConfig.builder()
                 .merchantId(merchantId)
@@ -134,22 +139,17 @@ public class EpgService {
             config.setId(UUID.randomUUID());
         }
 
-        merchantConfigs.put(config.getId(), config);
+        epgMerchantConfigRepository.save(config);
         return config;
     }
 
+    @Transactional(readOnly = true)
     public EpgMerchantConfig getMerchantConfig(UUID merchantId) {
-        return merchantConfigs.values().stream()
-                .filter(c -> merchantId.equals(c.getMerchantId()))
-                .findFirst()
-                .orElse(null);
+        return epgMerchantConfigRepository.findByMerchantId(merchantId).orElse(null);
     }
 
     private EpgTransaction getOrThrow(UUID txnId) {
-        EpgTransaction txn = transactions.get(txnId);
-        if (txn == null) {
-            throw new IllegalArgumentException("Transaction not found: " + txnId);
-        }
-        return txn;
+        return epgTransactionRepository.findById(txnId)
+                .orElseThrow(() -> new IllegalArgumentException("Transaction not found: " + txnId));
     }
 }

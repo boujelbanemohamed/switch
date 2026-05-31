@@ -2,6 +2,7 @@ package com.switchplatform.platform.service.issuing;
 
 import com.switchplatform.platform.model.issuing.Card;
 import com.switchplatform.platform.model.issuing.Cardholder;
+import com.switchplatform.platform.repository.issuing.CardholderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -9,8 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -18,8 +17,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class CardholderService {
 
-    private final ConcurrentMap<UUID, Cardholder> cardholderStore = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, UUID> emailIndex = new ConcurrentHashMap<>();
+    private final CardholderRepository cardholderRepository;
     private final CardService cardService;
 
     @Transactional
@@ -27,7 +25,7 @@ public class CardholderService {
         if (cardholder.getId() == null) {
             cardholder.setId(UUID.randomUUID());
         }
-        if (cardholder.getEmail() != null && emailIndex.containsKey(cardholder.getEmail())) {
+        if (cardholder.getEmail() != null && cardholderRepository.existsByEmail(cardholder.getEmail())) {
             throw new IllegalArgumentException("Email already exists: " + cardholder.getEmail());
         }
         cardholder.setStatus(Cardholder.CardholderStatus.ACTIVE);
@@ -35,28 +33,25 @@ public class CardholderService {
         cardholder.setCreatedAt(OffsetDateTime.now());
         cardholder.setUpdatedAt(OffsetDateTime.now());
 
-        cardholderStore.put(cardholder.getId(), cardholder);
-        if (cardholder.getEmail() != null) {
-            emailIndex.put(cardholder.getEmail(), cardholder.getId());
-        }
-        log.info("Created cardholder {} {} {}", cardholder.getId(), cardholder.getFirstName(), cardholder.getLastName());
-        return cardholder;
+        Cardholder saved = cardholderRepository.save(cardholder);
+        log.info("Created cardholder {} {} {}", saved.getId(), saved.getFirstName(), saved.getLastName());
+        return saved;
     }
 
     @Transactional(readOnly = true)
     public Optional<Cardholder> getCardholder(UUID id) {
-        return Optional.ofNullable(cardholderStore.get(id));
+        return cardholderRepository.findById(id);
     }
 
     @Transactional(readOnly = true)
     public Optional<Cardholder> getCardholderByEmail(String email) {
-        return Optional.ofNullable(emailIndex.get(email))
-                .map(cardholderStore::get);
+        return cardholderRepository.findByEmail(email);
     }
 
     @Transactional
     public Cardholder updateCardholder(UUID id, Cardholder update) {
-        Cardholder existing = getCardholderOrThrow(id);
+        Cardholder existing = cardholderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Cardholder not found: " + id));
         if (update.getTitle() != null) existing.setTitle(update.getTitle());
         if (update.getFirstName() != null) existing.setFirstName(update.getFirstName());
         if (update.getLastName() != null) existing.setLastName(update.getLastName());
@@ -73,41 +68,44 @@ public class CardholderService {
         if (update.getIdDocumentNumber() != null) existing.setIdDocumentNumber(update.getIdDocumentNumber());
 
         if (update.getEmail() != null && !update.getEmail().equals(existing.getEmail())) {
-            if (emailIndex.containsKey(update.getEmail())) {
+            if (cardholderRepository.existsByEmail(update.getEmail())) {
                 throw new IllegalArgumentException("Email already in use: " + update.getEmail());
             }
-            emailIndex.remove(existing.getEmail());
-            emailIndex.put(update.getEmail(), existing.getId());
             existing.setEmail(update.getEmail());
         }
 
         existing.setUpdatedAt(OffsetDateTime.now());
+        Cardholder saved = cardholderRepository.save(existing);
         log.info("Updated cardholder {}", id);
-        return existing;
+        return saved;
     }
 
     @Transactional
     public Cardholder updateKycLevel(UUID id, int level) {
-        Cardholder cardholder = getCardholderOrThrow(id);
+        Cardholder cardholder = cardholderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Cardholder not found: " + id));
         String newLevel = String.valueOf(level);
         cardholder.setKycLevel(newLevel);
         cardholder.setUpdatedAt(OffsetDateTime.now());
+        Cardholder saved = cardholderRepository.save(cardholder);
         log.info("Updated KYC level for cardholder {} to {}", id, level);
-        return cardholder;
+        return saved;
     }
 
     @Transactional
     public Cardholder blockCardholder(UUID id) {
-        Cardholder cardholder = getCardholderOrThrow(id);
+        Cardholder cardholder = cardholderRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Cardholder not found: " + id));
         cardholder.setStatus(Cardholder.CardholderStatus.BLOCKED);
         cardholder.setUpdatedAt(OffsetDateTime.now());
+        Cardholder saved = cardholderRepository.save(cardholder);
         log.info("Blocked cardholder {}", id);
 
         // Block all cards for this cardholder
         getCardsForCardholder(id).forEach(cardId ->
                 cardService.blockCard(cardId, "CARDHOLDER_BLOCKED"));
         log.info("Blocked all cards for cardholder {}", id);
-        return cardholder;
+        return saved;
     }
 
     @Transactional(readOnly = true)
@@ -115,13 +113,5 @@ public class CardholderService {
         return cardService.getCardsByCardholderId(cardholderId).stream()
                 .map(Card::getId)
                 .collect(Collectors.toList());
-    }
-
-    private Cardholder getCardholderOrThrow(UUID id) {
-        Cardholder cardholder = cardholderStore.get(id);
-        if (cardholder == null) {
-            throw new IllegalArgumentException("Cardholder not found: " + id);
-        }
-        return cardholder;
     }
 }

@@ -9,6 +9,7 @@ import com.switchplatform.platform.model.authorization.CardLimitUsage;
 import com.switchplatform.platform.model.authorization.VelocityCheck;
 import com.switchplatform.platform.model.issuing.Card;
 import com.switchplatform.platform.model.issuing.CardAccount;
+import com.switchplatform.platform.repository.authorization.CardLimitUsageRepository;
 import com.switchplatform.platform.service.fraud.FraudEngine;
 import com.switchplatform.platform.service.issuing.CardAccountService;
 import com.switchplatform.platform.service.issuing.CardService;
@@ -33,13 +34,13 @@ public class AuthorizationEngine {
 
     private final Map<UUID, AuthRule> rules = new ConcurrentHashMap<>();
     private final List<AuthDecision> decisions = new CopyOnWriteArrayList<>();
-    private final Map<UUID, List<CardLimitUsage>> cardLimits = new ConcurrentHashMap<>();
     private final Map<UUID, List<VelocityCheck>> velocityChecks = new ConcurrentHashMap<>();
 
     private final FraudEngine fraudEngine;
     private final CardAccountService cardAccountService;
     private final CardService cardService;
     private final HoldService holdService;
+    private final CardLimitUsageRepository cardLimitUsageRepository;
 
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         long start = System.currentTimeMillis();
@@ -245,14 +246,12 @@ public class AuthorizationEngine {
             }
         }
 
-        // Update limit usage
-        if (request.getAmount() != null) {
-            List<CardLimitUsage> limits = cardLimits.computeIfAbsent(
-                    request.getCardId(), k -> new ArrayList<>());
+        // Update limit usage in DB
+        if (request.getAmount() != null && request.getCardId() != null) {
+            List<CardLimitUsage> limits = cardLimitUsageRepository.findByCardId(request.getCardId());
             for (CardLimitUsage limit : limits) {
-                BigDecimal used = limit.getUsedAmount() != null ? limit.getUsedAmount() : BigDecimal.ZERO;
-                limit.setUsedAmount(used.add(request.getAmount()));
-                limit.setCountUsed((limit.getCountUsed() != null ? limit.getCountUsed() : 0) + 1);
+                limit.incrementUsage(request.getAmount());
+                cardLimitUsageRepository.save(limit);
                 decision.setLimitUsed(limit.getUsedAmount());
                 decision.setLimitMax(limit.getLimitAmount());
                 decision.setVelocityUsed(limit.getCountUsed() != null ? limit.getCountUsed() : 0);
@@ -296,8 +295,9 @@ public class AuthorizationEngine {
     }
 
     private String checkCardLimits(AuthorizationRequest request) {
-        List<CardLimitUsage> limits = cardLimits.get(request.getCardId());
-        if (limits == null) return null;
+        if (request.getCardId() == null) return null;
+        List<CardLimitUsage> limits = cardLimitUsageRepository.findByCardId(request.getCardId());
+        if (limits.isEmpty()) return null;
 
         for (CardLimitUsage limit : limits) {
             if (limit.getLimitAmount() == null) continue;

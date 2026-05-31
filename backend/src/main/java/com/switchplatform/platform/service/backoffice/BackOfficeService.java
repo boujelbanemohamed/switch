@@ -3,79 +3,76 @@ package com.switchplatform.platform.service.backoffice;
 import com.switchplatform.platform.model.backoffice.AuditLog;
 import com.switchplatform.platform.model.backoffice.MonitoringEvent;
 import com.switchplatform.platform.model.backoffice.Report;
+import com.switchplatform.platform.repository.backoffice.AuditLogRepository;
+import com.switchplatform.platform.repository.backoffice.MonitoringEventRepository;
+import com.switchplatform.platform.repository.backoffice.ReportRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class BackOfficeService {
 
-    private final Map<Long, AuditLog> auditLogs = new ConcurrentHashMap<>();
-    private final Map<UUID, Report> reports = new ConcurrentHashMap<>();
-    private final Map<Long, MonitoringEvent> monitoringEvents = new ConcurrentHashMap<>();
-    private final AtomicLong auditIdSeq = new AtomicLong(0);
-    private final AtomicLong eventIdSeq = new AtomicLong(0);
+    private final AuditLogRepository auditLogRepository;
+    private final ReportRepository reportRepository;
+    private final MonitoringEventRepository monitoringEventRepository;
 
     public AuditLog logAudit(AuditLog logEntry) {
-        long id = auditIdSeq.incrementAndGet();
-        logEntry.setId(id);
         if (logEntry.getStatus() == null) {
             logEntry.setStatus(AuditLog.Status.SUCCESS);
         }
-        logEntry.setCreatedAt(OffsetDateTime.now());
-        auditLogs.put(id, logEntry);
-        log.info("Audit log created: {} {} on {}", logEntry.getAction(),
-                logEntry.getResourceType(), logEntry.getCreatedAt());
-        return logEntry;
+        AuditLog saved = auditLogRepository.save(logEntry);
+        log.info("Audit log created: {} {} on {}", saved.getAction(),
+                saved.getResourceType(), saved.getCreatedAt());
+        return saved;
     }
 
     public List<AuditLog> getAuditLogs(String resourceType, String resourceId, int limit) {
-        return auditLogs.values().stream()
+        return auditLogRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream()
                 .filter(l -> (resourceType == null || resourceType.equals(l.getResourceType()))
                         && (resourceId == null || resourceId.equals(l.getResourceId())))
-                .sorted(Comparator.comparing(AuditLog::getCreatedAt).reversed())
                 .limit(limit)
                 .collect(Collectors.toList());
     }
 
     public List<AuditLog> getAuditLogsByUser(String userId, int limit) {
-        return auditLogs.values().stream()
+        return auditLogRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream()
                 .filter(l -> userId.equals(l.getUserId()))
-                .sorted(Comparator.comparing(AuditLog::getCreatedAt).reversed())
                 .limit(limit)
                 .collect(Collectors.toList());
     }
 
     public Report createReport(Report report) {
         report.setStatus(Report.Status.PENDING);
-        report.setCreatedAt(OffsetDateTime.now());
-        reports.put(report.getId(), report);
-        log.info("Report created: {} ({})", report.getName(), report.getReportType());
-        return report;
+        Report saved = reportRepository.save(report);
+        log.info("Report created: {} ({})", saved.getName(), saved.getReportType());
+        return saved;
     }
 
     public Report generateReport(UUID reportId) {
-        Report report = reports.get(reportId);
-        if (report == null) {
-            throw new IllegalArgumentException("Report not found: " + reportId);
-        }
+        Report report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new IllegalArgumentException("Report not found: " + reportId));
         report.setStatus(Report.Status.COMPLETED);
         report.setGeneratedAt(OffsetDateTime.now());
+        Report saved = reportRepository.save(report);
         log.info("Report generated: {}", reportId);
-        return report;
+        return saved;
     }
 
     public List<Report> getReportsByType(String type) {
-        return reports.values().stream()
-                .filter(r -> type.equals(r.getReportType().name()))
+        Report.ReportType reportType = Report.ReportType.valueOf(type);
+        return reportRepository.findByReportType(reportType).stream()
                 .sorted(Comparator.comparing(Report::getCreatedAt).reversed())
                 .collect(Collectors.toList());
     }
@@ -91,41 +88,43 @@ public class BackOfficeService {
                 .metricValue(metricValue)
                 .thresholdValue(threshold)
                 .acknowledged(false)
-                .createdAt(OffsetDateTime.now())
                 .build();
 
-        long id = eventIdSeq.incrementAndGet();
-        event.setId(id);
-        monitoringEvents.put(id, event);
+        MonitoringEvent saved = monitoringEventRepository.save(event);
         log.info("Monitoring event created: {} {} from {}", eventType, severity, source);
-        return event;
+        return saved;
     }
 
     public MonitoringEvent acknowledgeEvent(Long eventId, String acknowledgedBy) {
-        MonitoringEvent event = monitoringEvents.get(eventId);
-        if (event == null) {
-            throw new IllegalArgumentException("Monitoring event not found: " + eventId);
-        }
+        MonitoringEvent event = monitoringEventRepository.findById(eventId)
+                .orElseThrow(() -> new IllegalArgumentException("Monitoring event not found: " + eventId));
         event.setAcknowledged(true);
         event.setAcknowledgedBy(acknowledgedBy);
         event.setAcknowledgedAt(OffsetDateTime.now());
+        MonitoringEvent saved = monitoringEventRepository.save(event);
         log.info("Monitoring event {} acknowledged by {}", eventId, acknowledgedBy);
-        return event;
+        return saved;
     }
 
     public List<MonitoringEvent> getActiveAlerts() {
-        return monitoringEvents.values().stream()
+        List<MonitoringEvent> critical = monitoringEventRepository
+                .findBySeverityOrderByCreatedAtDesc(MonitoringEvent.Severity.CRITICAL,
+                        PageRequest.of(0, Integer.MAX_VALUE)).getContent();
+        List<MonitoringEvent> error = monitoringEventRepository
+                .findBySeverityOrderByCreatedAtDesc(MonitoringEvent.Severity.ERROR,
+                        PageRequest.of(0, Integer.MAX_VALUE)).getContent();
+        return Stream.concat(critical.stream(), error.stream())
                 .filter(e -> !e.getAcknowledged())
-                .filter(e -> e.getSeverity() == MonitoringEvent.Severity.CRITICAL
-                        || e.getSeverity() == MonitoringEvent.Severity.ERROR)
                 .sorted(Comparator.comparing(MonitoringEvent::getCreatedAt).reversed())
                 .collect(Collectors.toList());
     }
 
     public Map<MonitoringEvent.Severity, Long> getMonitoringStats(long minutes) {
         OffsetDateTime cutoff = OffsetDateTime.now().minusMinutes(minutes);
-        return monitoringEvents.values().stream()
-                .filter(e -> e.getCreatedAt().isAfter(cutoff))
+        List<MonitoringEvent> events = monitoringEventRepository
+                .findByCreatedAtBetweenOrderByCreatedAtDesc(cutoff, OffsetDateTime.now(),
+                        PageRequest.of(0, Integer.MAX_VALUE)).getContent();
+        return events.stream()
                 .collect(Collectors.groupingBy(
                         MonitoringEvent::getSeverity, Collectors.counting()));
     }

@@ -19,8 +19,13 @@ import java.util.*;
 public class Iso20022Engine {
 
     private static final String NS_PACS = "urn:iso:std:iso:20022:tech:xsd:pacs.008.001.12";
+    private static final String NS_PACS_002 = "urn:iso:std:iso:20022:tech:xsd:pacs.002.001.14";
+    private static final String NS_PACS_004 = "urn:iso:std:iso:20022:tech:xsd:pacs.004.001.12";
     private static final String NS_PAIN = "urn:iso:std:iso:20022:tech:xsd:pain.001.001.12";
     private static final String NS_CAMT = "urn:iso:std:iso:20022:tech:xsd:camt.053.001.10";
+    private static final String NS_CAMT_052 = "urn:iso:std:iso:20022:tech:xsd:camt.052.001.10";
+    private static final String NS_CAMT_054 = "urn:iso:std:iso:20022:tech:xsd:camt.054.001.10";
+    private static final String NS_CAMT_056 = "urn:iso:std:iso:20022:tech:xsd:camt.056.001.10";
 
     private final DocumentBuilder documentBuilder;
     private final Transformer transformer;
@@ -137,7 +142,7 @@ public class Iso20022Engine {
 
     public Document createPaymentStatusReport(String msgId, String originalMsgId, String status) {
         Document doc = documentBuilder.newDocument();
-        Element root = doc.createElementNS(NS_PACS, "Document");
+        Element root = doc.createElementNS(NS_PACS_002, "Document");
         doc.appendChild(root);
 
         Element fitfToFIPmtStsRpt = doc.createElement("FIToFIPmtStsRpt");
@@ -157,24 +162,128 @@ public class Iso20022Engine {
         return doc;
     }
 
-    public Map<String, String> extractPaymentDetails(Document doc) {
-        Map<String, String> result = new HashMap<>();
+    // pacs.004: Payment Return
+    public Document createPaymentReturn(String msgId, String originalMsgId,
+                                         BigDecimal returnAmount, String currency,
+                                         String returnReason, String additionalInfo) {
+        Document doc = documentBuilder.newDocument();
+        Element root = doc.createElementNS(NS_PACS_004, "Document");
+        doc.appendChild(root);
+
+        Element fitfToFIPmtRtr = doc.createElement("FIToFIPmtRtr");
+        root.appendChild(fitfToFIPmtRtr);
+
+        Element grpHdr = doc.createElement("GrpHdr");
+        fitfToFIPmtRtr.appendChild(grpHdr);
+        appendElement(doc, grpHdr, "MsgId", msgId);
+        appendElement(doc, grpHdr, "CreDtTm", OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        appendElement(doc, grpHdr, "NbOfTxs", "1");
+
+        Element rtrInf = doc.createElement("RtrInf");
+        fitfToFIPmtRtr.appendChild(rtrInf);
+
+        Element orgnlGrpInf = doc.createElement("OrgnlGrpInf");
+        rtrInf.appendChild(orgnlGrpInf);
+        appendElement(doc, orgnlGrpInf, "OrgnlMsgId", originalMsgId);
+
+        Element txInf = doc.createElement("TxInf");
+        rtrInf.appendChild(txInf);
+
+        Element rtrdAmt = doc.createElement("RtrdIntrBkSttlmAmt");
+        rtrdAmt.setAttribute("Ccy", currency);
+        rtrdAmt.setTextContent(formatAmount(returnAmount));
+        txInf.appendChild(rtrdAmt);
+
+        Element rtrRsnInf = doc.createElement("RtrRsnInf");
+        txInf.appendChild(rtrRsnInf);
+        Element rsn = doc.createElement("Rsn");
+        rtrRsnInf.appendChild(rsn);
+        appendElement(doc, rsn, "Cd", returnReason);
+        if (additionalInfo != null) {
+            appendElement(doc, rtrRsnInf, "AddtlInf", additionalInfo);
+        }
+
+        return doc;
+    }
+
+    // camt.056: Claim Non-Receipt (FIToFIPmtClm)
+    public Document createClaimNonReceipt(String msgId, String originalMsgId,
+                                           BigDecimal claimedAmount, String currency,
+                                           String claimReason) {
+        Document doc = documentBuilder.newDocument();
+        Element root = doc.createElementNS(NS_CAMT_056, "Document");
+        doc.appendChild(root);
+
+        Element fitfToFIPmtClm = doc.createElement("FIToFIPmtClm");
+        root.appendChild(fitfToFIPmtClm);
+
+        Element grpHdr = doc.createElement("GrpHdr");
+        fitfToFIPmtClm.appendChild(grpHdr);
+        appendElement(doc, grpHdr, "MsgId", msgId);
+        appendElement(doc, grpHdr, "CreDtTm", OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+
+        Element clmInf = doc.createElement("ClmInf");
+        fitfToFIPmtClm.appendChild(clmInf);
+
+        Element orgnlGrpInf = doc.createElement("OrgnlGrpInf");
+        clmInf.appendChild(orgnlGrpInf);
+        appendElement(doc, orgnlGrpInf, "OrgnlMsgId", originalMsgId);
+
+        Element clmAmt = doc.createElement("ClmAmt");
+        clmAmt.setAttribute("Ccy", currency);
+        clmAmt.setTextContent(formatAmount(claimedAmount));
+        clmInf.appendChild(clmAmt);
+
+        appendElement(doc, clmInf, "ClmRsn", claimReason);
+
+        return doc;
+    }
+
+    public String detectMessageType(Document doc) {
         try {
             Element root = doc.getDocumentElement();
             NodeList children = root.getChildNodes();
             for (int i = 0; i < children.getLength(); i++) {
                 Node child = children.item(i);
                 if (child.getNodeType() == Node.ELEMENT_NODE) {
-                    if (child.getNodeName().equals("FIToFICstmrCdtTrf")) {
-                        NodeList txChildren = child.getChildNodes();
-                        for (int j = 0; j < txChildren.getLength(); j++) {
-                            Node txChild = txChildren.item(j);
-                            if (txChild.getNodeType() == Node.ELEMENT_NODE
-                                    && txChild.getNodeName().equals("CdtTrfTxInf")) {
-                                result.put("transactionType", "CREDIT_TRANSFER");
-                                extractFields(txChild, result);
-                            }
-                        }
+                    String name = child.getLocalName() != null ? child.getLocalName() : child.getNodeName();
+                    return switch (name) {
+                        case "FIToFICstmrCdtTrf" -> "pacs.008";
+                        case "FIToFIPmtStsRpt" -> "pacs.002";
+                        case "FIToFIPmtRtr" -> "pacs.004";
+                        case "BkToCstmrStmt" -> "camt.053";
+                        case "BkToCstmrAcctRpt" -> "camt.052";
+                        case "BkToCstmrDbtCdtNtfctn" -> "camt.054";
+                        case "FIToFIPmtClm" -> "camt.056";
+                        default -> name;
+                    };
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to detect message type: {}", e.getMessage());
+        }
+        return "UNKNOWN";
+    }
+
+    public Map<String, String> extractPaymentDetails(Document doc) {
+        Map<String, String> result = new HashMap<>();
+        try {
+            String msgType = detectMessageType(doc);
+            result.put("messageType", msgType);
+            Element root = doc.getDocumentElement();
+            NodeList children = root.getChildNodes();
+            for (int i = 0; i < children.getLength(); i++) {
+                Node child = children.item(i);
+                if (child.getNodeType() == Node.ELEMENT_NODE) {
+                    String name = child.getLocalName() != null ? child.getLocalName() : child.getNodeName();
+                    switch (name) {
+                        case "FIToFICstmrCdtTrf" -> extractCreditTransferDetails(child, result);
+                        case "FIToFIPmtRtr" -> extractPaymentReturnDetails(child, result);
+                        case "FIToFIPmtStsRpt" -> extractStatusReportDetails(child, result);
+                        case "FIToFIPmtClm" -> extractClaimDetails(child, result);
+                        case "BkToCstmrStmt", "BkToCstmrAcctRpt", "BkToCstmrDbtCdtNtfctn" ->
+                                extractFields(child, result);
+                        default -> extractFields(child, result);
                     }
                 }
             }
@@ -182,6 +291,33 @@ public class Iso20022Engine {
             log.warn("Failed to extract payment details: {}", e.getMessage());
         }
         return result;
+    }
+
+    private void extractCreditTransferDetails(Node node, Map<String, String> result) {
+        result.put("transactionType", "CREDIT_TRANSFER");
+        NodeList children = node.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (child.getNodeType() == Node.ELEMENT_NODE
+                    && "CdtTrfTxInf".equals(child.getLocalName() != null ? child.getLocalName() : child.getNodeName())) {
+                extractFields(child, result);
+            }
+        }
+    }
+
+    private void extractPaymentReturnDetails(Node node, Map<String, String> result) {
+        result.put("transactionType", "PAYMENT_RETURN");
+        extractFields(node, result);
+    }
+
+    private void extractStatusReportDetails(Node node, Map<String, String> result) {
+        result.put("transactionType", "STATUS_REPORT");
+        extractFields(node, result);
+    }
+
+    private void extractClaimDetails(Node node, Map<String, String> result) {
+        result.put("transactionType", "CLAIM_NON_RECEIPT");
+        extractFields(node, result);
     }
 
     private void extractFields(Node parent, Map<String, String> result) {

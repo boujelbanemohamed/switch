@@ -6,6 +6,8 @@ import com.switchplatform.platform.model.acquiring.MerchantSettlement;
 import com.switchplatform.platform.model.acquiring.Terminal;
 import com.switchplatform.platform.repository.acquiring.MdrPlanRepository;
 import com.switchplatform.platform.repository.acquiring.MerchantRepository;
+import com.switchplatform.platform.repository.acquiring.MerchantSettlementRepository;
+import com.switchplatform.platform.repository.acquiring.TerminalRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -29,11 +31,15 @@ class AcquiringServiceTest {
     private MdrPlanRepository mdrPlanRepository;
     private final java.util.Map<java.util.UUID, Merchant> merchantStore = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<java.util.UUID, MdrPlan> mdrPlanStore = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<java.util.UUID, Terminal> terminalStore = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<java.util.UUID, MerchantSettlement> settlementStore = new java.util.concurrent.ConcurrentHashMap<>();
 
     @BeforeEach
     void setUp() {
         merchantStore.clear();
         mdrPlanStore.clear();
+        terminalStore.clear();
+        settlementStore.clear();
         merchantRepository = mock(MerchantRepository.class);
         mdrPlanRepository = mock(MdrPlanRepository.class);
         when(merchantRepository.existsByMerchantId(any())).thenAnswer(inv -> {
@@ -72,9 +78,50 @@ class AcquiringServiceTest {
                                     && (p.getCardType() == null || p.getCardType().equalsIgnoreCase(type)))
                             .findFirst();
                 });
+        TerminalRepository terminalRepository = mock(TerminalRepository.class);
+        MerchantSettlementRepository settlementRepository = mock(MerchantSettlementRepository.class);
+
+        when(terminalRepository.existsByTerminalId(any())).thenAnswer(inv -> {
+            String tid = inv.getArgument(0);
+            return terminalStore.values().stream()
+                    .anyMatch(t -> tid.equals(t.getTerminalId()));
+        });
+        when(terminalRepository.save(any())).thenAnswer(inv -> {
+            Terminal t = inv.getArgument(0);
+            if (t.getId() == null) t.setId(java.util.UUID.randomUUID());
+            terminalStore.put(t.getId(), t);
+            return t;
+        });
+        when(terminalRepository.findById(any())).thenAnswer(inv ->
+                java.util.Optional.ofNullable(terminalStore.get(inv.getArgument(0))));
+        when(terminalRepository.findByTerminalId(any())).thenAnswer(inv -> {
+            String tid = inv.getArgument(0);
+            return terminalStore.values().stream()
+                    .filter(t -> tid.equals(t.getTerminalId())).findFirst();
+        });
+        when(terminalRepository.findByMerchantId(any())).thenAnswer(inv -> {
+            java.util.UUID mid = inv.getArgument(0);
+            return terminalStore.values().stream()
+                    .filter(t -> mid.equals(t.getMerchantId())).toList();
+        });
+
+        when(settlementRepository.save(any())).thenAnswer(inv -> {
+            MerchantSettlement s = inv.getArgument(0);
+            if (s.getId() == null) s.setId(java.util.UUID.randomUUID());
+            settlementStore.put(s.getId(), s);
+            return s;
+        });
+        when(settlementRepository.findById(any())).thenAnswer(inv ->
+                java.util.Optional.ofNullable(settlementStore.get(inv.getArgument(0))));
+        when(settlementRepository.findByMerchantId(any())).thenAnswer(inv -> {
+            java.util.UUID mid = inv.getArgument(0);
+            return settlementStore.values().stream()
+                    .filter(s -> mid.equals(s.getMerchantId())).toList();
+        });
+
         merchantService = new MerchantService(merchantRepository, mdrPlanRepository);
-        terminalService = new TerminalService();
-        settlementService = new MerchantSettlementService();
+        terminalService = new TerminalService(terminalRepository);
+        settlementService = new MerchantSettlementService(settlementRepository);
     }
 
     @Test

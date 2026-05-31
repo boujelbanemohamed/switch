@@ -2,22 +2,75 @@ package com.switchplatform.platform.service.ecommerce;
 
 import com.switchplatform.platform.model.ecommerce.EpgMerchantConfig;
 import com.switchplatform.platform.model.ecommerce.EpgTransaction;
+import com.switchplatform.platform.repository.ecommerce.EpgMerchantConfigRepository;
+import com.switchplatform.platform.repository.ecommerce.EpgTransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class EpgServiceTest {
 
     private EpgService epgService;
+    private final ConcurrentHashMap<UUID, EpgTransaction> txnStore = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, EpgMerchantConfig> configStore = new ConcurrentHashMap<>();
 
     @BeforeEach
     void setUp() {
-        epgService = new EpgService();
+        txnStore.clear();
+        configStore.clear();
+
+        EpgTransactionRepository epgTransactionRepository = mock(EpgTransactionRepository.class);
+        EpgMerchantConfigRepository epgMerchantConfigRepository = mock(EpgMerchantConfigRepository.class);
+
+        when(epgTransactionRepository.save(any())).thenAnswer(inv -> {
+            EpgTransaction t = inv.getArgument(0);
+            if (t.getId() == null) t.setId(UUID.randomUUID());
+            txnStore.put(t.getId(), t);
+            return t;
+        });
+        when(epgTransactionRepository.findById(any())).thenAnswer(inv ->
+                java.util.Optional.ofNullable(txnStore.get(inv.getArgument(0))));
+        when(epgTransactionRepository.findByMerchantIdAndMerchantTransactionId(any(), any()))
+                .thenAnswer(inv -> {
+                    UUID merchantId = inv.getArgument(0);
+                    String merchantTxnId = inv.getArgument(1);
+                    return txnStore.values().stream()
+                            .filter(t -> merchantId.equals(t.getMerchantId())
+                                    && merchantTxnId.equals(t.getMerchantTransactionId()))
+                            .findFirst();
+                });
+        when(epgTransactionRepository.findByMerchantId(any())).thenAnswer(inv -> {
+            UUID merchantId = inv.getArgument(0);
+            return txnStore.values().stream()
+                    .filter(t -> merchantId.equals(t.getMerchantId()))
+                    .sorted(Comparator.comparing(EpgTransaction::getCreatedAt).reversed())
+                    .toList();
+        });
+
+        when(epgMerchantConfigRepository.save(any())).thenAnswer(inv -> {
+            EpgMerchantConfig c = inv.getArgument(0);
+            if (c.getId() == null) c.setId(UUID.randomUUID());
+            configStore.put(c.getId(), c);
+            return c;
+        });
+        when(epgMerchantConfigRepository.findByMerchantId(any())).thenAnswer(inv -> {
+            UUID merchantId = inv.getArgument(0);
+            return configStore.values().stream()
+                    .filter(c -> merchantId.equals(c.getMerchantId()))
+                    .findFirst();
+        });
+
+        epgService = new EpgService(epgTransactionRepository, epgMerchantConfigRepository);
     }
 
     @Test

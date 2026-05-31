@@ -143,14 +143,16 @@ class Iso20022EngineTest {
     }
 
     @Test
-    void shouldReturnEmptyForNonPaymentDocument() {
+    void shouldDetectMessageTypeForNonPaymentDocument() {
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                 + "<Document xmlns=\"urn:iso:std:iso:20022:tech:xsd:camt.053.001.10\">"
                 + "<BkToCstmrStmt><Stmt><Id>STMT001</Id></Stmt></BkToCstmrStmt>"
                 + "</Document>";
         Document doc = engine.parse(xml);
+        assertEquals("camt.053", engine.detectMessageType(doc));
         Map<String, String> details = engine.extractPaymentDetails(doc);
-        assertTrue(details.isEmpty());
+        assertFalse(details.isEmpty());
+        assertEquals("camt.053", details.get("messageType"));
     }
 
     @Test

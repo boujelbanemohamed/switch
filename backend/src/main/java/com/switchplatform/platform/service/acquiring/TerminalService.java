@@ -1,31 +1,30 @@
 package com.switchplatform.platform.service.acquiring;
 
 import com.switchplatform.platform.model.acquiring.Terminal;
+import com.switchplatform.platform.repository.acquiring.TerminalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class TerminalService {
 
-    private final ConcurrentMap<UUID, Terminal> terminalStore = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, UUID> terminalIdIndex = new ConcurrentHashMap<>();
+    private final TerminalRepository terminalRepository;
 
     @Transactional
     public Terminal registerTerminal(Terminal terminal) {
         if (terminal.getTerminalId() == null || terminal.getTerminalId().isBlank()) {
             throw new IllegalArgumentException("terminalId is required");
         }
-        if (terminalIdIndex.containsKey(terminal.getTerminalId())) {
+        if (terminalRepository.existsByTerminalId(terminal.getTerminalId())) {
             throw new IllegalArgumentException("terminalId already exists: " + terminal.getTerminalId());
         }
         if (terminal.getId() == null) {
@@ -35,28 +34,24 @@ public class TerminalService {
         terminal.setCreatedAt(OffsetDateTime.now());
         terminal.setUpdatedAt(OffsetDateTime.now());
 
-        terminalStore.put(terminal.getId(), terminal);
-        terminalIdIndex.put(terminal.getTerminalId(), terminal.getId());
+        terminalRepository.save(terminal);
         log.info("Registered terminal {} (TID: {}) for merchant {}", terminal.getId(), terminal.getTerminalId(), terminal.getMerchantId());
         return terminal;
     }
 
     @Transactional(readOnly = true)
     public Optional<Terminal> getTerminal(UUID id) {
-        return Optional.ofNullable(terminalStore.get(id));
+        return terminalRepository.findById(id);
     }
 
     @Transactional(readOnly = true)
     public Optional<Terminal> getTerminalByTid(String terminalId) {
-        return Optional.ofNullable(terminalIdIndex.get(terminalId))
-                .map(terminalStore::get);
+        return terminalRepository.findByTerminalId(terminalId);
     }
 
     @Transactional(readOnly = true)
     public List<Terminal> listByMerchant(UUID merchantId) {
-        return terminalStore.values().stream()
-                .filter(t -> t.getMerchantId().equals(merchantId))
-                .collect(Collectors.toList());
+        return terminalRepository.findByMerchantId(merchantId);
     }
 
     @Transactional
@@ -65,7 +60,7 @@ public class TerminalService {
         terminal.setStatus(Terminal.TerminalStatus.valueOf(status));
         terminal.setUpdatedAt(OffsetDateTime.now());
         log.info("Updated terminal {} status to {}", id, status);
-        return terminal;
+        return terminalRepository.save(terminal);
     }
 
     @Transactional
@@ -75,14 +70,11 @@ public class TerminalService {
         terminal.setLastContact(OffsetDateTime.now());
         terminal.setUpdatedAt(OffsetDateTime.now());
         log.info("Updated terminal {} firmware to {}", id, version);
-        return terminal;
+        return terminalRepository.save(terminal);
     }
 
     private Terminal getTerminalOrThrow(UUID id) {
-        Terminal terminal = terminalStore.get(id);
-        if (terminal == null) {
-            throw new IllegalArgumentException("Terminal not found: " + id);
-        }
-        return terminal;
+        return terminalRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Terminal not found: " + id));
     }
 }

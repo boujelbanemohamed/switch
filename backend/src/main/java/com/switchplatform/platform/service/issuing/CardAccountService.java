@@ -1,22 +1,23 @@
 package com.switchplatform.platform.service.issuing;
 
 import com.switchplatform.platform.model.issuing.CardAccount;
+import com.switchplatform.platform.repository.issuing.CardAccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class CardAccountService {
 
-    private final Map<UUID, CardAccount> accounts = new ConcurrentHashMap<>();
+    private final CardAccountRepository cardAccountRepository;
 
     @Transactional
     public CardAccount createAccount(CardAccount account) {
@@ -41,25 +42,23 @@ public class CardAccountService {
         if (account.getUpdatedAt() == null) {
             account.setUpdatedAt(OffsetDateTime.now());
         }
-        accounts.put(account.getId(), account);
+        cardAccountRepository.save(account);
         log.info("CardAccount created: id={}, cardholderId={}, balance={}",
                 account.getId(), account.getCardholderId(), account.getBalance());
         return account;
     }
 
     public Optional<CardAccount> getAccount(UUID id) {
-        return Optional.ofNullable(accounts.get(id));
+        return cardAccountRepository.findById(id);
     }
 
     public List<CardAccount> getAccountsByCardholderId(UUID cardholderId) {
-        return accounts.values().stream()
-                .filter(a -> cardholderId.equals(a.getCardholderId()))
-                .toList();
+        return cardAccountRepository.findByCardholderId(cardholderId);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public CardAccount debit(UUID accountId, BigDecimal amount, String currencyCode) {
-        CardAccount account = getAccount(accountId)
+        CardAccount account = cardAccountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
         if (account.getAvailableBalance().compareTo(amount) < 0) {
             throw new IllegalStateException("Insufficient available balance");
@@ -71,9 +70,9 @@ public class CardAccountService {
         return account;
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public CardAccount credit(UUID accountId, BigDecimal amount, String currencyCode) {
-        CardAccount account = getAccount(accountId)
+        CardAccount account = cardAccountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
         account.setBalance(account.getBalance().add(amount));
         account.setAvailableBalance(account.getAvailableBalance().add(amount));
@@ -82,9 +81,9 @@ public class CardAccountService {
         return account;
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public CardAccount hold(UUID accountId, BigDecimal amount) {
-        CardAccount account = getAccount(accountId)
+        CardAccount account = cardAccountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
         if (account.getAvailableBalance().compareTo(amount) < 0) {
             throw new IllegalStateException("Insufficient available balance for hold");
@@ -97,9 +96,9 @@ public class CardAccountService {
         return account;
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public CardAccount releaseHold(UUID accountId, BigDecimal amount) {
-        CardAccount account = getAccount(accountId)
+        CardAccount account = cardAccountRepository.findById(accountId)
                 .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId));
         BigDecimal newHold = account.getHoldAmount().subtract(amount);
         if (newHold.compareTo(BigDecimal.ZERO) < 0) {
@@ -114,6 +113,6 @@ public class CardAccountService {
     }
 
     public List<CardAccount> listAll() {
-        return List.copyOf(accounts.values());
+        return cardAccountRepository.findAll();
     }
 }

@@ -6,6 +6,8 @@ import com.switchplatform.platform.model.issuing.Cardholder;
 import com.switchplatform.platform.model.issuing.WalletToken;
 import com.switchplatform.platform.repository.issuing.CardOperationRepository;
 import com.switchplatform.platform.repository.issuing.CardRepository;
+import com.switchplatform.platform.repository.issuing.CardholderRepository;
+import com.switchplatform.platform.repository.issuing.WalletTokenRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -29,12 +31,16 @@ class IssuingServiceTest {
     private CardOperationRepository cardOperationRepository;
     private final java.util.Map<java.util.UUID, Card> cardStore = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<Long, CardOperation> cardOpStore = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<java.util.UUID, Cardholder> cardholderStore = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.Map<java.util.UUID, WalletToken> tokenStore = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.concurrent.atomic.AtomicLong cardOpIdGen = new java.util.concurrent.atomic.AtomicLong(1);
 
     @BeforeEach
     void setUp() {
         cardStore.clear();
         cardOpStore.clear();
+        cardholderStore.clear();
+        tokenStore.clear();
         notificationService = new IssuingNotificationService();
         cardRepository = mock(CardRepository.class);
         cardOperationRepository = mock(CardOperationRepository.class);
@@ -69,9 +75,50 @@ class IssuingServiceTest {
                     .sorted((a,b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
                     .toList();
         });
+        CardholderRepository cardholderRepository = mock(CardholderRepository.class);
+        when(cardholderRepository.save(any())).thenAnswer(inv -> {
+            Cardholder ch = inv.getArgument(0);
+            if (ch.getId() == null) ch.setId(java.util.UUID.randomUUID());
+            cardholderStore.put(ch.getId(), ch);
+            return ch;
+        });
+        when(cardholderRepository.findById(any())).thenAnswer(inv ->
+                java.util.Optional.ofNullable(cardholderStore.get(inv.getArgument(0))));
+        when(cardholderRepository.findByEmail(any())).thenAnswer(inv -> {
+            String email = inv.getArgument(0);
+            return cardholderStore.values().stream()
+                    .filter(ch -> email.equals(ch.getEmail())).findFirst();
+        });
+        when(cardholderRepository.existsByEmail(any())).thenAnswer(inv -> {
+            String email = inv.getArgument(0);
+            return cardholderStore.values().stream()
+                    .anyMatch(ch -> email.equals(ch.getEmail()));
+        });
+
+        WalletTokenRepository walletTokenRepository = mock(WalletTokenRepository.class);
+        when(walletTokenRepository.save(any())).thenAnswer(inv -> {
+            WalletToken t = inv.getArgument(0);
+            tokenStore.put(t.getId(), t);
+            return t;
+        });
+        when(walletTokenRepository.findById(any())).thenAnswer(inv ->
+                java.util.Optional.ofNullable(tokenStore.get(inv.getArgument(0))));
+        when(walletTokenRepository.findByToken(any())).thenAnswer(inv -> {
+            String tokenVal = inv.getArgument(0);
+            return tokenStore.values().stream()
+                    .filter(t -> tokenVal.equals(t.getToken())).findFirst();
+        });
+        when(walletTokenRepository.findByCardIdOrderByCreatedAtDesc(any())).thenAnswer(inv -> {
+            java.util.UUID cardId = inv.getArgument(0);
+            return tokenStore.values().stream()
+                    .filter(t -> cardId.equals(t.getCardId()))
+                    .sorted((a,b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+                    .toList();
+        });
+
         cardService = new CardService(cardRepository, cardOperationRepository, notificationService);
-        cardholderService = new CardholderService(cardService);
-        walletTokenService = new WalletTokenService();
+        cardholderService = new CardholderService(cardholderRepository, cardService);
+        walletTokenService = new WalletTokenService(walletTokenRepository);
     }
 
     @Test

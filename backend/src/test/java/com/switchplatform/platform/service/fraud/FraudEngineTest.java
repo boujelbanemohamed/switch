@@ -2,6 +2,7 @@ package com.switchplatform.platform.service.fraud;
 
 import com.switchplatform.platform.model.fraud.FraudAlert;
 import com.switchplatform.platform.model.fraud.FraudRule;
+import com.switchplatform.platform.repository.authorization.VelocityCheckRepository;
 import com.switchplatform.platform.repository.fraud.BehavioralProfileRepository;
 import com.switchplatform.platform.repository.fraud.DeviceFingerprintRecordRepository;
 import com.switchplatform.platform.repository.fraud.FraudAlertRepository;
@@ -26,7 +27,8 @@ class FraudEngineTest {
     void setUp() {
         profileService = new BehavioralProfileService(mock(BehavioralProfileRepository.class));
         deviceFingerprintService = new DeviceFingerprintService(mock(DeviceFingerprintRecordRepository.class));
-        fraudEngine = new FraudEngine(profileService, deviceFingerprintService,
+        fraudEngine = new FraudEngine(profileService, mock(VelocityCheckRepository.class),
+                deviceFingerprintService,
                 mock(FraudRuleRepository.class), mock(FraudAlertRepository.class));
     }
 

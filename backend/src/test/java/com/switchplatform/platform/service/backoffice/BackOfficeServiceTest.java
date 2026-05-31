@@ -3,23 +3,106 @@ package com.switchplatform.platform.service.backoffice;
 import com.switchplatform.platform.model.backoffice.AuditLog;
 import com.switchplatform.platform.model.backoffice.MonitoringEvent;
 import com.switchplatform.platform.model.backoffice.Report;
+import com.switchplatform.platform.repository.backoffice.AuditLogRepository;
+import com.switchplatform.platform.repository.backoffice.MonitoringEventRepository;
+import com.switchplatform.platform.repository.backoffice.ReportRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class BackOfficeServiceTest {
 
     private BackOfficeService backOfficeService;
+    private final ConcurrentHashMap<Long, AuditLog> auditLogStore = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Report> reportStore = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, MonitoringEvent> monitoringEventStore = new ConcurrentHashMap<>();
+    private final AtomicLong auditLogIdGen = new AtomicLong(1);
+    private final AtomicLong monitoringEventIdGen = new AtomicLong(1);
 
     @BeforeEach
     void setUp() {
-        backOfficeService = new BackOfficeService();
+        auditLogStore.clear();
+        reportStore.clear();
+        monitoringEventStore.clear();
+
+        AuditLogRepository auditLogRepository = mock(AuditLogRepository.class);
+        ReportRepository reportRepository = mock(ReportRepository.class);
+        MonitoringEventRepository monitoringEventRepository = mock(MonitoringEventRepository.class);
+
+        when(auditLogRepository.save(any())).thenAnswer(inv -> {
+            AuditLog log = inv.getArgument(0);
+            if (log.getId() == null) log.setId(auditLogIdGen.getAndIncrement());
+            if (log.getCreatedAt() == null) log.setCreatedAt(OffsetDateTime.now());
+            auditLogStore.put(log.getId(), log);
+            return log;
+        });
+        when(auditLogRepository.findAll(any(Sort.class))).thenAnswer(inv ->
+                new ArrayList<>(auditLogStore.values()));
+
+        when(reportRepository.save(any())).thenAnswer(inv -> {
+            Report r = inv.getArgument(0);
+            if (r.getCreatedAt() == null) r.setCreatedAt(OffsetDateTime.now());
+            reportStore.put(r.getId(), r);
+            return r;
+        });
+        when(reportRepository.findById(any())).thenAnswer(inv ->
+                java.util.Optional.ofNullable(reportStore.get(inv.getArgument(0))));
+        when(reportRepository.findByReportType(any())).thenAnswer(inv -> {
+            Report.ReportType type = inv.getArgument(0);
+            return reportStore.values().stream()
+                    .filter(r -> type == r.getReportType()).toList();
+        });
+
+        when(monitoringEventRepository.save(any())).thenAnswer(inv -> {
+            MonitoringEvent e = inv.getArgument(0);
+            if (e.getId() == null) e.setId(monitoringEventIdGen.getAndIncrement());
+            if (e.getCreatedAt() == null) e.setCreatedAt(OffsetDateTime.now());
+            monitoringEventStore.put(e.getId(), e);
+            return e;
+        });
+        when(monitoringEventRepository.findById(any())).thenAnswer(inv ->
+                java.util.Optional.ofNullable(monitoringEventStore.get(inv.getArgument(0))));
+        when(monitoringEventRepository.findBySeverityOrderByCreatedAtDesc(any(), any())).thenAnswer(inv -> {
+            MonitoringEvent.Severity sev = inv.getArgument(0);
+            List<MonitoringEvent> filtered = monitoringEventStore.values().stream()
+                    .filter(e -> e.getSeverity() == sev)
+                    .sorted(Comparator.comparing(MonitoringEvent::getCreatedAt,
+                            java.util.Comparator.nullsLast(Comparator.reverseOrder())))
+                    .toList();
+            return new PageImpl<>(filtered);
+        });
+        when(monitoringEventRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(any(), any(), any()))
+                .thenAnswer(inv -> {
+                    OffsetDateTime start = inv.getArgument(0);
+                    OffsetDateTime end = inv.getArgument(1);
+                    List<MonitoringEvent> filtered = monitoringEventStore.values().stream()
+                            .filter(e -> e.getCreatedAt() != null
+                                    && !e.getCreatedAt().isBefore(start)
+                                    && !e.getCreatedAt().isAfter(end))
+                            .sorted(Comparator.comparing(MonitoringEvent::getCreatedAt,
+                                    java.util.Comparator.nullsLast(Comparator.reverseOrder())))
+                            .toList();
+                    return new PageImpl<>(filtered);
+                });
+
+        backOfficeService = new BackOfficeService(auditLogRepository, reportRepository, monitoringEventRepository);
     }
 
     @Test

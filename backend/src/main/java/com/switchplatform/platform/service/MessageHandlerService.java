@@ -2,8 +2,8 @@ package com.switchplatform.platform.service;
 
 import com.switchplatform.platform.model.DLQRecord;
 import com.switchplatform.platform.model.Participant;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
@@ -16,10 +16,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,12 +26,11 @@ import java.util.concurrent.TimeoutException;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class MessageHandlerService {
 
     private final KafkaTemplate<String, byte[]> kafkaTemplate;
-    private final ConcurrentHashMap<String, byte[]> pendingResponses = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, DLQRecord> deadLetterQueue = new ConcurrentHashMap<>();
-    private final boolean kafkaEnabled;
 
     @Value("${switch.mq.request-timeout:5000}")
     private long requestTimeoutMs;
@@ -45,16 +41,6 @@ public class MessageHandlerService {
     private long[] retryDelaysMs;
     private static final int MAX_RETRIES = 3;
     private static final long SEND_TIMEOUT_SECONDS = 5;
-
-    public MessageHandlerService(ObjectProvider<KafkaTemplate<String, byte[]>> kafkaProvider) {
-        this.kafkaTemplate = kafkaProvider.getIfAvailable();
-        this.kafkaEnabled = this.kafkaTemplate != null;
-        if (kafkaEnabled) {
-            log.info("Kafka transport enabled for MQ message handling");
-        } else {
-            log.warn("KafkaTemplate not available — MQ transport will use stub responses");
-        }
-    }
 
     private long[] parseRetryBackoff() {
         if (retryBackoffConfig == null || retryBackoffConfig.isBlank()) {
@@ -92,10 +78,6 @@ public class MessageHandlerService {
         if (record == null) {
             return false;
         }
-        if (!kafkaEnabled) {
-            log.warn("Cannot retry DLQ message {}: Kafka not available", dlqId);
-            return false;
-        }
         try {
             kafkaTemplate.send(record.topic(), dlqId.toString(), record.payload().getBytes(StandardCharsets.UTF_8))
                     .get(requestTimeoutMs > 0 ? requestTimeoutMs / 1000 : SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS);
@@ -120,9 +102,9 @@ public class MessageHandlerService {
 
     public Map<String, Object> getMqStatus() {
         return Map.of(
-                "kafkaEnabled", kafkaEnabled,
+                "kafkaEnabled", true,
                 "dlqCount", deadLetterQueue.size(),
-                "status", kafkaEnabled ? "available" : "unavailable"
+                "status", "available"
         );
     }
 
@@ -183,12 +165,6 @@ public class MessageHandlerService {
     }
 
     private byte[] sendMq(Participant destination, byte[] message) {
-        if (!kafkaEnabled) {
-            log.info("MQ stub: message to {} (queue: {})", destination.getCode(),
-                    destination.getEndpointUrl());
-            return "OK".getBytes();
-        }
-
         String topic = destination.getEndpointUrl() != null
                 ? destination.getEndpointUrl() : "switch-mq-" + destination.getCode();
         String correlationId = UUID.randomUUID().toString();

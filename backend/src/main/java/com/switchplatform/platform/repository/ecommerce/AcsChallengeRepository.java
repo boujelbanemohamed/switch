@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -20,4 +21,6 @@ public interface AcsChallengeRepository extends JpaRepository<AcsChallenge, UUID
 
     @Query("SELECT c FROM AcsChallenge c WHERE c.challengeData = :authenticationToken")
     Optional<AcsChallenge> findByAuthenticationToken(@Param("authenticationToken") String authenticationToken);
+
+    List<AcsChallenge> findByAuthenticationId(UUID authenticationId);
 }

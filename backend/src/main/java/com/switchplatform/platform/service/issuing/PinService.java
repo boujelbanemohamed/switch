@@ -1,9 +1,12 @@
 package com.switchplatform.platform.service.issuing;
 
+import com.switchplatform.platform.model.issuing.PinManagement;
+import com.switchplatform.platform.repository.issuing.PinManagementRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKeyFactory;
@@ -12,10 +15,11 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.HexFormat;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -31,9 +35,7 @@ public class PinService {
     @Value("${switch.pin.encryption-key:}")
     private String encryptionKey;
 
-    private final Map<String, PinRecord> pinStore = new ConcurrentHashMap<>();
-    private final Map<String, String> panStore = new ConcurrentHashMap<>();
-
+    private final PinManagementRepository pinManagementRepository;
     private final CardService cardService;
 
     public record PinRecord(
@@ -45,6 +47,7 @@ public class PinService {
             Instant updatedAt
     ) {}
 
+    @Transactional
     public String createPin(String cardId, String rawPin, String pinBlock) {
         if (rawPin == null && pinBlock == null) {
             throw new IllegalArgumentException("Either rawPin or pinBlock must be provided");
@@ -72,22 +75,27 @@ public class PinService {
             }
         }
 
-        PinRecord record = new PinRecord(
-                cardId, pinHash, pinBlockHash, algorithm,
-                Instant.now(), Instant.now()
-        );
+        PinManagement entity = PinManagement.builder()
+                .cardId(UUID.fromString(cardId))
+                .pinHash(pinHash)
+                .pinBlock(pinBlockHash)
+                .pinFormat(algorithm)
+                .lastChanged(OffsetDateTime.now())
+                .build();
 
-        pinStore.put(cardId, record);
+        pinManagementRepository.save(entity);
         log.info("PIN {} for card {} using algorithm {}", algorithm != null ? "created" : "stored", cardId, algorithm);
         return "PIN created successfully";
     }
 
+    @Transactional(readOnly = true)
     public boolean verifyPin(String cardId, String rawPinOrPinBlock) {
-        PinRecord record = pinStore.get(cardId);
-        if (record == null) {
+        Optional<PinManagement> opt = pinManagementRepository.findByCardId(UUID.fromString(cardId));
+        if (opt.isEmpty()) {
             log.warn("No PIN record found for card {}", cardId);
             return false;
         }
+        PinRecord record = toRecord(opt.get());
 
         if (rawPinOrPinBlock.matches("\\d{4,12}")) {
             return verifyRawPin(record, rawPinOrPinBlock);
@@ -99,37 +107,59 @@ public class PinService {
         }
     }
 
+    @Transactional
     public boolean changePin(String cardId, String oldPinBlock, String newPinBlock) {
         if (!verifyPin(cardId, oldPinBlock)) {
             log.warn("PIN change failed for card {} - old PIN verification failed", cardId);
             return false;
         }
 
-        PinRecord oldRecord = pinStore.get(cardId);
-        String algorithm = oldRecord != null ? oldRecord.algorithm() : "ISO9564-1";
+        PinManagement mgmt = pinManagementRepository.findByCardId(UUID.fromString(cardId))
+                .orElseThrow(() -> new RuntimeException("PIN record not found for card " + cardId));
+        String algorithm = mgmt.getPinFormat() != null ? mgmt.getPinFormat() : "ISO9564-1";
         String pinHash = null;
         String pinBlockHash = encryptAes(newPinBlock.toUpperCase());
 
-        if (oldRecord != null && oldRecord.pinHash() != null) {
+        if (mgmt.getPinHash() != null) {
             String extractedPin = extractPinFromPinBlock(cardId, newPinBlock);
             if (extractedPin != null) {
                 pinHash = hashWithPbkdf2(extractedPin);
             }
         }
 
-        PinRecord newRecord = new PinRecord(
-                cardId, pinHash, pinBlockHash, algorithm,
-                oldRecord != null ? oldRecord.createdAt() : Instant.now(),
-                Instant.now()
-        );
-
-        pinStore.put(cardId, newRecord);
+        mgmt.setPinHash(pinHash);
+        mgmt.setPinBlock(pinBlockHash);
+        mgmt.setPinFormat(algorithm);
+        mgmt.setLastChanged(OffsetDateTime.now());
+        pinManagementRepository.save(mgmt);
         log.info("PIN changed for card {}", cardId);
         return true;
     }
 
+    @Transactional
     public void storePan(String cardId, String pan) {
-        panStore.put(cardId, pan);
+        pinManagementRepository.findByCardId(UUID.fromString(cardId))
+                .ifPresentOrElse(mgmt -> {
+                    mgmt.setPan(pan);
+                    pinManagementRepository.save(mgmt);
+                }, () -> {
+                    PinManagement mgmt = PinManagement.builder()
+                            .cardId(UUID.fromString(cardId))
+                            .pan(pan)
+                            .build();
+                    pinManagementRepository.save(mgmt);
+                });
+    }
+
+    private PinRecord toRecord(PinManagement mgmt) {
+        return new PinRecord(
+                mgmt.getCardId().toString(),
+                mgmt.getPinHash(),
+                mgmt.getPinBlock(),
+                mgmt.getPinFormat(),
+                mgmt.getCreatedAt() != null ? mgmt.getCreatedAt().toInstant() : Instant.now(),
+                mgmt.getLastChanged() != null ? mgmt.getLastChanged().toInstant() : Instant.now()
+        );
     }
 
     private boolean verifyRawPin(PinRecord record, String rawPin) {
@@ -167,7 +197,8 @@ public class PinService {
             return false;
         }
 
-        String pan = panStore.get(cardId);
+        String pan = pinManagementRepository.findByCardId(UUID.fromString(cardId))
+                .map(PinManagement::getPan).orElse(null);
 
         if (pan == null) {
             log.warn("No PAN available for card {}, using simplified PIN block comparison", cardId);
@@ -195,7 +226,8 @@ public class PinService {
     }
 
     private String extractPinFromPinBlock(String cardId, String pinBlockHex) {
-        String pan = panStore.get(cardId);
+        String pan = pinManagementRepository.findByCardId(UUID.fromString(cardId))
+                .map(PinManagement::getPan).orElse(null);
         if (pan == null) {
             return null;
         }

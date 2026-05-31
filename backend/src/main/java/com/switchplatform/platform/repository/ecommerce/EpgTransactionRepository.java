@@ -16,6 +16,8 @@ public interface EpgTransactionRepository extends JpaRepository<EpgTransaction, 
 
     Optional<EpgTransaction> findByMerchantTransactionId(String merchantTransactionId);
 
+    Optional<EpgTransaction> findByMerchantIdAndMerchantTransactionId(UUID merchantId, String merchantTransactionId);
+
     List<EpgTransaction> findByMerchantId(UUID merchantId);
 
     Page<EpgTransaction> findByMerchantIdOrderByCreatedAtDesc(UUID merchantId, Pageable pageable);

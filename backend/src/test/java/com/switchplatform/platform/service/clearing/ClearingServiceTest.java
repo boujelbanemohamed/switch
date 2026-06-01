@@ -1,5 +1,6 @@
 package com.switchplatform.platform.service.clearing;
 
+import com.switchplatform.platform.event.EventPublisher;
 import com.switchplatform.platform.model.clearing.ClearingRecord;
 import com.switchplatform.platform.model.clearing.NettingRecord;
 import com.switchplatform.platform.model.clearing.ReconciliationRecord;
@@ -27,6 +28,7 @@ class ClearingServiceTest {
     private ClearingRecordRepository clearingRecordRepository;
     private NettingRecordRepository nettingRecordRepository;
     private ReconciliationRecordRepository reconciliationRecordRepository;
+    private EventPublisher eventPublisher;
     private final java.util.Map<java.util.UUID, ClearingRecord> clearingStore = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<java.util.UUID, NettingRecord> nettingStore = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<java.util.UUID, ReconciliationRecord> reconciliationStore = new java.util.concurrent.ConcurrentHashMap<>();
@@ -40,6 +42,7 @@ class ClearingServiceTest {
         clearingRecordRepository = mock(ClearingRecordRepository.class);
         nettingRecordRepository = mock(NettingRecordRepository.class);
         reconciliationRecordRepository = mock(ReconciliationRecordRepository.class);
+        eventPublisher = mock(EventPublisher.class);
         when(clearingRecordRepository.save(any())).thenAnswer(inv -> {
             ClearingRecord r = inv.getArgument(0);
             if (r.getId() == null) r.setId(java.util.UUID.randomUUID());
@@ -84,7 +87,7 @@ class ClearingServiceTest {
                 java.util.Optional.empty());
         clearingService = new ClearingService(
                 clearingRecordRepository, nettingRecordRepository,
-                reconciliationRecordRepository, interchangeService);
+                reconciliationRecordRepository, interchangeService, eventPublisher);
     }
 
     @Test

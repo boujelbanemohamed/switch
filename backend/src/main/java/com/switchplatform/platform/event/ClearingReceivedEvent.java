@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public record ClearingReceivedEvent(
     UUID clearingId,
-    UUID transactionId,
+    String transactionId,
     String pan,
     String amount,
     String currency,

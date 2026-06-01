@@ -10,6 +10,7 @@ import com.switchplatform.platform.repository.authorization.CardLimitUsageReposi
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.switchplatform.platform.event.EventPublisher;
 import com.switchplatform.platform.repository.fraud.BehavioralProfileRepository;
 import com.switchplatform.platform.repository.fraud.DeviceFingerprintRecordRepository;
 import com.switchplatform.platform.repository.fraud.FraudAlertRepository;
@@ -21,6 +22,7 @@ import com.switchplatform.platform.service.issuing.CardAccountService;
 import com.switchplatform.platform.service.issuing.CardService;
 import com.switchplatform.platform.repository.issuing.CardAccountRepository;
 import com.switchplatform.platform.repository.authorization.HoldRecordRepository;
+import com.switchplatform.platform.service.ledger.LedgerPostingEngine;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.List;
@@ -41,6 +43,8 @@ class AuthorizationEngineTest {
     void setUp() {
         cardLimitUsageRepository = mock(CardLimitUsageRepository.class);
         CardAccountService cardAccountService = new CardAccountService(mock(CardAccountRepository.class));
+        LedgerPostingEngine ledgerPostingEngine = mock(LedgerPostingEngine.class);
+        EventPublisher eventPublisher = mock(EventPublisher.class);
         authEngine = new AuthorizationEngine(
                 new FraudEngine(new BehavioralProfileService(mock(BehavioralProfileRepository.class)),
                         mock(com.switchplatform.platform.repository.authorization.VelocityCheckRepository.class),
@@ -48,8 +52,10 @@ class AuthorizationEngineTest {
                         mock(FraudRuleRepository.class), mock(FraudAlertRepository.class)),
                 cardAccountService,
                 mock(CardService.class),
-                new HoldService(mock(HoldRecordRepository.class), cardAccountService),
-                cardLimitUsageRepository);
+                new HoldService(mock(HoldRecordRepository.class), cardAccountService, ledgerPostingEngine, eventPublisher),
+                cardLimitUsageRepository,
+                ledgerPostingEngine,
+                eventPublisher);
     }
 
     private void setField(Object target, String fieldName, Object value) {

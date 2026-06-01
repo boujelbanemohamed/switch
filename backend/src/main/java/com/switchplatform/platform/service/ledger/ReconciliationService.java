@@ -1,5 +1,7 @@
 package com.switchplatform.platform.service.ledger;
 
+import com.switchplatform.platform.event.EventPublisher;
+import com.switchplatform.platform.event.ReconciliationTriggeredEvent;
 import com.switchplatform.platform.model.authorization.AuthDecision;
 import com.switchplatform.platform.model.authorization.HoldRecord;
 import com.switchplatform.platform.model.clearing.ClearingRecord;
@@ -28,6 +30,7 @@ public class ReconciliationService {
     private final ClearingRecordRepository clearingRecordRepository;
     private final SettlementRecordRepository settlementRecordRepository;
     private final LedgerEntryRepository ledgerEntryRepository;
+    private final EventPublisher eventPublisher;
 
     public ReconciliationReport reconcile(OffsetDateTime from, OffsetDateTime to) {
         List<ReconciliationIssue> issues = new ArrayList<>();
@@ -41,10 +44,18 @@ public class ReconciliationService {
         issues.addAll(detectAmountMismatches(from, to));
         issues.addAll(detectSettlementGaps(from, to));
 
-        return new ReconciliationReport(
+        ReconciliationReport report = new ReconciliationReport(
                 OffsetDateTime.now(), from, to,
                 authCount, clearingCount, settlementCount,
                 issues.size(), issues);
+
+        eventPublisher.publishReconciliationTriggered(new ReconciliationTriggeredEvent(
+                "batch-" + from + "-" + to, from, to,
+                (int) authCount, (int) clearingCount, (int) settlementCount,
+                issues.size(), OffsetDateTime.now()
+        ));
+
+        return report;
     }
 
     private List<ReconciliationIssue> detectMissingTransactions(OffsetDateTime from, OffsetDateTime to) {

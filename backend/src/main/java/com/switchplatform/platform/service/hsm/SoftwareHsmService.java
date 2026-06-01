@@ -19,7 +19,12 @@ public class SoftwareHsmService implements HsmService {
 
     @Override
     public String generatePinBlock(String pan, String pin) {
-        String panBlock = pan.substring(0, 6) + "0000" + pan.substring(pan.length() - 5);
+        String panDigits = pan.replaceAll("\\D", "");
+        String panWithoutCheck = panDigits.substring(0, panDigits.length() - 1);
+        String pan12 = panWithoutCheck.length() > 12
+                ? panWithoutCheck.substring(panWithoutCheck.length() - 12)
+                : String.format("%012d", Integer.parseInt(panWithoutCheck));
+        String panBlock = "0000" + pan12;
         String pinBlock = "0" + String.format("%02d", pin.length()) + pin
                 + "F".repeat(14 - pin.length());
         byte[] xor = xorHex(pinBlock, panBlock);

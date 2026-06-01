@@ -1,5 +1,7 @@
 package com.switchplatform.platform.service.clearing;
 
+import com.switchplatform.platform.event.ClearingReceivedEvent;
+import com.switchplatform.platform.event.EventPublisher;
 import com.switchplatform.platform.model.clearing.ClearingRecord;
 import com.switchplatform.platform.model.clearing.InterchangeResult;
 import com.switchplatform.platform.model.clearing.NettingRecord;
@@ -31,6 +33,7 @@ public class ClearingService {
     private final ReconciliationRecordRepository reconciliationRecordRepository;
 
     private final InterchangeService interchangeService;
+    private final EventPublisher eventPublisher;
 
     @Data
     @Builder
@@ -112,6 +115,14 @@ public class ClearingService {
         record = clearingRecordRepository.save(record);
         log.info("Processed clearing record {} for transaction {}",
                 record.getId(), data.getTransactionId());
+
+        eventPublisher.publishClearingReceived(new ClearingReceivedEvent(
+                record.getId(), data.getTransactionId(),
+                null, data.getAmount().toPlainString(), data.getCurrencyCode(),
+                null, interchangeAmount.toPlainString(), feeAmount.toPlainString(),
+                OffsetDateTime.now()
+        ));
+
         return record;
     }
 

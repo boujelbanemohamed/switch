@@ -127,13 +127,21 @@ export interface Notification {
 // Acquiring
 export interface Merchant {
   id: string;
+  merchantId: string;
   code: string;
+  tradingName?: string;
+  legalName?: string;
   name: string;
   categoryCode?: string;
+  merchantCategoryCode?: string;
   status: string;
   countryCode?: string;
   currencyCode?: string;
+  email?: string;
+  phone?: string;
+  addressLine1?: string;
   mdrPlan?: MdrPlan;
+  acquiringParticipant?: Participant;
   createdAt: string;
 }
 

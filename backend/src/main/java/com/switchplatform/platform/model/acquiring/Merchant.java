@@ -1,5 +1,7 @@
 package com.switchplatform.platform.model.acquiring;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.switchplatform.platform.model.Participant;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -100,6 +102,11 @@ public class Merchant {
 
     @Column(name = "mdr_plan_id")
     private UUID mdrPlanId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "acquiring_participant_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private Participant acquiringParticipant;
 
     @Column(nullable = false)
     private OffsetDateTime createdAt;

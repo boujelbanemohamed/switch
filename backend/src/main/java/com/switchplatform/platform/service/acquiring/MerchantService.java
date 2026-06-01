@@ -123,6 +123,7 @@ public class MerchantService {
         if (update.getMdrPercentage() != null) existing.setMdrPercentage(update.getMdrPercentage());
         if (update.getMdrFixedFee() != null) existing.setMdrFixedFee(update.getMdrFixedFee());
         if (update.getMdrPlanId() != null) existing.setMdrPlanId(update.getMdrPlanId());
+        if (update.getAcquiringParticipant() != null) existing.setAcquiringParticipant(update.getAcquiringParticipant());
         existing.setUpdatedAt(OffsetDateTime.now());
         existing = merchantRepository.save(existing);
         log.info("Updated merchant {}", id);

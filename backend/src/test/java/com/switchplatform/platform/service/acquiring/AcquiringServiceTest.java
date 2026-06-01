@@ -49,6 +49,7 @@ class AcquiringServiceTest {
         });
         when(merchantRepository.save(any())).thenAnswer(inv -> {
             Merchant m = inv.getArgument(0);
+            if (m.getId() == null) m.setId(java.util.UUID.randomUUID());
             merchantStore.put(m.getId(), m);
             return m;
         });

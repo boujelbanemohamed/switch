@@ -1,5 +1,6 @@
 package com.switchplatform.platform.service.merchant;
 
+import com.switchplatform.platform.model.Participant;
 import com.switchplatform.platform.model.Transaction;
 import com.switchplatform.platform.model.acquiring.Merchant;
 import com.switchplatform.platform.model.acquiring.MerchantSettlement;
@@ -250,6 +251,12 @@ public class MerchantPortalService {
         info.put("settlementCycle", merchant.getSettlementCycle());
         info.put("mdrPercentage", merchant.getMdrPercentage());
         info.put("mdrFixedFee", merchant.getMdrFixedFee());
+        Participant ap = merchant.getAcquiringParticipant();
+        info.put("acquiringParticipant", ap != null ? Map.of(
+            "id", ap.getId(),
+            "code", ap.getCode(),
+            "name", ap.getName()
+        ) : null);
         return info;
     }
 }

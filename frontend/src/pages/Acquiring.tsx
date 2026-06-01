@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
-import type { Merchant, Terminal, MerchantSettlement, NettingRecord as NettingResult } from '../types';
+import type { Merchant, Terminal, MerchantSettlement, NettingRecord as NettingResult, Participant } from '../types';
 import { SectionHeader } from '../components/SectionHeader';
 
 type Tab = 'merchants' | 'terminals' | 'settlement';
@@ -58,7 +58,9 @@ export function Acquiring() {
   const [merchantForm, setMerchantForm] = useState({
     name: '', mcc: '5999', country: 'TN', status: 'ACTIVE',
     contactEmail: '', contactPhone: '', address: '',
+    acquiringParticipantId: '',
   });
+  const [participants, setParticipants] = useState<Participant[]>([]);
 
   const [terminalForm, setTerminalForm] = useState({
     merchantId: '', terminalId: '', serialNumber: '', model: '', location: '', status: 'ACTIVE',
@@ -69,9 +71,12 @@ export function Acquiring() {
   const [settlementResult, setSettlementResult] = useState<string | null>(null);
 
   const loadMerchants = () => api.acquiring.merchants.list().then(setMerchants).catch(console.error);
+  const loadParticipants = () => api.participants.list()
+    .then(list => setParticipants(list.filter(p => p.type === 'ACQUIRER')))
+    .catch(console.error);
 
   useEffect(() => {
-    loadMerchants().finally(() => setLoading(false));
+    Promise.all([loadMerchants(), loadParticipants()]).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -83,9 +88,23 @@ export function Acquiring() {
   const createMerchant = async () => {
     setSaving(true);
     try {
-      await api.acquiring.merchants.create(merchantForm);
+      const merchantId = merchantForm.name.toUpperCase().replace(/[^A-Z0-9]/g, '_').slice(0, 15);
+      const payload: Record<string, unknown> = {
+        merchantId,
+        legalName: merchantForm.name,
+        tradingName: merchantForm.name,
+        merchantCategoryCode: merchantForm.mcc,
+        countryCode: merchantForm.country,
+        email: merchantForm.contactEmail,
+        phone: merchantForm.contactPhone,
+        addressLine1: merchantForm.address,
+      };
+      if (merchantForm.acquiringParticipantId) {
+        payload.acquiringParticipant = { id: merchantForm.acquiringParticipantId };
+      }
+      await api.acquiring.merchants.create(payload as Partial<Merchant>);
       setShowMerchantModal(false);
-      setMerchantForm({ name: '', mcc: '5999', country: 'TN', status: 'ACTIVE', contactEmail: '', contactPhone: '', address: '' });
+      setMerchantForm({ name: '', mcc: '5999', country: 'TN', status: 'ACTIVE', contactEmail: '', contactPhone: '', address: '', acquiringParticipantId: '' });
       await loadMerchants();
     } catch (e) { console.error(e); alert(e instanceof Error ? e.message : 'Failed'); }
     setSaving(false);
@@ -392,6 +411,12 @@ export function Acquiring() {
               <Field label={t('acquiring.status')}>
                 <select style={styles.select} value={merchantForm.status} onChange={e => setMerchantForm({ ...merchantForm, status: e.target.value })}>
                   {['ACTIVE', 'PENDING_APPROVAL', 'SUSPENDED', 'TERMINATED'].map(s => <option key={s}>{s}</option>)}
+                </select>
+              </Field>
+              <Field label="Acquiring Bank">
+                <select style={styles.select} value={merchantForm.acquiringParticipantId} onChange={e => setMerchantForm({ ...merchantForm, acquiringParticipantId: e.target.value })}>
+                  <option value="">-- None --</option>
+                  {participants.map(p => <option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
                 </select>
               </Field>
             </div>

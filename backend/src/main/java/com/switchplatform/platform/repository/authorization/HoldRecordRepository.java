@@ -13,4 +13,5 @@ public interface HoldRecordRepository extends JpaRepository<HoldRecord, UUID> {
     List<HoldRecord> findByCardIdAndStatus(String cardId, String status);
     List<HoldRecord> findByCardAccountIdAndStatus(String cardAccountId, String status);
     List<HoldRecord> findByStatusAndExpiresAtBefore(String status, Instant now);
+    List<HoldRecord> findByStatusAndCreatedAtBetween(String status, Instant from, Instant to);
 }

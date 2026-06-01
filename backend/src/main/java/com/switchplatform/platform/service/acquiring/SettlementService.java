@@ -4,6 +4,7 @@ import com.switchplatform.platform.model.acquiring.Merchant;
 import com.switchplatform.platform.model.acquiring.NettingResult;
 import com.switchplatform.platform.model.acquiring.SettlementRecord;
 import com.switchplatform.platform.repository.acquiring.SettlementRecordRepository;
+import com.switchplatform.platform.service.ledger.LedgerPostingEngine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class SettlementService {
     private final SettlementRecordRepository settlementRecordRepository;
     private final ConcurrentMap<String, List<TransactionEntry>> transactionStore = new ConcurrentHashMap<>();
     private final MerchantService merchantService;
+    private final LedgerPostingEngine ledgerPostingEngine;
 
     record TransactionEntry(BigDecimal amount, String cardBrand, String cardType, OffsetDateTime timestamp) {}
 
@@ -94,6 +96,17 @@ public class SettlementService {
         record.setPaymentRef("STL-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         record.setConfirmedAt(OffsetDateTime.now());
         record = settlementRecordRepository.save(record);
+
+        try {
+            String txnRef = record.getPaymentRef();
+            ledgerPostingEngine.postSettlement(
+                    txnRef, record.getMerchantId(),
+                    record.getNetAmount(), record.getTotalFee(),
+                    BigDecimal.ZERO, record.getCurrencyCode());
+        } catch (Exception e) {
+            log.warn("Ledger posting failed for settlement {}: {}", settlementId, e.getMessage());
+        }
+
         log.info("Confirmed settlement {} with ref {}", settlementId, record.getPaymentRef());
         return record;
     }

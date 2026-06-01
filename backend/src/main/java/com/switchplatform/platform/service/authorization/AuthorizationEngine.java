@@ -13,6 +13,7 @@ import com.switchplatform.platform.repository.authorization.CardLimitUsageReposi
 import com.switchplatform.platform.service.fraud.FraudEngine;
 import com.switchplatform.platform.service.issuing.CardAccountService;
 import com.switchplatform.platform.service.issuing.CardService;
+import com.switchplatform.platform.service.ledger.LedgerPostingEngine;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,7 @@ public class AuthorizationEngine {
     private final CardService cardService;
     private final HoldService holdService;
     private final CardLimitUsageRepository cardLimitUsageRepository;
+    private final LedgerPostingEngine ledgerPostingEngine;
 
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         long start = System.currentTimeMillis();
@@ -239,6 +241,14 @@ public class AuthorizationEngine {
                     decision.setCardBalanceAfter(account.getAvailableBalance());
                     log.info("Hold placed: id={}, cardholderId={}, amount={}",
                             hold.getId(), request.getCardholderId(), request.getAmount());
+
+                    String txnRef = request.getStan() != null ? request.getStan() : hold.getId().toString();
+                    try {
+                        ledgerPostingEngine.postAuthorization(txnRef, request.getAmount(),
+                                request.getCurrencyCode(), "Auth hold cardholder=" + request.getCardholderId());
+                    } catch (Exception e2) {
+                        log.warn("Ledger posting failed (non-blocking): {}", e2.getMessage());
+                    }
                 }
             } catch (Exception e) {
                 log.warn("Failed to place hold for cardholderId={}: {}", request.getCardholderId(), e.getMessage());

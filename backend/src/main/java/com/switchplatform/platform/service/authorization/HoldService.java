@@ -3,6 +3,7 @@ package com.switchplatform.platform.service.authorization;
 import com.switchplatform.platform.model.authorization.HoldRecord;
 import com.switchplatform.platform.repository.authorization.HoldRecordRepository;
 import com.switchplatform.platform.service.issuing.CardAccountService;
+import com.switchplatform.platform.service.ledger.LedgerPostingEngine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class HoldService {
 
     private final HoldRecordRepository holdRecordRepository;
     private final CardAccountService cardAccountService;
+    private final LedgerPostingEngine ledgerPostingEngine;
 
     @Transactional
     public HoldRecord placeHold(String transactionId, String cardId, String cardAccountId,
@@ -84,6 +86,16 @@ public class HoldService {
             record.setStatus("CAPTURED");
             record.setReleasedAt(Instant.now());
             holdRecordRepository.save(record);
+
+            try {
+                ledgerPostingEngine.postSettlement(
+                        record.getTransactionId(), record.getCardId(),
+                        record.getAmount(), BigDecimal.ZERO, BigDecimal.ZERO,
+                        record.getCurrencyCode());
+            } catch (Exception e2) {
+                log.warn("Ledger settlement posting failed (non-blocking): {}", e2.getMessage());
+            }
+
             log.info("Hold captured: id={}, accountId={}, amount={}", holdId, accountId, record.getAmount());
             return true;
         } catch (Exception e) {

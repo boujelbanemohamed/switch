@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,4 +13,6 @@ import java.util.UUID;
 public interface SettlementRecordRepository extends JpaRepository<SettlementRecord, UUID> {
     List<SettlementRecord> findByMerchantIdAndSettlementDateBetween(String merchantId, LocalDate from, LocalDate to);
     List<SettlementRecord> findByMerchantId(String merchantId);
+    long countByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
+    List<SettlementRecord> findByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
 }

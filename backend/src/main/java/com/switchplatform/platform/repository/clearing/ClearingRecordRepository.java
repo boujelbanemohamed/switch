@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,4 +16,6 @@ public interface ClearingRecordRepository extends JpaRepository<ClearingRecord, 
     List<ClearingRecord> findByAcquiringParticipantIdOrIssuingParticipantId(UUID acquiringId, UUID issuingId);
     Optional<ClearingRecord> findByTransactionId(String transactionId);
     List<ClearingRecord> findByClearingDateAndStatus(LocalDate date, ClearingRecord.Status status);
+    long countByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
+    List<ClearingRecord> findByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
 }

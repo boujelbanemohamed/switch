@@ -6,6 +6,8 @@ import com.switchplatform.platform.model.acquiring.Merchant;
 import com.switchplatform.platform.model.acquiring.MerchantSettlement;
 import com.switchplatform.platform.model.acquiring.Terminal;
 import com.switchplatform.platform.model.ecommerce.EpgTransaction;
+import com.switchplatform.platform.model.merchant.MerchantApiKey;
+import com.switchplatform.platform.model.merchant.MerchantWebhook;
 import com.switchplatform.platform.repository.TransactionRepository;
 import com.switchplatform.platform.repository.acquiring.MerchantRepository;
 import com.switchplatform.platform.repository.acquiring.MerchantSettlementRepository;
@@ -32,6 +34,8 @@ public class MerchantPortalService {
     private final MerchantSettlementRepository settlementRepository;
     private final TransactionRepository transactionRepository;
     private final EpgTransactionRepository epgTransactionRepository;
+    private final com.switchplatform.platform.repository.merchant.MerchantWebhookRepository merchantWebhookRepository;
+    private final com.switchplatform.platform.repository.merchant.MerchantApiKeyRepository merchantApiKeyRepository;
 
     public Merchant getMerchantByCode(String merchantCode) {
         return merchantRepository.findByMerchantId(merchantCode)
@@ -305,5 +309,56 @@ public class MerchantPortalService {
             stats.add(stat);
         }
         return stats;
+    }
+
+    public List<MerchantWebhook> getWebhooks(String merchantCode) {
+        return merchantWebhookRepository.findByMerchantCode(merchantCode);
+    }
+
+    public MerchantWebhook createWebhook(String merchantCode, String url, String eventTypes, String secret) {
+        MerchantWebhook webhook = MerchantWebhook.builder()
+                .merchantCode(merchantCode)
+                .url(url)
+                .eventTypes(eventTypes)
+                .secret(secret)
+                .enabled(true)
+                .build();
+        return merchantWebhookRepository.save(webhook);
+    }
+
+    public MerchantWebhook updateWebhook(UUID webhookId, String url, String eventTypes, boolean enabled) {
+        MerchantWebhook webhook = merchantWebhookRepository.findById(webhookId)
+                .orElseThrow(() -> new IllegalArgumentException("Webhook not found: " + webhookId));
+        if (url != null) webhook.setUrl(url);
+        if (eventTypes != null) webhook.setEventTypes(eventTypes);
+        webhook.setEnabled(enabled);
+        return merchantWebhookRepository.save(webhook);
+    }
+
+    public void deleteWebhook(UUID webhookId) {
+        merchantWebhookRepository.deleteById(webhookId);
+    }
+
+    public List<MerchantApiKey> getApiKeys(String merchantCode) {
+        return merchantApiKeyRepository.findByMerchantCode(merchantCode);
+    }
+
+    public MerchantApiKey createApiKey(String merchantCode, String label, String permissions) {
+        String apiKey = "sw_" + java.util.UUID.randomUUID().toString().replace("-", "");
+        MerchantApiKey key = MerchantApiKey.builder()
+                .merchantCode(merchantCode)
+                .apiKey(apiKey)
+                .label(label)
+                .permissions(permissions)
+                .enabled(true)
+                .build();
+        return merchantApiKeyRepository.save(key);
+    }
+
+    public MerchantApiKey revokeApiKey(UUID keyId) {
+        MerchantApiKey key = merchantApiKeyRepository.findById(keyId)
+                .orElseThrow(() -> new IllegalArgumentException("API key not found: " + keyId));
+        key.setEnabled(false);
+        return merchantApiKeyRepository.save(key);
     }
 }

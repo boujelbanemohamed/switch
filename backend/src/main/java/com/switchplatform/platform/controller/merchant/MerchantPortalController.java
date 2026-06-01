@@ -3,6 +3,8 @@ package com.switchplatform.platform.controller.merchant;
 import com.switchplatform.platform.model.acquiring.MerchantSettlement;
 import com.switchplatform.platform.model.acquiring.Terminal;
 import com.switchplatform.platform.model.ecommerce.EpgTransaction;
+import com.switchplatform.platform.model.merchant.MerchantApiKey;
+import com.switchplatform.platform.model.merchant.MerchantWebhook;
 import com.switchplatform.platform.service.merchant.MerchantPortalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -29,7 +31,8 @@ public class MerchantPortalController {
         boolean isAuthorized = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
                            || a.getAuthority().equals("ROLE_OPERATOR")
-                           || a.getAuthority().equals("ROLE_ANALYST"));
+                           || a.getAuthority().equals("ROLE_ANALYST")
+                           || a.getAuthority().equals("ROLE_MERCHANT"));
         if (!isAuthorized) {
             throw new AccessDeniedException("Access denied to merchant: " + merchantCode);
         }
@@ -92,5 +95,57 @@ public class MerchantPortalController {
             @RequestParam(defaultValue = "30") int days) {
         checkAccess(merchantCode);
         return ResponseEntity.ok(merchantPortalService.getDailyStats(merchantCode, days));
+    }
+
+    @GetMapping("/webhooks/{merchantCode}")
+    public ResponseEntity<List<MerchantWebhook>> getWebhooks(@PathVariable String merchantCode) {
+        checkAccess(merchantCode);
+        return ResponseEntity.ok(merchantPortalService.getWebhooks(merchantCode));
+    }
+
+    @PostMapping("/webhooks/{merchantCode}")
+    public ResponseEntity<MerchantWebhook> createWebhook(
+            @PathVariable String merchantCode,
+            @RequestBody Map<String, String> request) {
+        checkAccess(merchantCode);
+        return ResponseEntity.ok(merchantPortalService.createWebhook(
+                merchantCode, request.get("url"), request.get("eventTypes"), request.get("secret")));
+    }
+
+    @PutMapping("/webhooks/{webhookId}")
+    public ResponseEntity<MerchantWebhook> updateWebhook(
+            @PathVariable UUID webhookId,
+            @RequestBody Map<String, Object> request) {
+        String url = (String) request.get("url");
+        String eventTypes = (String) request.get("eventTypes");
+        boolean enabled = Boolean.TRUE.equals(request.get("enabled"));
+        return ResponseEntity.ok(merchantPortalService.updateWebhook(webhookId, url, eventTypes, enabled));
+    }
+
+    @DeleteMapping("/webhooks/{webhookId}")
+    public ResponseEntity<Void> deleteWebhook(@PathVariable UUID webhookId) {
+        merchantPortalService.deleteWebhook(webhookId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/api-keys/{merchantCode}")
+    public ResponseEntity<List<MerchantApiKey>> getApiKeys(@PathVariable String merchantCode) {
+        checkAccess(merchantCode);
+        return ResponseEntity.ok(merchantPortalService.getApiKeys(merchantCode));
+    }
+
+    @PostMapping("/api-keys/{merchantCode}")
+    public ResponseEntity<MerchantApiKey> createApiKey(
+            @PathVariable String merchantCode,
+            @RequestBody Map<String, String> request) {
+        checkAccess(merchantCode);
+        return ResponseEntity.ok(merchantPortalService.createApiKey(
+                merchantCode, request.get("label"), request.get("permissions")));
+    }
+
+    @DeleteMapping("/api-keys/{keyId}")
+    public ResponseEntity<Void> revokeApiKey(@PathVariable UUID keyId) {
+        merchantPortalService.revokeApiKey(keyId);
+        return ResponseEntity.noContent().build();
     }
 }

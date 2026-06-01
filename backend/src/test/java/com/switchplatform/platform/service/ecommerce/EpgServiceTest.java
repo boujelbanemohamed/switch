@@ -2,14 +2,20 @@ package com.switchplatform.platform.service.ecommerce;
 
 import com.switchplatform.platform.model.ecommerce.EpgMerchantConfig;
 import com.switchplatform.platform.model.ecommerce.EpgTransaction;
+import com.switchplatform.platform.model.issuing.Card;
+import com.switchplatform.platform.model.issuing.CardAccount;
 import com.switchplatform.platform.repository.ecommerce.EpgMerchantConfigRepository;
 import com.switchplatform.platform.repository.ecommerce.EpgTransactionRepository;
+import com.switchplatform.platform.service.authorization.AuthorizationEngine;
+import com.switchplatform.platform.service.issuing.CardAccountService;
+import com.switchplatform.platform.service.issuing.CardService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -23,6 +29,8 @@ class EpgServiceTest {
     private EpgService epgService;
     private final ConcurrentHashMap<UUID, EpgTransaction> txnStore = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, EpgMerchantConfig> configStore = new ConcurrentHashMap<>();
+    private UUID testCardId;
+    private UUID testAccountId;
 
     @BeforeEach
     void setUp() {
@@ -70,7 +78,37 @@ class EpgServiceTest {
                     .findFirst();
         });
 
-        epgService = new EpgService(epgTransactionRepository, epgMerchantConfigRepository);
+        testCardId = UUID.randomUUID();
+        testAccountId = UUID.randomUUID();
+        Card card = mock(Card.class);
+        when(card.getId()).thenReturn(testCardId);
+        when(card.getCardAccountId()).thenReturn(testAccountId);
+        when(card.getCardholderId()).thenReturn(UUID.randomUUID());
+        when(card.getCardType()).thenReturn(Card.CardType.DEBIT);
+        when(card.getCardBrand()).thenReturn(Card.CardBrand.VISA);
+
+        CardAccount account = mock(CardAccount.class);
+        when(account.getId()).thenReturn(testAccountId);
+
+        CardService cardService = mock(CardService.class);
+        when(cardService.getCard(testCardId)).thenReturn(Optional.of(card));
+
+        CardAccountService cardAccountService = mock(CardAccountService.class);
+        when(cardAccountService.getAccount(testAccountId)).thenReturn(Optional.of(account));
+
+        AuthorizationEngine authorizationEngine = mock(AuthorizationEngine.class);
+        when(authorizationEngine.authorize(any())).thenAnswer(inv -> {
+            AuthorizationEngine.AuthorizationRequest req = inv.getArgument(0);
+            return AuthorizationEngine.AuthorizationResponse.builder()
+                    .decision(AuthorizationEngine.AuthorizationResponse.Decision.APPROVED)
+                    .responseCode("00")
+                    .reason("APPROVED")
+                    .authDecisionId(1L)
+                    .build();
+        });
+
+        epgService = new EpgService(epgTransactionRepository, epgMerchantConfigRepository,
+                authorizationEngine, cardService, cardAccountService);
     }
 
     @Test
@@ -79,17 +117,25 @@ class EpgServiceTest {
                 UUID.randomUUID(), "MCH-TXN-001",
                 BigDecimal.valueOf(250.00), "USD");
 
-        assertNotNull(txn.getId());
         assertEquals(EpgTransaction.Status.INITIATED, txn.getStatus());
+        assertEquals("MCH-TXN-001", txn.getMerchantTransactionId());
         assertEquals(0, BigDecimal.valueOf(250.00).compareTo(txn.getAmount()));
+        assertNotNull(txn.getId());
         assertNotNull(txn.getCreatedAt());
     }
 
     @Test
     void shouldThrowForNegativeAmount() {
         assertThrows(IllegalArgumentException.class, () ->
-                epgService.initiateTransaction(UUID.randomUUID(), "T2",
-                        BigDecimal.valueOf(-100), "USD"));
+                epgService.initiateTransaction(UUID.randomUUID(), "NEG-001",
+                        BigDecimal.valueOf(-50), "USD"));
+    }
+
+    @Test
+    void shouldThrowForZeroAmount() {
+        assertThrows(IllegalArgumentException.class, () ->
+                epgService.initiateTransaction(UUID.randomUUID(), "ZERO-001",
+                        BigDecimal.ZERO, "USD"));
     }
 
     @Test
@@ -106,7 +152,7 @@ class EpgServiceTest {
                 UUID.randomUUID(), "AUTH-001", BigDecimal.valueOf(100), "USD");
 
         EpgTransaction authorized = epgService.authorizeTransaction(
-                txn.getId(), "AAV12345==", "05");
+                txn.getId(), testCardId, "AAV12345==", "05");
 
         assertEquals(EpgTransaction.Status.AUTHORIZED, authorized.getStatus());
         assertEquals("AAV12345==", authorized.getCavv());
@@ -118,7 +164,7 @@ class EpgServiceTest {
     void shouldCaptureTransaction() {
         EpgTransaction txn = epgService.initiateTransaction(
                 UUID.randomUUID(), "CAP-001", BigDecimal.valueOf(500), "EUR");
-        epgService.authorizeTransaction(txn.getId(), "AAV===", "05");
+        epgService.authorizeTransaction(txn.getId(), testCardId, "AAV===", "05");
 
         EpgTransaction captured = epgService.captureTransaction(txn.getId());
 
@@ -142,7 +188,7 @@ class EpgServiceTest {
     void shouldRefundTransaction() {
         EpgTransaction txn = epgService.initiateTransaction(
                 UUID.randomUUID(), "REF-001", BigDecimal.valueOf(300), "USD");
-        epgService.authorizeTransaction(txn.getId(), "AAV===", "05");
+        epgService.authorizeTransaction(txn.getId(), testCardId, "AAV===", "05");
         epgService.captureTransaction(txn.getId());
 
         EpgTransaction refunded = epgService.refundTransaction(txn.getId());

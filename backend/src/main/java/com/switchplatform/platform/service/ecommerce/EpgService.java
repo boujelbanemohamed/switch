@@ -2,14 +2,20 @@ package com.switchplatform.platform.service.ecommerce;
 
 import com.switchplatform.platform.model.ecommerce.EpgMerchantConfig;
 import com.switchplatform.platform.model.ecommerce.EpgTransaction;
+import com.switchplatform.platform.model.issuing.Card;
+import com.switchplatform.platform.model.issuing.CardAccount;
 import com.switchplatform.platform.repository.ecommerce.EpgMerchantConfigRepository;
 import com.switchplatform.platform.repository.ecommerce.EpgTransactionRepository;
+import com.switchplatform.platform.service.authorization.AuthorizationEngine;
+import com.switchplatform.platform.service.issuing.CardAccountService;
+import com.switchplatform.platform.service.issuing.CardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.*;
 
@@ -20,6 +26,10 @@ public class EpgService {
 
     private final EpgTransactionRepository epgTransactionRepository;
     private final EpgMerchantConfigRepository epgMerchantConfigRepository;
+
+    private final AuthorizationEngine authorizationEngine;
+    private final CardService cardService;
+    private final CardAccountService cardAccountService;
 
     @Transactional
     public EpgTransaction initiateTransaction(UUID merchantId, String merchantTxnId,
@@ -72,13 +82,51 @@ public class EpgService {
     }
 
     @Transactional
-    public EpgTransaction authorizeTransaction(UUID txnId, String cavv, String eci) {
+    public EpgTransaction authorizeTransaction(UUID txnId, UUID cardId, String cavv, String eci) {
         EpgTransaction txn = getOrThrow(txnId);
-        txn.setStatus(EpgTransaction.Status.AUTHORIZED);
-        txn.setCavv(cavv);
-        txn.setEci(eci);
-        txn.setAuthorizedAt(OffsetDateTime.now());
-        txn.setUpdatedAt(OffsetDateTime.now());
+        if (txn.getStatus() != EpgTransaction.Status.INITIATED
+                && txn.getStatus() != EpgTransaction.Status.AUTHENTICATED) {
+            throw new IllegalStateException("Transaction must be INITIATED or AUTHENTICATED before authorize: " + txnId);
+        }
+
+        Card card = cardService.getCard(cardId)
+                .orElseThrow(() -> new IllegalArgumentException("Card not found: " + cardId));
+
+        CardAccount account = cardAccountService.getAccount(card.getCardAccountId())
+                .orElseThrow(() -> new IllegalArgumentException("Card account not found: " + card.getCardAccountId()));
+
+        AuthorizationEngine.AuthorizationRequest request = AuthorizationEngine.AuthorizationRequest.builder()
+                .cardId(cardId)
+                .cardholderId(card.getCardholderId())
+                .merchantId(txn.getMerchantId().toString())
+                .amount(txn.getAmount())
+                .currencyCode(txn.getCurrencyCode())
+                .mti("0100")
+                .stan(txn.getMerchantTransactionId())
+                .panHash(txn.getPanHash())
+                .cardType(card.getCardType() != null ? card.getCardType().name() : null)
+                .cardBrand(card.getCardBrand() != null ? card.getCardBrand().name() : null)
+                .build();
+
+        AuthorizationEngine.AuthorizationResponse response = authorizationEngine.authorize(request);
+
+        if (response.getDecision() == AuthorizationEngine.AuthorizationResponse.Decision.APPROVED) {
+            txn.setStatus(EpgTransaction.Status.AUTHORIZED);
+            txn.setCavv(cavv);
+            txn.setEci(eci);
+            txn.setAuthorizedAt(OffsetDateTime.now());
+            txn.setUpdatedAt(OffsetDateTime.now());
+            log.info("EPG transaction authorized: id={}, authDecisionId={}",
+                    txnId, response.getAuthDecisionId());
+        } else {
+            txn.setStatus(EpgTransaction.Status.FAILED);
+            txn.setErrorCode(response.getResponseCode());
+            txn.setErrorDescription(response.getReason());
+            txn.setUpdatedAt(OffsetDateTime.now());
+            log.warn("EPG transaction declined: id={}, reason={}, code={}",
+                    txnId, response.getReason(), response.getResponseCode());
+        }
+
         return txn;
     }
 
@@ -88,9 +136,11 @@ public class EpgService {
         if (txn.getStatus() != EpgTransaction.Status.AUTHORIZED) {
             throw new IllegalStateException("Transaction must be AUTHORIZED before capture: " + txnId);
         }
+
         txn.setStatus(EpgTransaction.Status.CAPTURED);
         txn.setCapturedAt(OffsetDateTime.now());
         txn.setUpdatedAt(OffsetDateTime.now());
+        log.info("EPG transaction captured: id={}, amount={}", txnId, txn.getAmount());
         return txn;
     }
 

@@ -46,9 +46,11 @@ public class EpgController {
 
     @PostMapping("/transactions/{id}/authorize")
     public ResponseEntity<EpgTransaction> authorize(@PathVariable UUID id,
-                                                     @Valid @RequestBody Map<String, String> request) {
-        EpgTransaction txn = epgService.authorizeTransaction(id,
-                request.get("cavv"), request.get("eci"));
+                                                     @Valid @RequestBody Map<String, Object> request) {
+        UUID cardId = request.get("cardId") != null
+                ? UUID.fromString((String) request.get("cardId")) : null;
+        EpgTransaction txn = epgService.authorizeTransaction(id, cardId,
+                (String) request.get("cavv"), (String) request.get("eci"));
         return ResponseEntity.ok(txn);
     }
 

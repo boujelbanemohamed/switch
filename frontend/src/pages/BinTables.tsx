@@ -123,14 +123,18 @@ FROM participants WHERE code = 'SIB';`}
                 </span>
                 {bt.cardBrand && (
                   <span style={{
-                    background: `${brandColors[bt.cardBrand]}33`,
-                    color: brandColors[bt.cardBrand],
-                    padding: '2px 8px',
-                    borderRadius: 4,
-                    fontSize: 11,
-                    fontWeight: 600,
+                    background: brandColors[bt.cardBrand] || '#64748b',
+                    color: '#fff',
+                    padding: '3px 10px',
+                    borderRadius: 5,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: '0.02em',
                   }}>
-                    {bt.cardBrand}
+                    {bt.cardBrand === 'VISA' ? 'VISA' :
+                     bt.cardBrand === 'MASTERCARD' ? 'MASTERCARD' :
+                     bt.cardBrand === 'AMEX' ? 'AMEX' :
+                     bt.cardBrand === 'CB' ? 'CB' : bt.cardBrand}
                   </span>
                 )}
               </div>

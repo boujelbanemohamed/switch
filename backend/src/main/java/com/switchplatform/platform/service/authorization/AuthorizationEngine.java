@@ -13,6 +13,10 @@ import com.switchplatform.platform.repository.authorization.CardLimitUsageReposi
 import com.switchplatform.platform.service.fraud.FraudEngine;
 import com.switchplatform.platform.service.issuing.CardAccountService;
 import com.switchplatform.platform.service.issuing.CardService;
+import com.switchplatform.platform.event.AuthorizationApprovedEvent;
+import com.switchplatform.platform.event.AuthorizationDeclinedEvent;
+import com.switchplatform.platform.event.EventPublisher;
+import com.switchplatform.platform.event.TransactionReceivedEvent;
 import com.switchplatform.platform.service.ledger.LedgerPostingEngine;
 import lombok.Builder;
 import lombok.Data;
@@ -43,6 +47,7 @@ public class AuthorizationEngine {
     private final HoldService holdService;
     private final CardLimitUsageRepository cardLimitUsageRepository;
     private final LedgerPostingEngine ledgerPostingEngine;
+    private final EventPublisher eventPublisher;
 
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         long start = System.currentTimeMillis();
@@ -192,6 +197,26 @@ public class AuthorizationEngine {
         log.info("Authorization result: {} reason={} fraudScore={} time={}ms",
                 decision.getDecision(), decision.getResponseReason(),
                 decision.getFraudScore(), elapsed);
+
+        eventPublisher.publishTransactionReceived(new TransactionReceivedEvent(
+                UUID.fromString(request.getStan()), request.getPanHash(),
+                request.getAmount().toPlainString(), request.getCurrencyCode(),
+                request.getMerchantId(), null, request.getMerchantCategory(),
+                decision.getResponseCode(), OffsetDateTime.now()));
+
+        if (decision.getDecision() == AuthDecision.Decision.APPROVED) {
+            eventPublisher.publishAuthorizationApproved(new AuthorizationApprovedEvent(
+                    UUID.fromString(request.getStan()), request.getPanHash(),
+                    request.getAmount().toPlainString(), request.getCurrencyCode(),
+                    request.getMerchantId(), null, request.getMerchantCategory(),
+                    null, null, OffsetDateTime.now()));
+        } else {
+            eventPublisher.publishAuthorizationDeclined(new AuthorizationDeclinedEvent(
+                    UUID.fromString(request.getStan()), request.getPanHash(),
+                    request.getAmount().toPlainString(), request.getCurrencyCode(),
+                    request.getMerchantId(), decision.getResponseReason(),
+                    decision.getResponseCode(), OffsetDateTime.now()));
+        }
 
         return AuthorizationResponse.builder()
                 .decision(mapDecision(decision.getDecision()))

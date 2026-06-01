@@ -2,6 +2,9 @@ package com.switchplatform.platform.service.authorization;
 
 import com.switchplatform.platform.model.authorization.HoldRecord;
 import com.switchplatform.platform.repository.authorization.HoldRecordRepository;
+import com.switchplatform.platform.event.EventPublisher;
+import com.switchplatform.platform.event.HoldPlacedEvent;
+import com.switchplatform.platform.event.HoldReleasedEvent;
 import com.switchplatform.platform.service.issuing.CardAccountService;
 import com.switchplatform.platform.service.ledger.LedgerPostingEngine;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +16,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -24,6 +28,7 @@ public class HoldService {
     private final HoldRecordRepository holdRecordRepository;
     private final CardAccountService cardAccountService;
     private final LedgerPostingEngine ledgerPostingEngine;
+    private final EventPublisher eventPublisher;
 
     @Transactional
     public HoldRecord placeHold(String transactionId, String cardId, String cardAccountId,
@@ -47,6 +52,13 @@ public class HoldService {
 
         HoldRecord saved = holdRecordRepository.save(record);
         log.info("Hold placed: id={}, cardId={}, amount={}, expiresAt={}", saved.getId(), cardId, amount, expiresAt);
+
+        eventPublisher.publishHoldPlaced(new HoldPlacedEvent(
+                saved.getId(), UUID.fromString(transactionId), cardId,
+                amount.toPlainString(), currencyCode,
+                OffsetDateTime.ofInstant(expiresAt, java.time.ZoneOffset.UTC),
+                OffsetDateTime.now()));
+
         return saved;
     }
 
@@ -64,6 +76,12 @@ public class HoldService {
             record.setReleasedAt(Instant.now());
             holdRecordRepository.save(record);
             log.info("Hold released: id={}, accountId={}, amount={}", holdId, record.getCardAccountId(), record.getAmount());
+
+            eventPublisher.publishHoldReleased(new HoldReleasedEvent(
+                    holdId, UUID.fromString(record.getTransactionId()), record.getCardId(),
+                    record.getAmount().toPlainString(), record.getCurrencyCode(),
+                    "MANUAL_RELEASE", OffsetDateTime.now()));
+
             return true;
         } catch (Exception e) {
             log.error("Failed to release hold: id={}, error={}", holdId, e.getMessage());
@@ -97,6 +115,12 @@ public class HoldService {
             }
 
             log.info("Hold captured: id={}, accountId={}, amount={}", holdId, accountId, record.getAmount());
+
+            eventPublisher.publishHoldReleased(new HoldReleasedEvent(
+                    holdId, UUID.fromString(record.getTransactionId()), record.getCardId(),
+                    record.getAmount().toPlainString(), record.getCurrencyCode(),
+                    "CAPTURE", OffsetDateTime.now()));
+
             return true;
         } catch (Exception e) {
             log.error("Failed to capture hold: id={}, error={}", holdId, e.getMessage());

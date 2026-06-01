@@ -4,6 +4,9 @@ import com.switchplatform.platform.model.issuing.Card;
 import com.switchplatform.platform.model.issuing.PinManagement;
 import com.switchplatform.platform.repository.issuing.CardRepository;
 import com.switchplatform.platform.repository.issuing.PinManagementRepository;
+import com.switchplatform.platform.event.EventPublisher;
+import com.switchplatform.platform.event.PinVerifiedEvent;
+import com.switchplatform.platform.event.PinFailedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,7 @@ public class PinVerificationService {
     private final PinManagementRepository pinManagementRepository;
     private final CardRepository cardRepository;
     private final HsmService hsmService;
+    private final EventPublisher eventPublisher;
 
     @Transactional
     public boolean verifyPin(UUID cardId, String pin) {
@@ -61,6 +65,10 @@ public class PinVerificationService {
             pinMgmt.setLastChanged(OffsetDateTime.now());
             pinManagementRepository.save(pinMgmt);
             log.info("PIN verified for card {}", cardId);
+
+            eventPublisher.publishPinVerified(new PinVerifiedEvent(
+                    cardId, null, pinMgmt.getId(), OffsetDateTime.now()));
+
             return true;
         } else {
             pinMgmt.setPinAttempts(attempts + 1);
@@ -68,6 +76,10 @@ public class PinVerificationService {
             pinManagementRepository.save(pinMgmt);
             log.warn("PIN verification failed for card {}, attempt {}/{}",
                     cardId, attempts + 1, max);
+
+            eventPublisher.publishPinFailed(new PinFailedEvent(
+                    cardId, null, pinMgmt.getId(), attempts + 1, OffsetDateTime.now()));
+
             if (attempts + 1 >= max) {
                 card.setStatus(Card.CardStatus.BLOCKED);
                 cardRepository.save(card);

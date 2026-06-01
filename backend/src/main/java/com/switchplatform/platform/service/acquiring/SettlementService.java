@@ -4,6 +4,9 @@ import com.switchplatform.platform.model.acquiring.Merchant;
 import com.switchplatform.platform.model.acquiring.NettingResult;
 import com.switchplatform.platform.model.acquiring.SettlementRecord;
 import com.switchplatform.platform.repository.acquiring.SettlementRecordRepository;
+import com.switchplatform.platform.event.EventPublisher;
+import com.switchplatform.platform.event.SettlementInitiatedEvent;
+import com.switchplatform.platform.event.SettlementCompletedEvent;
 import com.switchplatform.platform.service.ledger.LedgerPostingEngine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +31,7 @@ public class SettlementService {
     private final ConcurrentMap<String, List<TransactionEntry>> transactionStore = new ConcurrentHashMap<>();
     private final MerchantService merchantService;
     private final LedgerPostingEngine ledgerPostingEngine;
+    private final EventPublisher eventPublisher;
 
     record TransactionEntry(BigDecimal amount, String cardBrand, String cardType, OffsetDateTime timestamp) {}
 
@@ -83,6 +87,11 @@ public class SettlementService {
 
         log.info("Created settlement {} for merchant {}: amount={}, fee={}, net={}",
                 record.getId(), merchantId, totalAmount, totalFee, netAmount);
+
+        eventPublisher.publishSettlementInitiated(new SettlementInitiatedEvent(
+                record.getId(), null, merchantId,
+                totalAmount.toPlainString(), currencyCode, merchantId, OffsetDateTime.now()));
+
         return record;
     }
 
@@ -108,6 +117,12 @@ public class SettlementService {
         }
 
         log.info("Confirmed settlement {} with ref {}", settlementId, record.getPaymentRef());
+
+        eventPublisher.publishSettlementCompleted(new SettlementCompletedEvent(
+                settlementId, null, record.getMerchantId(),
+                record.getNetAmount().toPlainString(), record.getCurrencyCode(),
+                record.getMerchantId(), "CONFIRMED", OffsetDateTime.now()));
+
         return record;
     }
 

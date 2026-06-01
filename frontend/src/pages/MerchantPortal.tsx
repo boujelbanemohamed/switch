@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { request } from '../services/api';
 
@@ -79,7 +79,9 @@ interface ReportData {
 
 export function MerchantPortal() {
   const { t } = useTranslation();
-  const [merchantCode, setMerchantCode] = useState('');
+  const [merchantCode, setMerchantCode] = useState(
+    () => sessionStorage.getItem('mp_code') || ''
+  );
   const [loggedIn, setLoggedIn] = useState(false);
   const [tab, setTab] = useState<MerchantTab>('dashboard');
   const [loading, setLoading] = useState(false);
@@ -103,7 +105,7 @@ export function MerchantPortal() {
     try {
       const [dashData, txnData, termData, settData, infoData] = await Promise.all([
         request<DashboardData>(`/merchant-portal/dashboard/${merchantCode}`),
-        request<TransactionItem[]>(`/merchant-portal/transactions/${merchantCode}`),
+        request<TransactionItem[]>(`/merchant-portal/transactions/${merchantCode}?page=0&size=50`),
         request<TerminalItem[]>(`/merchant-portal/terminals/${merchantCode}`),
         request<SettlementItem[]>(`/merchant-portal/settlements/${merchantCode}`),
         request<Record<string, any>>(`/merchant-portal/info/${merchantCode}`),
@@ -114,11 +116,30 @@ export function MerchantPortal() {
       setSettlements(settData);
       setMerchantInfo(infoData);
       setLoggedIn(true);
+      sessionStorage.setItem('mp_code', merchantCode);
     } catch (e) {
       setError(t('common.failedToLoad'));
     }
     setLoading(false);
   }, [merchantCode, t]);
+
+  const logout = () => {
+    sessionStorage.removeItem('mp_code');
+    setLoggedIn(false);
+    setMerchantCode('');
+    setDashboard(null);
+    setTransactions([]);
+    setTerminals([]);
+    setSettlements([]);
+    setReport(null);
+    setMerchantInfo(null);
+  };
+
+  useEffect(() => {
+    if (merchantCode && !loggedIn && !loading) {
+      login();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadTab = useCallback(async (newTab: MerchantTab) => {
     setTab(newTab);
@@ -216,8 +237,12 @@ export function MerchantPortal() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <h2 style={{ fontSize: 24, fontWeight: 700 }}>{t('merchantPortal.title')}</h2>
-        <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, color: 'var(--text-secondary)' }}>
           <strong>{dashboard?.merchantName}</strong> ({merchantCode})
+          <button onClick={logout} style={{
+            padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)',
+            background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 12,
+          }}>{t('auth.logout')}</button>
         </div>
       </div>
 
@@ -356,7 +381,7 @@ function TerminalsTab({ data, t }: { data: TerminalItem[]; t: (key: string) => s
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
-              <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('merchantPortal.terminalId')}TID</th>
+              <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('merchantPortal.terminalId')}</th>
               <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('merchantPortal.serialNumber')}</th>
               <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('merchantPortal.terminalType')}</th>
               <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('merchantPortal.manufacturer')}</th>

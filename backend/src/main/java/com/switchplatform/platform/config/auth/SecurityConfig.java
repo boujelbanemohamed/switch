@@ -101,6 +101,11 @@ public class SecurityConfig {
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name())
 
+                .requestMatchers("/api/v1/merchant-portal/**")
+                    .hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name(),
+                        AuthUser.Role.ANALYST.name())
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())

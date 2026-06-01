@@ -51,6 +51,9 @@ public class AuthUser {
     @Column(name = "mfa_enabled", nullable = false)
     private boolean mfaEnabled = false;
 
+    @Column(name = "merchant_code", length = 32)
+    private String merchantCode;
+
     @Column(name = "failed_attempts", nullable = false)
     private int failedAttempts = 0;
 
@@ -75,6 +78,6 @@ public class AuthUser {
     }
 
     public enum Role {
-        ADMIN, OPERATOR, ANALYST, AUDITOR, VIEWER
+        ADMIN, OPERATOR, ANALYST, AUDITOR, VIEWER, MERCHANT
     }
 }

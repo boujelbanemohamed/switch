@@ -28,4 +28,7 @@ public interface EpgTransactionRepository extends JpaRepository<EpgTransaction, 
 
     Page<EpgTransaction> findByCreatedAtBetweenOrderByCreatedAtDesc(
             OffsetDateTime start, OffsetDateTime end, Pageable pageable);
+
+    List<EpgTransaction> findByMerchantIdAndCreatedAtBetween(
+            UUID merchantId, OffsetDateTime from, OffsetDateTime to);
 }

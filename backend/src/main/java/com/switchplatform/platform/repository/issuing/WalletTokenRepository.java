@@ -18,4 +18,8 @@ public interface WalletTokenRepository extends JpaRepository<WalletToken, UUID> 
     List<WalletToken> findByWalletProvider(WalletToken.WalletProvider walletProvider);
 
     List<WalletToken> findByStatus(WalletToken.TokenStatus status);
+
+    List<WalletToken> findByCardIdAndStatus(UUID cardId, WalletToken.TokenStatus status);
+
+    boolean existsByToken(String token);
 }

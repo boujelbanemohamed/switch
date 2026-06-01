@@ -289,48 +289,32 @@ public ResponseEntity<List<IssuingNotificationService.Notification>> listNotific
     // ─── Token Vault endpoints ──────────────────────────────────────────────
 
     @PostMapping("/tokens/tokenize")
-    public ResponseEntity<TokenVaultService.TokenRecord> tokenize(@Valid @RequestBody Map<String, String> body) {
+    public ResponseEntity<WalletToken> tokenize(@Valid @RequestBody Map<String, String> body) {
         String cardId = body.get("cardId");
         String walletProvider = body.get("walletProvider");
         String deviceId = body.get("deviceId");
-        String fpan = body.get("fpan");
+        String deviceName = body.get("deviceName");
 
-        TokenVaultService.TokenRecord record;
-        if (fpan != null && !fpan.isEmpty()) {
-            record = tokenVaultService.tokenizeWithFpan(cardId, fpan, walletProvider, deviceId);
-        } else {
-            record = tokenVaultService.tokenize(cardId, walletProvider, deviceId);
-        }
-        return ResponseEntity.ok(record);
-    }
-
-    @GetMapping("/tokens/uuid/{uuid}")
-    public ResponseEntity<TokenVaultService.TokenRecord> getTokenByUuid(@PathVariable String uuid) {
-        return ResponseEntity.ok(tokenVaultService.getToken(uuid));
+        WalletToken token = tokenVaultService.storeToken(
+                UUID.fromString(cardId), null, walletProvider, deviceId, deviceName);
+        return ResponseEntity.ok(token);
     }
 
     @GetMapping("/tokens/by-dpan/{dpan}")
-    public ResponseEntity<TokenVaultService.TokenRecord> getByDpan(@PathVariable String dpan) {
-        return ResponseEntity.ok(tokenVaultService.getByDpan(dpan));
+    public ResponseEntity<WalletToken> getByDpan(@PathVariable String dpan) {
+        return tokenVaultService.getTokenByDpan(dpan)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/tokens/{dpan}/suspend")
-    public ResponseEntity<TokenVaultService.TokenRecord> suspendTokenVault(@PathVariable String dpan) {
-        return ResponseEntity.ok(tokenVaultService.suspendToken(dpan));
-    }
-
-    @PostMapping("/tokens/{dpan}/activate")
-    public ResponseEntity<TokenVaultService.TokenRecord> activateTokenVault(@PathVariable String dpan) {
-        return ResponseEntity.ok(tokenVaultService.activateToken(dpan));
-    }
-
-    @PostMapping("/tokens/{dpan}/delete")
-    public ResponseEntity<TokenVaultService.TokenRecord> deleteTokenVault(@PathVariable String dpan) {
-        return ResponseEntity.ok(tokenVaultService.deleteToken(dpan));
+    public ResponseEntity<Void> suspendTokenVault(@PathVariable String dpan) {
+        tokenVaultService.revokeToken(dpan);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/tokens/by-card/{cardId}")
-    public ResponseEntity<List<TokenVaultService.TokenRecord>> listByCard(@PathVariable String cardId) {
-        return ResponseEntity.ok(tokenVaultService.listByCard(cardId));
+    public ResponseEntity<List<WalletToken>> listByCard(@PathVariable String cardId) {
+        return ResponseEntity.ok(tokenVaultService.getTokensForCard(UUID.fromString(cardId)));
     }
 }

@@ -13,6 +13,8 @@ import com.switchplatform.platform.repository.acquiring.TerminalRepository;
 import com.switchplatform.platform.repository.ecommerce.EpgTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -93,12 +95,15 @@ public class MerchantPortalService {
         return dashboard;
     }
 
-    public List<Map<String, Object>> getTransactions(String merchantCode) {
+    public List<Map<String, Object>> getTransactions(String merchantCode, int page, int size) {
         Merchant merchant = getMerchantByCode(merchantCode);
+        org.springframework.data.domain.Pageable pageable =
+                PageRequest.of(page, size, Sort.by("createdAt").descending());
 
         List<Map<String, Object>> result = new ArrayList<>();
 
-        List<Transaction> switchTxns = transactionRepository.findByMerchantId(merchantCode);
+        List<Transaction> switchTxns = transactionRepository
+                .findByMerchantId(merchantCode, pageable).getContent();
         for (Transaction t : switchTxns) {
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("id", t.getId());
@@ -117,7 +122,8 @@ public class MerchantPortalService {
             result.add(item);
         }
 
-        List<EpgTransaction> epgTxns = epgTransactionRepository.findByMerchantId(merchant.getId());
+        List<EpgTransaction> epgTxns = epgTransactionRepository
+                .findByMerchantIdOrderByCreatedAtDesc(merchant.getId(), pageable).getContent();
         for (EpgTransaction t : epgTxns) {
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("id", t.getId());
@@ -142,6 +148,9 @@ public class MerchantPortalService {
         result.sort((a, b) -> {
             OffsetDateTime da = (OffsetDateTime) a.get("createdAt");
             OffsetDateTime db = (OffsetDateTime) b.get("createdAt");
+            if (da == null && db == null) return 0;
+            if (da == null) return 1;
+            if (db == null) return -1;
             return db.compareTo(da);
         });
 
@@ -180,8 +189,13 @@ public class MerchantPortalService {
     public Map<String, Object> getReportData(String merchantCode, LocalDate from, LocalDate to) {
         Merchant merchant = getMerchantByCode(merchantCode);
 
-        List<Transaction> switchTxns = transactionRepository.findByMerchantId(merchantCode);
-        List<EpgTransaction> epgTxns = epgTransactionRepository.findByMerchantId(merchant.getId());
+        OffsetDateTime fromDt = from.atStartOfDay().atOffset(java.time.ZoneOffset.UTC);
+        OffsetDateTime toDt   = to.plusDays(1).atStartOfDay().atOffset(java.time.ZoneOffset.UTC);
+
+        List<Transaction> switchTxns = transactionRepository
+                .findByMerchantIdAndCreatedAtBetween(merchantCode, fromDt, toDt);
+        List<EpgTransaction> epgTxns = epgTransactionRepository
+                .findByMerchantIdAndCreatedAtBetween(merchant.getId(), fromDt, toDt);
         List<MerchantSettlement> settlements = settlementRepository.findByMerchantIdOrderBySettlementDateDesc(merchant.getId());
 
         long totalTxns = switchTxns.size() + epgTxns.size();
@@ -258,5 +272,38 @@ public class MerchantPortalService {
             "name", ap.getName()
         ) : null);
         return info;
+    }
+
+    public List<Map<String, Object>> getDailyStats(String merchantCode, int days) {
+        Merchant merchant = getMerchantByCode(merchantCode);
+        OffsetDateTime since = OffsetDateTime.now().minusDays(days);
+
+        List<Transaction> txns = transactionRepository.findByMerchantId(merchantCode)
+                .stream()
+                .filter(t -> t.getCreatedAt() != null && t.getCreatedAt().isAfter(since))
+                .toList();
+
+        Map<LocalDate, List<Transaction>> byDay = txns.stream()
+                .collect(java.util.stream.Collectors.groupingBy(
+                    t -> t.getCreatedAt().toLocalDate()
+                ));
+
+        List<Map<String, Object>> stats = new ArrayList<>();
+        for (int i = days - 1; i >= 0; i--) {
+            LocalDate day = LocalDate.now().minusDays(i);
+            List<Transaction> dayTxns = byDay.getOrDefault(day, List.of());
+            Map<String, Object> stat = new LinkedHashMap<>();
+            stat.put("date", day.toString());
+            stat.put("count", dayTxns.size());
+            stat.put("volume", dayTxns.stream()
+                    .filter(t -> t.getAmount() != null)
+                    .map(Transaction::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add));
+            stat.put("approved", dayTxns.stream()
+                    .filter(t -> t.getStatus() == Transaction.TransactionStatus.COMPLETED)
+                    .count());
+            stats.add(stat);
+        }
+        return stats;
     }
 }

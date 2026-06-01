@@ -44,4 +44,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     List<Object[]> statusBreakdownSince(@Param("since") OffsetDateTime since);
 
     List<Transaction> findByMerchantId(String merchantId);
+
+    Page<Transaction> findByMerchantId(String merchantId, Pageable pageable);
+
+    List<Transaction> findByMerchantIdAndCreatedAtBetween(
+            String merchantId, OffsetDateTime from, OffsetDateTime to);
 }

@@ -36,6 +36,15 @@ spring:
       properties:
         spring.json.trusted.packages: "com.switch.platform.*"
 
+  mail:
+    host: ${MAIL_HOST:smtp.example.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USER:}
+    password: ${MAIL_PASS:}
+    properties:
+      mail.smtp.starttls.enable: true
+      mail.smtp.auth: true
+
   jackson:
     serialization:
       fail-on-empty-beans: false
@@ -61,7 +70,7 @@ switch:
     encryption-key: ${PIN_ENCRYPTION_KEY:}
 
   notification:
-    enabled: false
+    enabled: ${NOTIFICATIONS_ENABLED:false}
 
   mq:
     request-timeout: 5000

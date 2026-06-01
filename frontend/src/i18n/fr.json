@@ -575,6 +575,7 @@
     "settlementAccountIban": "IBAN",
     "settlementCycle": "Cycle Règlement",
     "mdrPercentage": "MDR %",
+    "terminalId": "Identifiant Terminal (TID)",
     "mdrFixedFee": "Frais Fixe MDR"
   },
   "common": {

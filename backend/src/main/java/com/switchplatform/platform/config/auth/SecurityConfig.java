@@ -105,7 +105,8 @@ public class SecurityConfig {
                     .hasAnyRole(
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name(),
-                        AuthUser.Role.ANALYST.name())
+                        AuthUser.Role.ANALYST.name(),
+                        AuthUser.Role.MERCHANT.name())
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())

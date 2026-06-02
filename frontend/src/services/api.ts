@@ -14,7 +14,7 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
     ...options,
   });
 
-  if (res.status === 401 && token) {
+  if ((res.status === 401 || res.status === 403) && token) {
     const refreshToken = localStorage.getItem('refreshToken');
     if (refreshToken) {
       try {
@@ -39,11 +39,13 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
           return retryRes.json();
         }
       } catch {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+        // refresh failed
       }
     }
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
   }
 
   if (!res.ok) {

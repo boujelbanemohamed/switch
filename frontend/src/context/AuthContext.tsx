@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const res = await fetch(`/api/v1${path}`, { ...options, headers });
-    if (res.status === 401 && refreshTokenValue) {
+    if ((res.status === 401 || res.status === 403) && refreshTokenValue) {
       await refreshAccessToken();
       const newToken = localStorage.getItem('accessToken');
       if (newToken) {

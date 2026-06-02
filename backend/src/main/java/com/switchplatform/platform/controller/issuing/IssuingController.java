@@ -34,6 +34,11 @@ public class IssuingController {
 
     // ─── Cardholder endpoints ───────────────────────────────────────────────
 
+    @GetMapping("/cardholders")
+    public ResponseEntity<List<Cardholder>> listCardholders() {
+        return ResponseEntity.ok(cardholderService.listAll());
+    }
+
     @PostMapping("/cardholders")
     public ResponseEntity<Cardholder> createCardholder(@Valid @RequestBody Cardholder cardholder) {
         return ResponseEntity.ok(cardholderService.createCardholder(cardholder));
@@ -246,13 +251,13 @@ public ResponseEntity<List<IssuingNotificationService.Notification>> listNotific
         return ResponseEntity.ok(notificationService.listAll());
     }
 
-    @GetMapping("/notifications/cardholder/{cardholderId}")
+    @GetMapping("/notifications/by-cardholder/{cardholderId}")
     public ResponseEntity<List<IssuingNotificationService.Notification>> getNotificationsByCardholder(
             @PathVariable UUID cardholderId) {
         return ResponseEntity.ok(notificationService.getNotificationsByCardholder(cardholderId));
     }
 
-    @GetMapping("/notifications/card/{cardId}")
+    @GetMapping("/notifications/by-card/{cardId}")
     public ResponseEntity<List<IssuingNotificationService.Notification>> getNotificationsByCard(
             @PathVariable UUID cardId) {
         return ResponseEntity.ok(notificationService.getNotificationsByCard(cardId));

@@ -39,6 +39,11 @@ public class CardholderService {
     }
 
     @Transactional(readOnly = true)
+    public List<Cardholder> listAll() {
+        return cardholderRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
     public Optional<Cardholder> getCardholder(UUID id) {
         return cardholderRepository.findById(id);
     }

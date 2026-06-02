@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -123,6 +125,14 @@ public class SecurityConfig {
                     response.getWriter().write("{\"error\":\"Forbidden\"}");
                 })
             )
+            .headers(headers -> headers
+                .contentTypeOptions(Customizer.withDefaults())
+                .frameOptions(f -> f.deny())
+                .xssProtection(x -> x.headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                .httpStrictTransportSecurity(h -> h
+                    .maxAgeInSeconds(31536000)
+                    .includeSubDomains(true))
+                .cacheControl(Customizer.withDefaults()))
             .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

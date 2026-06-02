@@ -18,6 +18,7 @@ import com.switchplatform.platform.service.clearing.ClearingService;
 import com.switchplatform.platform.service.clearing.InterchangeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
@@ -44,6 +45,9 @@ public class SwitchCore {
     private final ClearingService clearingService;
     private final SettlementService settlementService;
     private final InterchangeService interchangeService;
+
+    @Value("${switch.pan.hash-key:}")
+    private String panHashKey = "test-key-not-for-production";
 
     public Transaction processIso8583Message(byte[] rawMessage, String sourceCode) {
         IsoMessage isoMsg = iso8583Engine.parse(rawMessage);
@@ -414,10 +418,14 @@ public class SwitchCore {
     private String hashPan(String pan) {
         if (pan == null) return null;
         try {
-            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(pan.getBytes("UTF-8"));
+            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+            javax.crypto.spec.SecretKeySpec spec = new javax.crypto.spec.SecretKeySpec(
+                    panHashKey.getBytes("UTF-8"), "HmacSHA256");
+            mac.init(spec);
+            byte[] hash = mac.doFinal(pan.getBytes("UTF-8"));
             return Base64.getEncoder().encodeToString(hash);
         } catch (Exception e) {
+            log.error("PAN hash failed", e);
             return pan;
         }
     }

@@ -20,7 +20,7 @@ public class JwtUtil {
     private final long refreshTokenExpiration;
 
     public JwtUtil(
-            @Value("${switch.auth.jwt.secret:6c156d8b6c9e8a3f4d2e5f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7}") String secret,
+            @Value("${switch.auth.jwt.secret}") String secret,
             @Value("${switch.auth.jwt.access-token-expiration:3600000}") long accessTokenExpiration,
             @Value("${switch.auth.jwt.refresh-token-expiration:86400000}") long refreshTokenExpiration) {
         this.secretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));

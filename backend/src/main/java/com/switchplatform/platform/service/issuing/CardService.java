@@ -4,14 +4,14 @@ import com.switchplatform.platform.model.issuing.Card;
 import com.switchplatform.platform.model.issuing.CardOperation;
 import com.switchplatform.platform.repository.issuing.CardRepository;
 import com.switchplatform.platform.repository.issuing.CardOperationRepository;
+import com.switchplatform.platform.service.issuing.IssuingNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -25,6 +25,9 @@ public class CardService {
     private final CardRepository cardRepository;
     private final CardOperationRepository cardOperationRepository;
     private final IssuingNotificationService notificationService;
+
+    @Value("${switch.pan.hash-key:}")
+    private String panHashKey = "test-key-not-for-production";
 
     @Transactional
     public Card createCard(Card card) {
@@ -305,15 +308,18 @@ public class CardService {
 
     private String hashCardNumber(String cardNumber) {
         try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hash = md.digest(cardNumber.getBytes());
+            javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
+            javax.crypto.spec.SecretKeySpec spec = new javax.crypto.spec.SecretKeySpec(
+                    panHashKey.getBytes("UTF-8"), "HmacSHA256");
+            mac.init(spec);
+            byte[] hash = mac.doFinal(cardNumber.getBytes("UTF-8"));
             StringBuilder hex = new StringBuilder();
             for (byte b : hash) {
                 hex.append(String.format("%02x", b));
             }
             return hex.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("SHA-256 not available", e);
+        } catch (Exception e) {
+            throw new RuntimeException("PAN hash failed", e);
         }
     }
 }

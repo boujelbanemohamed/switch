@@ -72,6 +72,9 @@ export const api = {
     list: () => request<import('../types').RoutingRule[]>('/admin/routing-rules'),
     create: (data: Partial<import('../types').RoutingRule>) =>
       request<import('../types').RoutingRule>('/admin/routing-rules', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<import('../types').RoutingRule>) =>
+      request<import('../types').RoutingRule>(`/admin/routing-rules/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) => request<void>(`/admin/routing-rules/${id}`, { method: 'DELETE' }),
   },
   transactions: {
     list: (page = 0, size = 20) =>

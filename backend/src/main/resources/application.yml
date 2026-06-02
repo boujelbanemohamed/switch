@@ -7,7 +7,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/switch_db
     username: switch_user
-    password: switch_pass
+    password: ${POSTGRES_PASSWORD}
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
@@ -34,7 +34,7 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "com.switch.platform.*"
+        spring.json.trusted.packages: "com.switchplatform.platform.*"
 
   mail:
     host: ${MAIL_HOST:smtp.example.com}
@@ -48,6 +48,15 @@ spring:
   jackson:
     serialization:
       fail-on-empty-beans: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
 
 logging:
   level:
@@ -66,6 +75,8 @@ switch:
     core-pool-size: 10
     max-pool-size: 50
     queue-capacity: 100
+  pan:
+    hash-key: ${PAN_HASH_KEY}
   pin:
     encryption-key: ${PIN_ENCRYPTION_KEY:}
 

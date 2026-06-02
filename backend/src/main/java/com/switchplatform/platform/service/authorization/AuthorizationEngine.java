@@ -23,6 +23,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -49,6 +50,7 @@ public class AuthorizationEngine {
     private final LedgerPostingEngine ledgerPostingEngine;
     private final EventPublisher eventPublisher;
 
+    @Transactional
     public AuthorizationResponse authorize(AuthorizationRequest request) {
         long start = System.currentTimeMillis();
         log.info("Authorization request: cardId={}, amount={}, currency={}",
@@ -198,21 +200,23 @@ public class AuthorizationEngine {
                 decision.getDecision(), decision.getResponseReason(),
                 decision.getFraudScore(), elapsed);
 
+        String stan = request.getStan() != null ? request.getStan() : UUID.randomUUID().toString();
+
         eventPublisher.publishTransactionReceived(new TransactionReceivedEvent(
-                UUID.fromString(request.getStan()), request.getPanHash(),
+                UUID.fromString(stan), request.getPanHash(),
                 request.getAmount().toPlainString(), request.getCurrencyCode(),
                 request.getMerchantId(), null, request.getMerchantCategory(),
                 decision.getResponseCode(), OffsetDateTime.now()));
 
         if (decision.getDecision() == AuthDecision.Decision.APPROVED) {
             eventPublisher.publishAuthorizationApproved(new AuthorizationApprovedEvent(
-                    UUID.fromString(request.getStan()), request.getPanHash(),
+                    UUID.fromString(stan), request.getPanHash(),
                     request.getAmount().toPlainString(), request.getCurrencyCode(),
                     request.getMerchantId(), null, request.getMerchantCategory(),
                     null, null, OffsetDateTime.now()));
         } else {
             eventPublisher.publishAuthorizationDeclined(new AuthorizationDeclinedEvent(
-                    UUID.fromString(request.getStan()), request.getPanHash(),
+                    UUID.fromString(stan), request.getPanHash(),
                     request.getAmount().toPlainString(), request.getCurrencyCode(),
                     request.getMerchantId(), decision.getResponseReason(),
                     decision.getResponseCode(), OffsetDateTime.now()));

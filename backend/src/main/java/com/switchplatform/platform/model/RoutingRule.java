@@ -1,7 +1,16 @@
 package com.switchplatform.platform.model;
 
+import com.fasterxml.jackson.annotation.JsonRawValue;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -34,6 +43,9 @@ public class RoutingRule {
     @JoinColumn(name = "destination_participant_id", nullable = false)
     private Participant destinationParticipant;
 
+    @JsonRawValue
+    @JdbcTypeCode(SqlTypes.JSON)
+    @JsonDeserialize(using = JsonNodeToStringDeserializer.class)
     @Column(name = "condition_expression", nullable = false, columnDefinition = "JSONB")
     private String conditionExpression;
 
@@ -71,5 +83,13 @@ public class RoutingRule {
 
     public enum RuleStatus {
         ACTIVE, INACTIVE
+    }
+
+    public static class JsonNodeToStringDeserializer extends JsonDeserializer<String> {
+        @Override
+        public String deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
+            JsonNode node = p.getCodec().readTree(p);
+            return node != null ? node.toString() : null;
+        }
     }
 }

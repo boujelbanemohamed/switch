@@ -31,14 +31,14 @@ public class RoutingRuleService {
 
     public RoutingRule update(UUID id, RoutingRule rule) {
         RoutingRule existing = findById(id);
-        existing.setName(rule.getName());
-        existing.setDescription(rule.getDescription());
-        existing.setSourceParticipant(rule.getSourceParticipant());
-        existing.setDestinationParticipant(rule.getDestinationParticipant());
-        existing.setProtocol(rule.getProtocol());
-        existing.setPriority(rule.getPriority());
-        existing.setStatus(rule.getStatus());
-        existing.setConditionExpression(rule.getConditionExpression());
+        if (rule.getName() != null) existing.setName(rule.getName());
+        if (rule.getDescription() != null) existing.setDescription(rule.getDescription());
+        if (rule.getSourceParticipant() != null) existing.setSourceParticipant(rule.getSourceParticipant());
+        if (rule.getDestinationParticipant() != null) existing.setDestinationParticipant(rule.getDestinationParticipant());
+        if (rule.getProtocol() != null) existing.setProtocol(rule.getProtocol());
+        if (rule.getPriority() != null) existing.setPriority(rule.getPriority());
+        if (rule.getStatus() != null) existing.setStatus(rule.getStatus());
+        if (rule.getConditionExpression() != null) existing.setConditionExpression(rule.getConditionExpression());
         return routingRuleRepository.save(existing);
     }
 

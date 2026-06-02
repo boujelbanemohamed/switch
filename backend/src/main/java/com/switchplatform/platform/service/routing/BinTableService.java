@@ -31,10 +31,14 @@ public class BinTableService {
 
     public BinTable update(UUID id, BinTable binTable) {
         BinTable existing = findById(id);
-        existing.setBin(binTable.getBin());
-        existing.setCardBrand(binTable.getCardBrand());
-        existing.setParticipant(binTable.getParticipant());
-        existing.setIsActive(binTable.getIsActive());
+        if (binTable.getBin() != null) existing.setBin(binTable.getBin());
+        if (binTable.getBinLength() != null) existing.setBinLength(binTable.getBinLength());
+        if (binTable.getCardBrand() != null) existing.setCardBrand(binTable.getCardBrand());
+        if (binTable.getCardType() != null) existing.setCardType(binTable.getCardType());
+        if (binTable.getCountryCode() != null) existing.setCountryCode(binTable.getCountryCode());
+        if (binTable.getCurrencyCode() != null) existing.setCurrencyCode(binTable.getCurrencyCode());
+        if (binTable.getParticipant() != null) existing.setParticipant(binTable.getParticipant());
+        if (binTable.getIsActive() != null) existing.setIsActive(binTable.getIsActive());
         return binTableRepository.save(existing);
     }
 

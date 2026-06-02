@@ -7,6 +7,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.CompletableFuture;
+
 @Service
 @Slf4j
 @ConditionalOnProperty(name = "spring.kafka.bootstrap-servers")
@@ -84,13 +86,20 @@ public class KafkaEventPublisher implements EventPublisher {
     private void publish(String topic, String key, Object event) {
         try {
             byte[] payload = objectMapper.writeValueAsBytes(event);
-            kafkaTemplate.send(topic, key, payload)
-                    .whenComplete((result, ex) -> {
-                        if (ex != null) {
-                            log.error("Failed to publish event to topic={}, key={}, error={}",
-                                    topic, key, ex.getMessage(), ex);
-                        }
-                    });
+            CompletableFuture.runAsync(() -> {
+                try {
+                    kafkaTemplate.send(topic, key, payload)
+                        .whenComplete((result, ex) -> {
+                            if (ex != null) {
+                                log.error("Failed to publish event to topic={}, key={}, error={}",
+                                        topic, key, ex.getMessage(), ex);
+                            }
+                        });
+                } catch (Exception ex) {
+                    log.error("Failed to send event to topic={}, key={}, error={}",
+                            topic, key, ex.getMessage(), ex);
+                }
+            });
         } catch (Exception e) {
             log.error("Failed to serialize event for topic={}, key={}, error={}",
                     topic, key, e.getMessage(), e);

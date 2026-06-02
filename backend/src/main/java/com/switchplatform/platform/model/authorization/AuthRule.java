@@ -2,6 +2,8 @@ package com.switchplatform.platform.model.authorization;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -38,6 +40,7 @@ public class AuthRule {
     @Column(name = "response_code", length = 2)
     private String responseCode;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "condition_expression", columnDefinition = "JSONB")
     private String conditionExpression;
 

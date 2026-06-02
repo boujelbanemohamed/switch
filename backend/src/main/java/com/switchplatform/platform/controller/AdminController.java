@@ -96,4 +96,21 @@ public class AdminController {
     public ResponseEntity<BinTable> createBinTable(@Valid @RequestBody BinTable binTable) {
         return ResponseEntity.ok(binTableService.create(binTable));
     }
+
+    @GetMapping("/bin-tables/{id}")
+    public ResponseEntity<BinTable> getBinTable(@PathVariable UUID id) {
+        return ResponseEntity.ok(binTableService.findById(id));
+    }
+
+    @PutMapping("/bin-tables/{id}")
+    public ResponseEntity<BinTable> updateBinTable(
+            @PathVariable UUID id, @Valid @RequestBody BinTable binTable) {
+        return ResponseEntity.ok(binTableService.update(id, binTable));
+    }
+
+    @DeleteMapping("/bin-tables/{id}")
+    public ResponseEntity<Void> deleteBinTable(@PathVariable UUID id) {
+        binTableService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
 }

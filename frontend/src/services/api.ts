@@ -83,6 +83,12 @@ export const api = {
   },
   binTables: {
     list: () => request<import('../types').BinTable[]>('/admin/bin-tables'),
+    get: (id: string) => request<import('../types').BinTable>(`/admin/bin-tables/${id}`),
+    create: (data: Partial<import('../types').BinTable>) =>
+      request<import('../types').BinTable>('/admin/bin-tables', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: Partial<import('../types').BinTable>) =>
+      request<import('../types').BinTable>(`/admin/bin-tables/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) => request<void>(`/admin/bin-tables/${id}`, { method: 'DELETE' }),
   },
   issuing: {
     cardholders: {
@@ -228,6 +234,8 @@ export const api = {
         request<import('../types').AuthRule>('/authorization/rules', { method: 'POST', body: JSON.stringify(data) }),
       update: (id: string, data: Partial<import('../types').AuthRule>) =>
         request<import('../types').AuthRule>(`/authorization/rules/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      remove: (id: string) =>
+        request<void>(`/authorization/rules/${id}`, { method: 'DELETE' }),
     },
     decisions: {
       list: (cardId: string, limit = 10) =>

@@ -5,6 +5,8 @@ import com.switchplatform.platform.model.authorization.AuthRule;
 import com.switchplatform.platform.model.authorization.HoldRecord;
 import com.switchplatform.platform.model.authorization.AuthRule.ActionType;
 import com.switchplatform.platform.model.authorization.AuthRule.RuleStatus;
+import com.switchplatform.platform.repository.authorization.AuthRuleRepository;
+import com.switchplatform.platform.repository.authorization.AuthDecisionRepository;
 import com.switchplatform.platform.model.authorization.CardLimitUsage;
 import com.switchplatform.platform.model.authorization.VelocityCheck;
 import com.switchplatform.platform.model.issuing.Card;
@@ -26,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -38,7 +41,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @RequiredArgsConstructor
 public class AuthorizationEngine {
 
-    private final Map<UUID, AuthRule> rules = new ConcurrentHashMap<>();
     private final List<AuthDecision> decisions = new CopyOnWriteArrayList<>();
     private final Map<UUID, List<VelocityCheck>> velocityChecks = new ConcurrentHashMap<>();
 
@@ -49,6 +51,8 @@ public class AuthorizationEngine {
     private final CardLimitUsageRepository cardLimitUsageRepository;
     private final LedgerPostingEngine ledgerPostingEngine;
     private final EventPublisher eventPublisher;
+    private final AuthRuleRepository authRuleRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public AuthorizationResponse authorize(AuthorizationRequest request) {
@@ -121,7 +125,7 @@ public class AuthorizationEngine {
         // 3. Evaluate authorization rules
         AuthRule matchedRule = null;
         if (decision.getDecision() == null) {
-            List<AuthRule> applicableRules = rules.values().stream()
+            List<AuthRule> applicableRules = authRuleRepository.findByStatusOrderByPriorityAsc(RuleStatus.ACTIVE).stream()
                     .filter(r -> r.getStatus() == RuleStatus.ACTIVE)
                     .filter(r -> evaluateCondition(r, request))
                     .sorted(Comparator.comparingInt(AuthRule::getPriority))
@@ -356,6 +360,7 @@ public class AuthorizationEngine {
     }
 
     private String checkVelocity(AuthorizationRequest request) {
+        if (request.getCardId() == null) return null;
         List<VelocityCheck> checks = velocityChecks.get(request.getCardId());
         if (checks == null) return null;
 
@@ -372,36 +377,45 @@ public class AuthorizationEngine {
         return null;
     }
 
+    @Transactional
     public AuthRule defineRule(AuthRule rule) {
-        if (rule.getId() == null) {
-            rule.setId(UUID.randomUUID());
-        }
         if (rule.getStatus() == null) {
             rule.setStatus(RuleStatus.ACTIVE);
         }
         rule.setCreatedAt(OffsetDateTime.now());
         rule.setUpdatedAt(OffsetDateTime.now());
-        rules.put(rule.getId(), rule);
+        authRuleRepository.save(rule);
         log.info("Auth rule defined: id={}, name={}, priority={}",
                 rule.getId(), rule.getName(), rule.getPriority());
         return rule;
     }
 
-    public AuthRule updateRule(UUID id, AuthRule rule) {
-        AuthRule existing = rules.get(id);
-        if (existing == null) {
+    @Transactional
+    public AuthRule updateRule(UUID id, Map<String, Object> updates) {
+        AuthRule existing = authRuleRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Rule not found: " + id));
+        try {
+            objectMapper.updateValue(existing, updates);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to update rule: " + e.getMessage(), e);
+        }
+        existing.setUpdatedAt(OffsetDateTime.now());
+        authRuleRepository.save(existing);
+        log.info("Auth rule updated: id={}, name={}", id, existing.getName());
+        return existing;
+    }
+
+    @Transactional
+    public void deleteRule(UUID id) {
+        if (!authRuleRepository.existsById(id)) {
             throw new IllegalArgumentException("Rule not found: " + id);
         }
-        rule.setId(id);
-        rule.setCreatedAt(existing.getCreatedAt());
-        rule.setUpdatedAt(OffsetDateTime.now());
-        rules.put(id, rule);
-        log.info("Auth rule updated: id={}, name={}", id, rule.getName());
-        return rule;
+        authRuleRepository.deleteById(id);
+        log.info("Auth rule deleted: id={}", id);
     }
 
     public List<AuthRule> getRules() {
-        return List.copyOf(rules.values());
+        return authRuleRepository.findAll();
     }
 
     public List<AuthDecision> getDecisions(UUID cardId, int limit) {

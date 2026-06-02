@@ -35,8 +35,14 @@ public class AuthorizationController {
     }
 
     @PutMapping("/rules/{id}")
-    public ResponseEntity<AuthRule> updateRule(@PathVariable UUID id, @Valid @RequestBody AuthRule rule) {
-        return ResponseEntity.ok(authorizationEngine.updateRule(id, rule));
+    public ResponseEntity<AuthRule> updateRule(@PathVariable UUID id, @RequestBody java.util.Map<String, Object> updates) {
+        return ResponseEntity.ok(authorizationEngine.updateRule(id, updates));
+    }
+
+    @DeleteMapping("/rules/{id}")
+    public ResponseEntity<Void> deleteRule(@PathVariable UUID id) {
+        authorizationEngine.deleteRule(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/rules")

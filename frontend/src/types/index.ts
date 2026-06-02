@@ -181,6 +181,35 @@ export interface MerchantSettlement {
 }
 
 // Authorization
+export interface Condition {
+  field: 'amount' | 'currency' | 'merchantCategory' | 'cardType' | 'country' | 'transactionType' | 'channel' | 'timeOfDay' | 'dayOfWeek';
+  operator: 'GREATER_THAN' | 'LESS_THAN' | 'EQUAL' | 'NOT_EQUAL' | 'IN' | 'NOT_IN' | 'BETWEEN';
+  value: string;
+}
+
+export type ConditionField = Condition['field'];
+export type ConditionOperator = Condition['operator'];
+
+export const CONDITION_FIELDS: ConditionField[] = [
+  'amount', 'currency', 'merchantCategory', 'cardType',
+  'country', 'transactionType', 'channel', 'timeOfDay', 'dayOfWeek',
+];
+
+export const OPERATORS_BY_FIELD: Record<ConditionField, ConditionOperator[]> = {
+  amount: ['GREATER_THAN', 'LESS_THAN', 'EQUAL', 'BETWEEN'],
+  currency: ['EQUAL', 'NOT_EQUAL', 'IN', 'NOT_IN'],
+  merchantCategory: ['EQUAL', 'NOT_EQUAL', 'IN', 'NOT_IN'],
+  cardType: ['EQUAL', 'NOT_EQUAL', 'IN', 'NOT_IN'],
+  country: ['EQUAL', 'NOT_EQUAL', 'IN', 'NOT_IN'],
+  transactionType: ['EQUAL', 'NOT_EQUAL', 'IN', 'NOT_IN'],
+  channel: ['EQUAL', 'NOT_EQUAL', 'IN', 'NOT_IN'],
+  timeOfDay: ['BETWEEN', 'EQUAL'],
+  dayOfWeek: ['BETWEEN', 'EQUAL'],
+};
+
+export const IS_MULTI_VALUE_OP: ConditionOperator[] = ['IN', 'NOT_IN'];
+export const IS_RANGE_OP: ConditionOperator[] = ['BETWEEN'];
+
 export interface HoldRecord {
   id: string;
   cardId?: string;
@@ -196,7 +225,8 @@ export interface AuthRule {
   id: string;
   name: string;
   ruleType: string;
-  parameters: string;
+  action: string;
+  conditionExpression: string;
   priority: number;
   status: string;
   successCount: number;

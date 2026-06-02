@@ -5,6 +5,11 @@ spring:
     password: switch_pass
   kafka:
     bootstrap-servers: localhost:9092
+    admin:
+      fail-fast: false
+      properties:
+        default.api.timeout.ms: 3000
+        request.timeout.ms: 2000
 
 switch:
   auth:

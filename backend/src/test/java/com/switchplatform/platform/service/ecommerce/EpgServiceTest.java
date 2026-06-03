@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +44,7 @@ class EpgServiceTest {
         when(epgTransactionRepository.save(any())).thenAnswer(inv -> {
             EpgTransaction t = inv.getArgument(0);
             if (t.getId() == null) t.setId(UUID.randomUUID());
+            if (t.getCreatedAt() == null) t.setCreatedAt(OffsetDateTime.now());
             txnStore.put(t.getId(), t);
             return t;
         });

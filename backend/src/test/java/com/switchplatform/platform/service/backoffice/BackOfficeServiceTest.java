@@ -6,10 +6,14 @@ import com.switchplatform.platform.model.backoffice.Report;
 import com.switchplatform.platform.repository.backoffice.AuditLogRepository;
 import com.switchplatform.platform.repository.backoffice.MonitoringEventRepository;
 import com.switchplatform.platform.repository.backoffice.ReportRepository;
+import com.switchplatform.platform.repository.TransactionRepository;
+import com.switchplatform.platform.repository.clearing.ClearingRecordRepository;
+import com.switchplatform.platform.repository.fraud.FraudAlertRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import java.time.OffsetDateTime;
@@ -45,6 +49,9 @@ class BackOfficeServiceTest {
         AuditLogRepository auditLogRepository = mock(AuditLogRepository.class);
         ReportRepository reportRepository = mock(ReportRepository.class);
         MonitoringEventRepository monitoringEventRepository = mock(MonitoringEventRepository.class);
+        TransactionRepository transactionRepository = mock(TransactionRepository.class);
+        ClearingRecordRepository clearingRecordRepository = mock(ClearingRecordRepository.class);
+        FraudAlertRepository fraudAlertRepository = mock(FraudAlertRepository.class);
 
         when(auditLogRepository.save(any())).thenAnswer(inv -> {
             AuditLog log = inv.getArgument(0);
@@ -53,8 +60,14 @@ class BackOfficeServiceTest {
             auditLogStore.put(log.getId(), log);
             return log;
         });
-        when(auditLogRepository.findAll(any(Sort.class))).thenAnswer(inv ->
-                new ArrayList<>(auditLogStore.values()));
+        when(auditLogRepository.findAll(any(Pageable.class))).thenAnswer(inv -> {
+            Pageable pageable = inv.getArgument(0);
+            List<AuditLog> all = new ArrayList<>(auditLogStore.values());
+            all.sort(Comparator.comparing(AuditLog::getCreatedAt,
+                    java.util.Comparator.nullsLast(Comparator.reverseOrder())));
+            int end = Math.min(pageable.getPageSize(), all.size());
+            return new PageImpl<>(all.subList(0, end));
+        });
 
         when(reportRepository.save(any())).thenAnswer(inv -> {
             Report r = inv.getArgument(0);
@@ -89,6 +102,10 @@ class BackOfficeServiceTest {
                     .toList();
             return new PageImpl<>(filtered);
         });
+        when(transactionRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+        when(clearingRecordRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+        when(fraudAlertRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+
         when(monitoringEventRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(any(), any(), any()))
                 .thenAnswer(inv -> {
                     OffsetDateTime start = inv.getArgument(0);
@@ -103,7 +120,15 @@ class BackOfficeServiceTest {
                     return new PageImpl<>(filtered);
                 });
 
-        backOfficeService = new BackOfficeService(auditLogRepository, reportRepository, monitoringEventRepository);
+        backOfficeService = new BackOfficeService(auditLogRepository, reportRepository, monitoringEventRepository,
+                transactionRepository, clearingRecordRepository, fraudAlertRepository);
+        try {
+            var f = BackOfficeService.class.getDeclaredField("reportsDirectory");
+            f.setAccessible(true);
+            f.set(backOfficeService, System.getProperty("java.io.tmpdir"));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test

@@ -5,6 +5,9 @@ import com.switchplatform.platform.model.issuing.Cardholder;
 import com.switchplatform.platform.repository.issuing.CardholderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,7 +43,13 @@ public class CardholderService {
 
     @Transactional(readOnly = true)
     public List<Cardholder> listAll() {
-        return cardholderRepository.findAll();
+        return cardholderRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Cardholder> listAll(int page, int size) {
+        return cardholderRepository.findAll(
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
     }
 
     @Transactional(readOnly = true)

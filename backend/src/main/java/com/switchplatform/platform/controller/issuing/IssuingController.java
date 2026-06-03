@@ -35,8 +35,10 @@ public class IssuingController {
     // ─── Cardholder endpoints ───────────────────────────────────────────────
 
     @GetMapping("/cardholders")
-    public ResponseEntity<List<Cardholder>> listCardholders() {
-        return ResponseEntity.ok(cardholderService.listAll());
+    public ResponseEntity<?> listCardholders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        return ResponseEntity.ok(cardholderService.listAll(page, size));
     }
 
     @PostMapping("/cardholders")
@@ -240,8 +242,10 @@ public class IssuingController {
     }
 
     @GetMapping("/accounts")
-    public ResponseEntity<List<CardAccount>> listAccounts() {
-        return ResponseEntity.ok(cardAccountService.listAll());
+    public ResponseEntity<?> listAccounts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        return ResponseEntity.ok(cardAccountService.listAll(page, size));
     }
 
     // ─── Notification endpoints ─────────────────────────────────────────────

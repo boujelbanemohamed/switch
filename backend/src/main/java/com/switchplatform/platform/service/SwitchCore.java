@@ -16,6 +16,7 @@ import com.switchplatform.platform.service.acquiring.MerchantService;
 import com.switchplatform.platform.service.acquiring.SettlementService;
 import com.switchplatform.platform.service.clearing.ClearingService;
 import com.switchplatform.platform.service.clearing.InterchangeService;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,10 +47,23 @@ public class SwitchCore {
     private final SettlementService settlementService;
     private final InterchangeService interchangeService;
 
-    @Value("${switch.pan.hash-key:}")
-    private String panHashKey = "test-key-not-for-production";
+    @Value("${switch.pan.hash-key}")
+    private String panHashKey;
+
+    @PostConstruct
+    public void validateConfig() {
+        if (panHashKey == null || panHashKey.isBlank()) {
+            throw new IllegalStateException("switch.pan.hash-key must be set via PAN_HASH_KEY environment variable");
+        }
+    }
 
     public Transaction processIso8583Message(byte[] rawMessage, String sourceCode) {
+        if (rawMessage == null || rawMessage.length == 0) {
+            throw new IllegalArgumentException("Raw ISO 8583 message must not be null or empty");
+        }
+        if (rawMessage.length > 4096) {
+            throw new IllegalArgumentException("Raw ISO 8583 message exceeds maximum length of 4096 bytes");
+        }
         IsoMessage isoMsg = iso8583Engine.parse(rawMessage);
         String mti = String.format("%04d", isoMsg.getType());
         String pan = isoMsg.getField(2) != null ? isoMsg.getField(2).toString() : null;

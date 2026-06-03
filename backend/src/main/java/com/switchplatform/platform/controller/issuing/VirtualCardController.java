@@ -2,6 +2,7 @@ package com.switchplatform.platform.controller.issuing;
 
 import com.switchplatform.platform.model.issuing.VirtualCard;
 import com.switchplatform.platform.service.issuing.VirtualCardService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,8 +19,10 @@ public class VirtualCardController {
     private final VirtualCardService virtualCardService;
 
     @GetMapping
-    public ResponseEntity<List<VirtualCard>> listAll() {
-        return ResponseEntity.ok(virtualCardService.listAll());
+    public ResponseEntity<?> listAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        return ResponseEntity.ok(virtualCardService.listAll(page, size));
     }
 
     @GetMapping("/{id}")
@@ -48,7 +51,7 @@ public class VirtualCardController {
     }
 
     @PostMapping
-    public ResponseEntity<VirtualCard> createCard(@RequestBody VirtualCard card) {
+    public ResponseEntity<VirtualCard> createCard(@Valid @RequestBody VirtualCard card) {
         return ResponseEntity.ok(virtualCardService.createVirtualCard(card));
     }
 

@@ -62,7 +62,26 @@ public class SecurityConfig {
                         "/api/v1/auth/audit/**").hasRole(AuthUser.Role.ADMIN.name())
                 .requestMatchers("/api/v1/auth/me").authenticated()
                 .requestMatchers("/api/v1/backoffice/monitoring/events").permitAll()
-                .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                .requestMatchers("/actuator/**").hasRole(AuthUser.Role.ADMIN.name())
+                .requestMatchers("/api/v1/acs/**",
+                        "/api/v1/epg/**",
+                        "/api/v1/3dss/**").hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name(),
+                        AuthUser.Role.ANALYST.name())
+                .requestMatchers(HttpMethod.GET, "/api/v1/merchant-portal/**").hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name(),
+                        AuthUser.Role.ANALYST.name(),
+                        AuthUser.Role.MERCHANT.name())
+                .requestMatchers("/api/v1/merchant-portal/**").hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name(),
+                        AuthUser.Role.MERCHANT.name())
+                .requestMatchers("/api/v1/issuing/virtual-cards/**").hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name())
                 .requestMatchers("/api/v1/admin/live-config/**").hasRole(AuthUser.Role.ADMIN.name())
                 .requestMatchers("/api/v1/admin/**").hasRole(AuthUser.Role.ADMIN.name())
 
@@ -101,7 +120,7 @@ public class SecurityConfig {
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name())
 
-                .requestMatchers("/api/v1/authorization/holds/**").hasAnyRole(
+                .requestMatchers("/api/v1/authorization/**").hasAnyRole(
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name())
                 .requestMatchers("/api/v1/acquiring/settlements/**",

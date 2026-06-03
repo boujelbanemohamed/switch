@@ -30,7 +30,8 @@ function decodeTokenPayload(token: string): Record<string, unknown> | null {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('accessToken'));
+  // TODO: Migrate access token to httpOnly cookie for XSS protection
+  const [token, setToken] = useState<string | null>(() => sessionStorage.getItem('accessToken'));
   const [refreshTokenValue, setRefreshTokenValue] = useState<string | null>(() => localStorage.getItem('refreshToken'));
   const [mfaUsername, setMfaUsername] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(() => {
@@ -63,7 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setAuthState = useCallback((data: LoginResponse) => {
     setToken(data.accessToken);
     setRefreshTokenValue(data.refreshToken);
-    localStorage.setItem('accessToken', data.accessToken);
+    sessionStorage.setItem('accessToken', data.accessToken);
+    // TODO: Move refreshToken to httpOnly cookie
     localStorage.setItem('refreshToken', data.refreshToken);
     const payload = decodeTokenPayload(data.accessToken);
     if (payload) {
@@ -148,7 +150,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRefreshTokenValue(null);
     setUser(null);
     setMfaUsername(null);
-    localStorage.removeItem('accessToken');
+    sessionStorage.removeItem('accessToken');
+    // TODO: Move refreshToken to httpOnly cookie
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
   }, [refreshTokenValue, token]);
@@ -168,7 +171,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data: LoginResponse = await res.json();
       setToken(data.accessToken);
       setRefreshTokenValue(data.refreshToken);
-      localStorage.setItem('accessToken', data.accessToken);
+      sessionStorage.setItem('accessToken', data.accessToken);
+      // TODO: Move refreshToken to httpOnly cookie
       localStorage.setItem('refreshToken', data.refreshToken);
     } catch {
       logout();
@@ -184,7 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await fetch(`/api/v1${path}`, { ...options, headers });
     if ((res.status === 401 || res.status === 403) && refreshTokenValue) {
       await refreshAccessToken();
-      const newToken = localStorage.getItem('accessToken');
+      const newToken = sessionStorage.getItem('accessToken');
       if (newToken) {
         headers['Authorization'] = `Bearer ${newToken}`;
         const retryRes = await fetch(`/api/v1${path}`, { ...options, headers });

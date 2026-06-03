@@ -220,7 +220,7 @@ export function BinTables() {
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Via l'API REST (curl)</div>
               <pre style={{ fontSize: 12, background: 'var(--bg)', padding: 12, borderRadius: 8, overflowX: 'auto', lineHeight: 1.6 }}>
-{`curl -X POST http://localhost:3000/api/v1/admin/bin-tables \\
+{`curl -X POST \${window.location.origin}/api/v1/admin/bin-tables \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer $TOKEN" \\
   -d '{

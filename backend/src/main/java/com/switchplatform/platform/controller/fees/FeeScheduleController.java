@@ -6,6 +6,7 @@ import com.switchplatform.platform.model.fees.FeeSchedule.ScheduleType;
 import com.switchplatform.platform.service.fees.FeeCalculationContext;
 import com.switchplatform.platform.service.fees.FeeCalculationResult;
 import com.switchplatform.platform.service.fees.FeeScheduleService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,13 +34,13 @@ public class FeeScheduleController {
     }
 
     @PostMapping("/schedules")
-    public ResponseEntity<FeeSchedule> createSchedule(@RequestBody FeeSchedule schedule) {
+    public ResponseEntity<FeeSchedule> createSchedule(@Valid @RequestBody FeeSchedule schedule) {
         return ResponseEntity.ok(feeScheduleService.createSchedule(schedule));
     }
 
     @PutMapping("/schedules/{id}")
     public ResponseEntity<FeeSchedule> updateSchedule(@PathVariable UUID id,
-                                                       @RequestBody FeeSchedule update) {
+                                                       @Valid @RequestBody FeeSchedule update) {
         return ResponseEntity.ok(feeScheduleService.updateSchedule(id, update));
     }
 
@@ -65,12 +66,12 @@ public class FeeScheduleController {
     }
 
     @PostMapping("/schedules/{id}/rules")
-    public ResponseEntity<FeeRule> addRule(@PathVariable UUID id, @RequestBody FeeRule rule) {
+    public ResponseEntity<FeeRule> addRule(@PathVariable UUID id, @Valid @RequestBody FeeRule rule) {
         return ResponseEntity.ok(feeScheduleService.addRule(id, rule));
     }
 
     @PutMapping("/rules/{ruleId}")
-    public ResponseEntity<FeeRule> updateRule(@PathVariable UUID ruleId, @RequestBody FeeRule update) {
+    public ResponseEntity<FeeRule> updateRule(@PathVariable UUID ruleId, @Valid @RequestBody FeeRule update) {
         return ResponseEntity.ok(feeScheduleService.updateRule(ruleId, update));
     }
 
@@ -81,7 +82,7 @@ public class FeeScheduleController {
     }
 
     @PostMapping("/calculate")
-    public ResponseEntity<FeeCalculationResult> calculate(@RequestBody FeeCalculateRequest req) {
+    public ResponseEntity<FeeCalculationResult> calculate(@Valid @RequestBody FeeCalculateRequest req) {
         FeeCalculationContext ctx = new FeeCalculationContext(
                 req.amount, req.currency, req.brand, req.cardType,
                 req.mcc, req.region, req.entryMode, req.participantId,

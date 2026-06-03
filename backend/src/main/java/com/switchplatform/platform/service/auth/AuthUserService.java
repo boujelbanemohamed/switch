@@ -4,6 +4,9 @@ import com.switchplatform.platform.model.auth.AuthUser;
 import com.switchplatform.platform.repository.auth.AuthUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -141,9 +144,13 @@ public class AuthUserService implements UserDetailsService {
 
     @Transactional(readOnly = true)
     public List<AuthUser> listAllUsers() {
-        return authUserRepository.findAll().stream()
-                .sorted(Comparator.comparing(AuthUser::getCreatedAt).reversed())
-                .collect(Collectors.toList());
+        return authUserRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AuthUser> listAllUsers(int page, int size) {
+        return authUserRepository.findAll(
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
     }
 
     @Transactional

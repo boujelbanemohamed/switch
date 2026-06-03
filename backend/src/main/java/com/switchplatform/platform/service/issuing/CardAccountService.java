@@ -4,6 +4,9 @@ import com.switchplatform.platform.model.issuing.CardAccount;
 import com.switchplatform.platform.repository.issuing.CardAccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -113,6 +116,11 @@ public class CardAccountService {
     }
 
     public List<CardAccount> listAll() {
-        return cardAccountRepository.findAll();
+        return cardAccountRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
+
+    public Page<CardAccount> listAll(int page, int size) {
+        return cardAccountRepository.findAll(
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
     }
 }

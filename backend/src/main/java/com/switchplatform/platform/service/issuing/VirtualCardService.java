@@ -5,6 +5,9 @@ import com.switchplatform.platform.model.issuing.VirtualCard.Status;
 import com.switchplatform.platform.repository.issuing.VirtualCardRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -135,7 +138,12 @@ public class VirtualCardService {
     }
 
     public List<VirtualCard> listAll() {
-        return virtualCardRepository.findAll();
+        return virtualCardRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
+
+    public Page<VirtualCard> listAll(int page, int size) {
+        return virtualCardRepository.findAll(
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
     }
 
     public List<VirtualCard> listByStatus(VirtualCard.Status status) {

@@ -1,7 +1,8 @@
 const BASE_URL = '/api/v1';
 
+// TODO: Migrate access token to httpOnly cookie for XSS protection
 function getToken(): string | null {
-  return localStorage.getItem('accessToken');
+  return sessionStorage.getItem('accessToken');
 }
 
 export async function safeRequest<T>(path: string, options?: RequestInit): Promise<T> {
@@ -42,7 +43,8 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
         });
         if (refreshRes.ok) {
           const data = await refreshRes.json();
-          localStorage.setItem('accessToken', data.accessToken);
+          sessionStorage.setItem('accessToken', data.accessToken);
+          // TODO: Move refreshToken to httpOnly cookie
           localStorage.setItem('refreshToken', data.refreshToken);
           headers['Authorization'] = `Bearer ${data.accessToken}`;
           const retryRes = await fetch(`${BASE_URL}${path}`, {
@@ -59,7 +61,8 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
         // refresh failed
       }
     }
-    localStorage.removeItem('accessToken');
+    sessionStorage.removeItem('accessToken');
+    // TODO: Move refreshToken to httpOnly cookie
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     window.location.href = '/login';

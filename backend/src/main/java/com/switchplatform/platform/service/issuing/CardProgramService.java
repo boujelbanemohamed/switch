@@ -6,6 +6,9 @@ import com.switchplatform.platform.repository.issuing.CardProductRepository;
 import com.switchplatform.platform.repository.issuing.CardProgramRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -68,7 +71,12 @@ public class CardProgramService {
     }
 
     public List<CardProgram> listPrograms() {
-        return programRepository.findAll();
+        return programRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
+
+    public Page<CardProgram> listPrograms(int page, int size) {
+        return programRepository.findAll(
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
     }
 
     @Transactional
@@ -142,6 +150,11 @@ public class CardProgramService {
     }
 
     public List<CardProduct> listProducts() {
-        return productRepository.findAll();
+        return productRepository.findAll(Sort.by(Sort.Direction.DESC, "name"));
+    }
+
+    public Page<CardProduct> listProducts(int page, int size) {
+        return productRepository.findAll(
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "name")));
     }
 }

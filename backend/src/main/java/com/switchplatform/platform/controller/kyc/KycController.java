@@ -3,6 +3,7 @@ package com.switchplatform.platform.controller.kyc;
 import com.switchplatform.platform.model.kyc.KycDocument;
 import com.switchplatform.platform.model.kyc.KycVerification;
 import com.switchplatform.platform.service.kyc.KycService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +27,7 @@ public class KycController {
     }
 
     @PostMapping("/documents")
-    public ResponseEntity<KycDocument> uploadDocument(@RequestBody KycDocument doc) {
+    public ResponseEntity<KycDocument> uploadDocument(@Valid @RequestBody KycDocument doc) {
         return ResponseEntity.ok(kycService.uploadDocument(doc));
     }
 

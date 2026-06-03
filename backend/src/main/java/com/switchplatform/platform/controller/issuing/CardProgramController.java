@@ -3,6 +3,7 @@ package com.switchplatform.platform.controller.issuing;
 import com.switchplatform.platform.model.issuing.CardProduct;
 import com.switchplatform.platform.model.issuing.CardProgram;
 import com.switchplatform.platform.service.issuing.CardProgramService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,8 +19,10 @@ public class CardProgramController {
     private final CardProgramService cardProgramService;
 
     @GetMapping
-    public ResponseEntity<List<CardProgram>> listPrograms() {
-        return ResponseEntity.ok(cardProgramService.listPrograms());
+    public ResponseEntity<?> listPrograms(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        return ResponseEntity.ok(cardProgramService.listPrograms(page, size));
     }
 
     @GetMapping("/{id}")
@@ -28,13 +31,13 @@ public class CardProgramController {
     }
 
     @PostMapping
-    public ResponseEntity<CardProgram> createProgram(@RequestBody CardProgram program) {
+    public ResponseEntity<CardProgram> createProgram(@Valid @RequestBody CardProgram program) {
         return ResponseEntity.ok(cardProgramService.createProgram(program));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<CardProgram> updateProgram(@PathVariable UUID id,
-                                                      @RequestBody CardProgram update) {
+                                                       @Valid @RequestBody CardProgram update) {
         return ResponseEntity.ok(cardProgramService.updateProgram(id, update));
     }
 
@@ -61,14 +64,16 @@ public class CardProgramController {
 
     @PostMapping("/{programId}/products")
     public ResponseEntity<CardProduct> createProduct(@PathVariable UUID programId,
-                                                      @RequestBody CardProduct product) {
+                                                       @Valid @RequestBody CardProduct product) {
         product.setProgramId(programId);
         return ResponseEntity.ok(cardProgramService.createProduct(product));
     }
 
     @GetMapping("/products")
-    public ResponseEntity<List<CardProduct>> listProducts() {
-        return ResponseEntity.ok(cardProgramService.listProducts());
+    public ResponseEntity<?> listProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        return ResponseEntity.ok(cardProgramService.listProducts(page, size));
     }
 
     @GetMapping("/products/{id}")
@@ -83,7 +88,7 @@ public class CardProgramController {
 
     @PutMapping("/products/{id}")
     public ResponseEntity<CardProduct> updateProduct(@PathVariable UUID id,
-                                                      @RequestBody CardProduct update) {
+                                                       @Valid @RequestBody CardProduct update) {
         return ResponseEntity.ok(cardProgramService.updateProduct(id, update));
     }
 

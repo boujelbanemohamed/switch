@@ -58,6 +58,7 @@ class BackOfficeServiceTest {
 
         when(reportRepository.save(any())).thenAnswer(inv -> {
             Report r = inv.getArgument(0);
+            if (r.getId() == null) r.setId(UUID.randomUUID());
             if (r.getCreatedAt() == null) r.setCreatedAt(OffsetDateTime.now());
             reportStore.put(r.getId(), r);
             return r;

@@ -304,7 +304,7 @@ class IssuingServiceTest {
 
         assertNotNull(created.getId());
         assertEquals(Cardholder.CardholderStatus.ACTIVE, created.getStatus());
-        assertEquals("1", created.getKycLevel());
+        assertEquals(1, created.getKycLevel().intValue());
         assertNotNull(created.getCreatedAt());
     }
 
@@ -350,7 +350,7 @@ class IssuingServiceTest {
 
         Cardholder updated = cardholderService.updateKycLevel(created.getId(), 3);
 
-        assertEquals("3", updated.getKycLevel());
+        assertEquals(3, updated.getKycLevel().intValue());
     }
 
     @Test

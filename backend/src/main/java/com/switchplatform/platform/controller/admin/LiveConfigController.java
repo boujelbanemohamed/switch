@@ -2,6 +2,7 @@ package com.switchplatform.platform.controller.admin;
 
 import com.switchplatform.platform.model.admin.LiveConfig;
 import com.switchplatform.platform.service.admin.LiveConfigService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -40,7 +41,7 @@ public class LiveConfigController {
 
     @PutMapping("/{id}")
     public ResponseEntity<LiveConfig> update(@PathVariable UUID id,
-                                              @RequestBody Map<String, String> body,
+                                               @Valid @RequestBody Map<String, String> body,
                                               Authentication auth) {
         String updatedBy = auth != null ? auth.getName() : "system";
         return ResponseEntity.ok(liveConfigService.updateConfig(id, body.get("value"), updatedBy));

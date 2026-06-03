@@ -7,6 +7,8 @@ import com.switchplatform.platform.model.authorization.AuthRule.RuleStatus;
 import com.switchplatform.platform.model.authorization.CardLimitUsage;
 import com.switchplatform.platform.model.authorization.VelocityCheck;
 import com.switchplatform.platform.repository.authorization.CardLimitUsageRepository;
+import com.switchplatform.platform.repository.authorization.AuthRuleRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,9 +27,7 @@ import com.switchplatform.platform.repository.authorization.HoldRecordRepository
 import com.switchplatform.platform.service.ledger.LedgerPostingEngine;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -38,13 +38,42 @@ class AuthorizationEngineTest {
 
     private AuthorizationEngine authEngine;
     private CardLimitUsageRepository cardLimitUsageRepository;
+    private AuthRuleRepository authRuleRepository;
+    private final Map<UUID, AuthRule> ruleStore = new ConcurrentHashMap<>();
 
     @BeforeEach
     void setUp() {
+        ruleStore.clear();
         cardLimitUsageRepository = mock(CardLimitUsageRepository.class);
         CardAccountService cardAccountService = new CardAccountService(mock(CardAccountRepository.class));
         LedgerPostingEngine ledgerPostingEngine = mock(LedgerPostingEngine.class);
         EventPublisher eventPublisher = mock(EventPublisher.class);
+        authRuleRepository = mock(AuthRuleRepository.class);
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        when(authRuleRepository.save(any())).thenAnswer(inv -> {
+            AuthRule r = inv.getArgument(0);
+            if (r.getId() == null) r.setId(UUID.randomUUID());
+            ruleStore.put(r.getId(), r);
+            return r;
+        });
+        when(authRuleRepository.findById(any())).thenAnswer(inv ->
+                Optional.ofNullable(ruleStore.get(inv.getArgument(0))));
+        when(authRuleRepository.findAll()).thenAnswer(inv -> new ArrayList<>(ruleStore.values()));
+        when(authRuleRepository.findByStatusOrderByPriorityAsc(any())).thenAnswer(inv -> {
+            AuthRule.RuleStatus status = inv.getArgument(0);
+            return ruleStore.values().stream()
+                    .filter(r -> r.getStatus() == status)
+                    .sorted(Comparator.comparingInt(AuthRule::getPriority))
+                    .toList();
+        });
+        when(authRuleRepository.existsById(any())).thenAnswer(inv ->
+                ruleStore.containsKey(inv.getArgument(0)));
+        doAnswer(inv -> {
+            ruleStore.remove(inv.getArgument(0));
+            return null;
+        }).when(authRuleRepository).deleteById(any());
+
         authEngine = new AuthorizationEngine(
                 new FraudEngine(new BehavioralProfileService(mock(BehavioralProfileRepository.class)),
                         mock(com.switchplatform.platform.repository.authorization.VelocityCheckRepository.class),
@@ -55,7 +84,9 @@ class AuthorizationEngineTest {
                 new HoldService(mock(HoldRecordRepository.class), cardAccountService, ledgerPostingEngine, eventPublisher),
                 cardLimitUsageRepository,
                 ledgerPostingEngine,
-                eventPublisher);
+                eventPublisher,
+                authRuleRepository,
+                objectMapper);
     }
 
     private void setField(Object target, String fieldName, Object value) {
@@ -312,14 +343,13 @@ class AuthorizationEngineTest {
         assertNotNull(defined.getCreatedAt());
         assertNotNull(defined.getUpdatedAt());
 
-        AuthRule updateData = AuthRule.builder()
-                .name("Updated Rule")
-                .action(ActionType.DECLINE)
-                .responseCode("05")
-                .priority(10)
-                .build();
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("name", "Updated Rule");
+        updates.put("action", ActionType.DECLINE);
+        updates.put("responseCode", "05");
+        updates.put("priority", 10);
 
-        AuthRule updated = authEngine.updateRule(defined.getId(), updateData);
+        AuthRule updated = authEngine.updateRule(defined.getId(), updates);
         assertEquals(defined.getId(), updated.getId());
         assertEquals("Updated Rule", updated.getName());
         assertEquals(ActionType.DECLINE, updated.getAction());

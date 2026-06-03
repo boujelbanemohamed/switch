@@ -259,8 +259,10 @@ public class AuthController {
     }
 
     @GetMapping("/users")
-    public ResponseEntity<List<AuthUser>> listUsers() {
-        return ResponseEntity.ok(authUserService.listAllUsers());
+    public ResponseEntity<?> listUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        return ResponseEntity.ok(authUserService.listAllUsers(page, size));
     }
 
     @PutMapping("/users/{id}")

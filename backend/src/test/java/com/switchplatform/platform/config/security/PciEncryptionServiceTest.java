@@ -11,7 +11,7 @@ class PciEncryptionServiceTest {
 
     @BeforeEach
     void setUp() {
-        encryptionService = new PciEncryptionService(null);
+        encryptionService = new PciEncryptionService("gx+3an3CogvPuttoHcYQhWBoPjWGL9S9Ji4kdgDzcwM=");
     }
 
     @Test

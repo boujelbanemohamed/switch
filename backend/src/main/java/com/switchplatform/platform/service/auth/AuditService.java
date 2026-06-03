@@ -8,15 +8,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -55,64 +53,53 @@ public class AuditService {
 
     @Transactional(readOnly = true)
     public List<AuditLog> listByResource(String resourceType, String resourceId, int limit) {
-        return auditLogRepository.findAll().stream()
-                .filter(a -> resourceType.equals(a.getResourceType()) && resourceId.equals(a.getResourceId()))
-                .sorted(Comparator.comparing(AuditLog::getCreatedAt).reversed())
-                .limit(limit)
-                .collect(Collectors.toList());
+        return auditLogRepository.findByResourceTypeAndResourceIdOrderByCreatedAtDesc(
+                resourceType, resourceId, PageRequest.of(0, limit));
     }
 
     @Transactional(readOnly = true)
     public Page<AuditLog> listByResource(String resourceType, String resourceId, int page, int size) {
-        List<AuditLog> all = auditLogRepository.findAll().stream()
-                .filter(a -> resourceType.equals(a.getResourceType()) && resourceId.equals(a.getResourceId()))
-                .sorted(Comparator.comparing(AuditLog::getCreatedAt).reversed())
-                .collect(Collectors.toList());
-        return paginate(all, page, size);
+        List<AuditLog> results = auditLogRepository.findByResourceTypeAndResourceIdOrderByCreatedAtDesc(
+                resourceType, resourceId, PageRequest.of(page, size));
+        long total = results.size();
+        return new PageImpl<>(results, PageRequest.of(page, size), total);
     }
 
     @Transactional(readOnly = true)
     public List<AuditLog> listByUser(UUID userId, int limit) {
-        return auditLogRepository.findAll().stream()
-                .filter(a -> userId.equals(a.getUserId()))
-                .sorted(Comparator.comparing(AuditLog::getCreatedAt).reversed())
-                .limit(limit)
-                .collect(Collectors.toList());
+        return auditLogRepository.findByUserIdOrderByCreatedAtDesc(
+                userId, PageRequest.of(0, limit));
     }
 
     @Transactional(readOnly = true)
     public Page<AuditLog> listByUser(UUID userId, int page, int size) {
-        List<AuditLog> all = auditLogRepository.findAll().stream()
-                .filter(a -> userId.equals(a.getUserId()))
-                .sorted(Comparator.comparing(AuditLog::getCreatedAt).reversed())
-                .collect(Collectors.toList());
-        return paginate(all, page, size);
+        List<AuditLog> results = auditLogRepository.findByUserIdOrderByCreatedAtDesc(
+                userId, PageRequest.of(page, size));
+        long total = results.size();
+        return new PageImpl<>(results, PageRequest.of(page, size), total);
     }
 
     @Transactional(readOnly = true)
     public List<AuditLog> listAll(int limit) {
-        return auditLogRepository.findAll().stream()
-                .sorted(Comparator.comparing(AuditLog::getCreatedAt).reversed())
-                .limit(limit)
-                .collect(Collectors.toList());
+        return auditLogRepository.findAll(
+                PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt")))
+                .getContent();
     }
 
     @Transactional(readOnly = true)
     public Page<AuditLog> listAll(int page, int size) {
-        return listAllFiltered(page, size, null, null, null, null);
+        return auditLogRepository.findAll(
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
     }
 
     @Transactional(readOnly = true)
     public Page<AuditLog> listAllFiltered(int page, int size, String action, UUID userId,
                                            OffsetDateTime dateFrom, OffsetDateTime dateTo) {
-        List<AuditLog> all = auditLogRepository.findAll().stream()
-                .filter(a -> action == null || a.getAction().equalsIgnoreCase(action))
-                .filter(a -> userId == null || userId.equals(a.getUserId()))
-                .filter(a -> dateFrom == null || (a.getCreatedAt() != null && !a.getCreatedAt().isBefore(dateFrom)))
-                .filter(a -> dateTo == null || (a.getCreatedAt() != null && !a.getCreatedAt().isAfter(dateTo)))
-                .sorted(Comparator.comparing(AuditLog::getCreatedAt).reversed())
-                .collect(Collectors.toList());
-        return paginate(all, page, size);
+        long count = auditLogRepository.count();
+        List<AuditLog> results = auditLogRepository.findFiltered(
+                action, userId, dateFrom, dateTo,
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+        return new PageImpl<>(results, PageRequest.of(page, size), count);
     }
 
     @Transactional(readOnly = true)
@@ -123,16 +110,6 @@ public class AuditService {
 
     @Transactional(readOnly = true)
     public long countByStatus(String status) {
-        return auditLogRepository.findAll().stream()
-                .filter(a -> a.getStatus().equalsIgnoreCase(status))
-                .count();
-    }
-
-    private <T> Page<T> paginate(List<T> list, int page, int size) {
-        int total = list.size();
-        int fromIndex = Math.min(page * size, total);
-        int toIndex = Math.min(fromIndex + size, total);
-        List<T> pageContent = fromIndex < total ? list.subList(fromIndex, toIndex) : Collections.emptyList();
-        return new PageImpl<>(pageContent, PageRequest.of(page, size), total);
+        return auditLogRepository.countByStatus(status);
     }
 }

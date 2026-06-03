@@ -477,6 +477,11 @@ function EpgMerchantsSection() {
   const [form, setForm] = useState({ merchantId: '', apiKeyHash: '', apiSecretHash: '', webhookUrl: '' });
   const [saving, setSaving] = useState(false);
 
+  const generateKey = () => {
+    const randHex = (len: number) => Array.from({ length: len }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+    setForm(f => ({ ...f, apiKeyHash: `epk_${randHex(24)}`, apiSecretHash: `eps_${randHex(48)}` }));
+  };
+
   const fetch = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -535,7 +540,10 @@ function EpgMerchantsSection() {
             <input value={form.merchantId} onChange={e => setForm(f => ({ ...f, merchantId: e.target.value }))} />
           </Field>
           <Field label="API Key Hash">
-            <input value={form.apiKeyHash} onChange={e => setForm(f => ({ ...f, apiKeyHash: e.target.value }))} />
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input value={form.apiKeyHash} onChange={e => setForm(f => ({ ...f, apiKeyHash: e.target.value }))} />
+              <button onClick={generateKey} style={{ ...smallBtnStyle, background: '#8b5cf6', whiteSpace: 'nowrap', flexShrink: 0 }}>{t('ecommerce.generateKeys')}</button>
+            </div>
           </Field>
           <Field label="API Secret Hash">
             <input value={form.apiSecretHash} onChange={e => setForm(f => ({ ...f, apiSecretHash: e.target.value }))} />

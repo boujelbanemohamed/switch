@@ -1,6 +1,7 @@
 package com.switchplatform.platform.config.auth;
 
 import com.switchplatform.platform.service.auth.AuthUserService;
+import com.switchplatform.platform.service.auth.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +29,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final AuthUserService authUserService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -36,6 +38,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String token = extractToken(request);
 
         if (token != null && jwtUtil.validateToken(token)) {
+            if (tokenBlacklistService.isRevoked(token)) {
+                log.warn("Revoked token used: {}", token.substring(0, 20));
+                SecurityContextHolder.clearContext();
+                filterChain.doFilter(request, response);
+                return;
+            }
             try {
                 String username = jwtUtil.getUsernameFromToken(token);
                 UserDetails userDetails = authUserService.loadUserByUsername(username);

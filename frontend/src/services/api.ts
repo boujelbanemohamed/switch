@@ -73,6 +73,18 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
 }
 
 export const api = {
+  liveConfig: {
+    list: () => request<import('../types').LiveConfigItem[]>('/admin/live-config'),
+    update: (id: string, value: string) =>
+      request<import('../types').LiveConfigItem>(`/admin/live-config/${id}`, { method: 'PUT', body: JSON.stringify({ value }) }),
+  },
+  reports: {
+    list: (type: string) => request<import('../types').Report[]>(`/backoffice/reports?type=${type}`),
+    create: (data: Record<string, unknown>) =>
+      request<import('../types').Report>('/backoffice/reports', { method: 'POST', body: JSON.stringify(data) }),
+    generate: (id: string) =>
+      request<import('../types').Report>(`/backoffice/reports/${id}/generate`, { method: 'POST' }),
+  },
   dashboard: {
     stats: () => request<import('../types').DashboardStats>('/admin/dashboard'),
   },
@@ -393,6 +405,24 @@ export const api = {
       fail: (id: string, errorDescription: string) =>
         request<import('../types').ThreeDsSession>(`/3dss/sessions/${id}/fail`, { method: 'POST', body: JSON.stringify({ errorDescription }) }),
     },
+  },
+  disputes: {
+    list: (status?: string, merchantId?: string) => {
+      const params = new URLSearchParams();
+      if (status) params.set('status', status);
+      if (merchantId) params.set('merchantId', merchantId);
+      const qs = params.toString();
+      return safeRequest<import('../types').Dispute[]>(`/disputes${qs ? '?' + qs : ''}`);
+    },
+    get: (id: string) => safeRequest<{ dispute: import('../types').Dispute; timeline: import('../types').DisputeTimeline[] }>(`/disputes/${id}`),
+    open: (data: Record<string, unknown>) => safeRequest<import('../types').Dispute>('/disputes', { method: 'POST', body: JSON.stringify(data) }),
+    transition: (id: string, status: string, notes?: string) =>
+      safeRequest<import('../types').Dispute>(`/disputes/${id}/transition`, { method: 'POST', body: JSON.stringify({ status, notes }) }),
+    submitEvidence: (id: string, data: Record<string, unknown>) =>
+      safeRequest<import('../types').DisputeEvidence>(`/disputes/${id}/evidence`, { method: 'POST', body: JSON.stringify(data) }),
+    getEvidence: (id: string) => safeRequest<import('../types').DisputeEvidence[]>(`/disputes/${id}/evidence`),
+    getTimeline: (id: string) => safeRequest<import('../types').DisputeTimeline[]>(`/disputes/${id}/timeline`),
+    getByTransaction: (transactionId: string) => safeRequest<import('../types').Dispute[]>(`/disputes/transaction/${transactionId}`),
   },
   auth: {
     login: (data: import('../types').LoginRequest) =>

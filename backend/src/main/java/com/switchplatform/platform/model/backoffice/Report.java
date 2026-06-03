@@ -2,6 +2,8 @@ package com.switchplatform.platform.model.backoffice;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -27,6 +29,7 @@ public class Report {
     @Enumerated(EnumType.STRING)
     private ReportType reportType;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSONB")
     private String parameters;
 

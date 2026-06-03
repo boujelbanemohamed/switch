@@ -14,9 +14,18 @@ import { Clearing } from './pages/Clearing';
 import { Backoffice } from './pages/Backoffice';
 import { Ecommerce } from './pages/Ecommerce';
 import { MerchantPortal } from './pages/MerchantPortal';
+import { Disputes } from './pages/Disputes';
+import { Batch } from './pages/Batch';
+import { Netting } from './pages/Netting';
+import { FeeSchedules } from './pages/FeeSchedules';
+import { CardPrograms } from './pages/CardPrograms';
+import { VirtualCards } from './pages/VirtualCards';
+import { Kyc } from './pages/Kyc';
 import { Login } from './pages/Login';
 import { Profile } from './pages/Profile';
 import { Users } from './pages/Users';
+import { Reports } from './pages/Reports';
+import { ConfigLive } from './pages/ConfigLive';
 import type { ReactNode } from 'react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -44,9 +53,18 @@ function AppRoutes() {
       <Route path="/clearing" element={<ProtectedRoute><Layout><Clearing /></Layout></ProtectedRoute>} />
       <Route path="/backoffice" element={<ProtectedRoute><Layout><Backoffice /></Layout></ProtectedRoute>} />
       <Route path="/ecommerce" element={<ProtectedRoute><Layout><Ecommerce /></Layout></ProtectedRoute>} />
+      <Route path="/disputes" element={<ProtectedRoute><Layout><Disputes /></Layout></ProtectedRoute>} />
       <Route path="/merchant-portal" element={<ProtectedRoute><Layout><MerchantPortal /></Layout></ProtectedRoute>} />
+      <Route path="/batch" element={<ProtectedRoute><Layout><Batch /></Layout></ProtectedRoute>} />
+      <Route path="/netting" element={<ProtectedRoute><Layout><Netting /></Layout></ProtectedRoute>} />
+      <Route path="/fees" element={<ProtectedRoute><Layout><FeeSchedules /></Layout></ProtectedRoute>} />
+      <Route path="/card-programs" element={<ProtectedRoute><Layout><CardPrograms /></Layout></ProtectedRoute>} />
+      <Route path="/virtual-cards" element={<ProtectedRoute><Layout><VirtualCards /></Layout></ProtectedRoute>} />
+      <Route path="/kyc" element={<ProtectedRoute><Layout><Kyc /></Layout></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
       <Route path="/users" element={<ProtectedRoute><Layout><Users /></Layout></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
+      <Route path="/config-live" element={<ProtectedRoute><Layout><ConfigLive /></Layout></ProtectedRoute>} />
     </Routes>
   );
 }

@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(req),
     });
@@ -132,7 +132,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [token]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    if (refreshTokenValue) {
+      try {
+        await fetch('/api/v1/auth/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ refreshToken: refreshTokenValue }),
+        });
+      } catch {
+        // ignore network errors on logout
+      }
+    }
     setToken(null);
     setRefreshTokenValue(null);
     setUser(null);
@@ -140,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
-  }, []);
+  }, [refreshTokenValue, token]);
 
   const refreshAccessToken = useCallback(async () => {
     if (!refreshTokenValue) {

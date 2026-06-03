@@ -333,13 +333,25 @@ export interface MonitoringEvent {
   createdAt: string;
 }
 
+export interface LiveConfigItem {
+  id: string;
+  configKey: string;
+  configValue: string;
+  description: string;
+  dataType: string;
+  category: string;
+  mutable: boolean;
+  updatedBy: string;
+  updatedAt: string;
+}
+
 // Auth
 export interface AuthUser {
   id: string;
   username: string;
   email: string;
   displayName?: string;
-  role: 'ADMIN' | 'OPERATOR' | 'ANALYST' | 'AUDITOR' | 'VIEWER';
+  role: 'ADMIN' | 'OPERATOR' | 'ANALYST' | 'AUDITOR' | 'VIEWER' | 'MERCHANT';
   enabled: boolean;
   lastLogin?: string;
   createdAt: string;
@@ -467,4 +479,49 @@ export interface ThreeDsSessionCancelResponse {
   id: string;
   status: string;
   message?: string;
+}
+
+export interface Dispute {
+  id: string;
+  disputeNumber: string;
+  transactionId: string;
+  clearingRecordId?: string;
+  merchantId?: string;
+  acquiringParticipantId?: string;
+  issuingParticipantId?: string;
+  amount: number;
+  currencyCode: string;
+  disputeType: string;
+  status: string;
+  reasonCode?: string;
+  reasonDescription?: string;
+  evidenceDeadline?: string;
+  resolutionDeadline?: string;
+  initiatedBy: string;
+  initiatedAt: string;
+  resolvedAt?: string;
+  resolutionNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DisputeEvidence {
+  id: string;
+  disputeId: string;
+  submittedBy: string;
+  evidenceType: string;
+  description?: string;
+  fileReference?: string;
+  submittedAt: string;
+}
+
+export interface DisputeTimeline {
+  id: string;
+  disputeId: string;
+  action: string;
+  oldStatus?: string;
+  newStatus?: string;
+  performedBy?: string;
+  notes?: string;
+  createdAt: string;
 }

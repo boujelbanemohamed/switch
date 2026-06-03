@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { request } from '../services/api';
 
-type MerchantTab = 'dashboard' | 'transactions' | 'terminals' | 'settlements' | 'refunds' | 'reports' | 'info';
+type MerchantTab = 'dashboard' | 'transactions' | 'terminals' | 'settlements' | 'refunds' | 'reports' | 'info' | 'apiKeys' | 'webhooks';
 
 interface DashboardData {
   merchantCode: string;
@@ -97,6 +97,8 @@ export function MerchantPortal() {
   const [refundEpgId, setRefundEpgId] = useState('');
   const [refundMsg, setRefundMsg] = useState('');
   const [merchantInfo, setMerchantInfo] = useState<Record<string, any> | null>(null);
+  const [apiKeys, setApiKeys] = useState<any[]>([]);
+  const [webhooks, setWebhooks] = useState<any[]>([]);
 
   const login = useCallback(async () => {
     if (!merchantCode.trim()) return;
@@ -115,6 +117,14 @@ export function MerchantPortal() {
       setTerminals(termData);
       setSettlements(settData);
       setMerchantInfo(infoData);
+      try {
+        const [ak, wh] = await Promise.all([
+          request<any[]>(`/merchant-portal/api-keys/${merchantCode}`),
+          request<any[]>(`/merchant-portal/webhooks/${merchantCode}`),
+        ]);
+        setApiKeys(ak);
+        setWebhooks(wh);
+      } catch {}
       setLoggedIn(true);
       sessionStorage.setItem('mp_code', merchantCode);
     } catch (e) {
@@ -133,6 +143,8 @@ export function MerchantPortal() {
     setSettlements([]);
     setReport(null);
     setMerchantInfo(null);
+    setApiKeys([]);
+    setWebhooks([]);
   };
 
   useEffect(() => {
@@ -226,6 +238,8 @@ export function MerchantPortal() {
     { key: 'refunds', label: t('merchantPortal.refunds') },
     { key: 'reports', label: t('merchantPortal.reports') },
     { key: 'info', label: t('merchantPortal.info') },
+    { key: 'apiKeys', label: t('merchantPortal.apiKeys') },
+    { key: 'webhooks', label: t('merchantPortal.webhooks') },
   ];
 
   const btnStyle: React.CSSProperties = {
@@ -296,6 +310,8 @@ export function MerchantPortal() {
         />
       )}
       {tab === 'info' && merchantInfo && <InfoTab data={merchantInfo} t={t} />}
+      {tab === 'apiKeys' && <ApiKeysTab merchantCode={merchantCode} t={t} />}
+      {tab === 'webhooks' && <WebhooksTab merchantCode={merchantCode} t={t} />}
     </div>
   );
 }
@@ -585,6 +601,217 @@ function InfoTab({ data, t }: { data: Record<string, any>; t: (key: string) => s
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function ApiKeysTab({ merchantCode, t }: { merchantCode: string; t: (key: string) => string }) {
+  const [keys, setKeys] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newKeyResult, setNewKeyResult] = useState<any>(null);
+  const [showCreate, setShowCreate] = useState(false);
+
+  const loadKeys = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await request<any[]>(`/merchant-portal/api-keys/${merchantCode}`);
+      setKeys(data);
+    } catch {}
+    setLoading(false);
+  }, [merchantCode]);
+
+  useEffect(() => { loadKeys(); }, [loadKeys]);
+
+  const createKey = async () => {
+    try {
+      const result = await request<any>(`/merchant-portal/api-keys/${merchantCode}`, { method: 'POST' });
+      setNewKeyResult(result);
+      setShowCreate(false);
+      loadKeys();
+    } catch {}
+  };
+
+  const revokeKey = async (keyId: string) => {
+    try {
+      await request(`/merchant-portal/api-keys/${keyId}`, { method: 'DELETE' });
+      loadKeys();
+    } catch {}
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+        <button onClick={() => setShowCreate(true)}
+          style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#3b82f6', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+          + {t('merchantPortal.createApiKey')}
+        </button>
+      </div>
+
+      {newKeyResult && (
+        <div style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#22c55e', marginBottom: 12 }}>{t('merchantPortal.keyCreated')}</p>
+          <div style={{ background: 'var(--bg)', borderRadius: 8, padding: 12, marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('merchantPortal.apiKey')}</div>
+            <code style={{ fontSize: 13, wordBreak: 'break-all' }}>{newKeyResult.apiKey || newKeyResult.id}</code>
+          </div>
+          <div style={{ background: 'var(--bg)', borderRadius: 8, padding: 12 }}>
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('merchantPortal.apiSecret')}</div>
+            <code style={{ fontSize: 13, wordBreak: 'break-all' }}>{newKeyResult.apiSecret}</code>
+          </div>
+          <p style={{ fontSize: 12, color: '#ef4444', marginTop: 8 }}>{t('merchantPortal.saveSecretWarning')}</p>
+          <button onClick={() => setNewKeyResult(null)}
+            style={{ marginTop: 12, padding: '6px 16px', borderRadius: 6, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontSize: 12, cursor: 'pointer' }}>
+            {t('common.dismiss')}
+          </button>
+        </div>
+      )}
+
+      {loading ? (
+        <p style={{ color: 'var(--text-secondary)' }}>{t('common.loading')}</p>
+      ) : (
+        <div style={{ background: 'var(--surface)', borderRadius: 12, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
+                <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('merchantPortal.keyId')}</th>
+                <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('merchantPortal.keyStatus')}</th>
+                <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('merchantPortal.createdAt')}</th>
+                <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('merchantPortal.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {keys.length === 0 ? (
+                <tr><td colSpan={4} style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>{t('merchantPortal.noApiKeys')}</td></tr>
+              ) : keys.map(k => (
+                <tr key={k.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontSize: 12 }}>{k.id || k.keyId}</td>
+                  <td style={{ padding: '10px 16px' }}>
+                    <StatusBadge status={k.status || 'ACTIVE'} />
+                  </td>
+                  <td style={{ padding: '10px 16px', fontSize: 12 }}>{k.createdAt ? new Date(k.createdAt).toLocaleString() : '-'}</td>
+                  <td style={{ padding: '10px 16px' }}>
+                    {k.status !== 'REVOKED' && (
+                      <button onClick={() => revokeKey(k.id)}
+                        style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: '#ef4444', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                        {t('merchantPortal.revoke')}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WebhooksTab({ merchantCode, t }: { merchantCode: string; t: (key: string) => string }) {
+  const [webhooks, setWebhooks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [formUrl, setFormUrl] = useState('');
+  const [formEvents, setFormEvents] = useState('');
+
+  const loadWebhooks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await request<any[]>(`/merchant-portal/webhooks/${merchantCode}`);
+      setWebhooks(data);
+    } catch {}
+    setLoading(false);
+  }, [merchantCode]);
+
+  useEffect(() => { loadWebhooks(); }, [loadWebhooks]);
+
+  const createWebhook = async () => {
+    if (!formUrl.trim()) return;
+    try {
+      await request(`/merchant-portal/webhooks/${merchantCode}`, {
+        method: 'POST',
+        body: JSON.stringify({ url: formUrl, events: formEvents.split(',').map(s => s.trim()).filter(Boolean) }),
+      });
+      setShowCreate(false);
+      setFormUrl('');
+      setFormEvents('');
+      loadWebhooks();
+    } catch {}
+  };
+
+  const deleteWebhook = async (id: string) => {
+    try {
+      await request(`/merchant-portal/webhooks/${id}`, { method: 'DELETE' });
+      loadWebhooks();
+    } catch {}
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+        <button onClick={() => setShowCreate(true)}
+          style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#3b82f6', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+          + {t('merchantPortal.addWebhook')}
+        </button>
+      </div>
+
+      {showCreate && (
+        <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 24, marginBottom: 20, maxWidth: 500 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('merchantPortal.newWebhook')}</h3>
+          <div style={{ display: 'grid', gap: 12 }}>
+            <input value={formUrl} onChange={e => setFormUrl(e.target.value)} placeholder={t('merchantPortal.webhookUrl')}
+              style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13 }} />
+            <input value={formEvents} onChange={e => setFormEvents(e.target.value)} placeholder={t('merchantPortal.webhookEvents')}
+              style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13 }} />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={createWebhook} disabled={!formUrl.trim()}
+                style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#3b82f6', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                {t('merchantPortal.create')}
+              </button>
+              <button onClick={() => setShowCreate(false)}
+                style={{ padding: '10px 24px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                {t('common.cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <p style={{ color: 'var(--text-secondary)' }}>{t('common.loading')}</p>
+      ) : (
+        <div style={{ background: 'var(--surface)', borderRadius: 12, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
+                <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('merchantPortal.webhookUrl')}</th>
+                <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('merchantPortal.webhookEvents')}</th>
+                <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('merchantPortal.webhookStatus')}</th>
+                <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('merchantPortal.actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {webhooks.length === 0 ? (
+                <tr><td colSpan={4} style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>{t('merchantPortal.noWebhooks')}</td></tr>
+              ) : webhooks.map(w => (
+                <tr key={w.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontSize: 12 }}>{w.url}</td>
+                  <td style={{ padding: '10px 16px', fontSize: 12 }}>{(w.events || []).join(', ') || '-'}</td>
+                  <td style={{ padding: '10px 16px' }}>
+                    <StatusBadge status={w.status || 'ACTIVE'} />
+                  </td>
+                  <td style={{ padding: '10px 16px' }}>
+                    <button onClick={() => deleteWebhook(w.id)}
+                      style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: '#ef4444', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                      {t('common.delete')}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

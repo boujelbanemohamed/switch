@@ -71,8 +71,8 @@ public class Cardholder {
     @Enumerated(EnumType.STRING)
     private CardholderStatus status = CardholderStatus.ACTIVE;
 
-    @Column(name = "kyc_level", length = 10)
-    private String kycLevel;
+    @Column(name = "kyc_level")
+    private Integer kycLevel;
 
     @Column(name = "risk_profile", length = 20)
     @Enumerated(EnumType.STRING)

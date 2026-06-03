@@ -6,6 +6,7 @@ import com.switchplatform.platform.model.auth.AuthUser;
 import com.switchplatform.platform.service.auth.AuditService;
 import com.switchplatform.platform.service.auth.AuthUserService;
 import com.switchplatform.platform.service.auth.MfaService;
+import com.switchplatform.platform.service.auth.TokenBlacklistService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
@@ -17,6 +18,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -38,6 +40,7 @@ public class AuthController {
     private final AuthUserService authUserService;
     private final MfaService mfaService;
     private final AuditService auditService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest servletRequest) {
@@ -151,22 +154,54 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest servletRequest) {
         try {
-            AuthUser.Role role = request.getRole() != null
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String currentUsername = auth.getName();
+            AuthUser currentUser = authUserService.findByUsername(currentUsername);
+            AuthUser.Role currentRole = currentUser.getRole();
+
+            AuthUser.Role targetRole = request.getRole() != null
                     ? AuthUser.Role.valueOf(request.getRole().toUpperCase())
-                    : AuthUser.Role.OPERATOR;
+                    : AuthUser.Role.VIEWER;
+
+            if (currentRole == AuthUser.Role.ADMIN) {
+                if (targetRole == AuthUser.Role.MERCHANT) {
+                    targetRole = AuthUser.Role.VIEWER;
+                }
+            } else if (currentRole == AuthUser.Role.OPERATOR) {
+                if (targetRole != AuthUser.Role.ANALYST && targetRole != AuthUser.Role.VIEWER) {
+                    throw new AccessDeniedException("Operator can only create ANALYST or VIEWER accounts");
+                }
+            } else {
+                throw new AccessDeniedException("Insufficient privileges to register users");
+            }
 
             AuthUser user = authUserService.registerUser(
                     request.getUsername(), request.getPassword(),
-                    request.getEmail(), request.getDisplayName(), role);
+                    request.getEmail(), request.getDisplayName(), targetRole);
 
-            auditService.record("REGISTER", "AUTH", user.getUsername(), "User registered with role: " + role, "SUCCESS", user.getUsername(), user.getId(), servletRequest);
+            auditService.record("REGISTER", "AUTH", user.getUsername(), "User registered with role: " + targetRole, "SUCCESS", user.getUsername(), user.getId(), servletRequest);
 
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(Map.of("id", user.getId(), "username", user.getUsername(),
                             "email", user.getEmail(), "role", user.getRole().name()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@Valid @RequestBody Map<String, String> body) {
+        String refreshToken = body.get("refreshToken");
+        if (refreshToken != null && jwtUtil.validateToken(refreshToken)) {
+            tokenBlacklistService.revoke(refreshToken);
+        }
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()) {
+            auditService.record("LOGOUT", "AUTH", auth.getName(), "User logged out", "SUCCESS", auth.getName(), null, null);
+        }
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/refresh")
@@ -175,6 +210,11 @@ public class AuthController {
         if (refreshToken == null || !jwtUtil.validateToken(refreshToken)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Invalid refresh token"));
+        }
+
+        if (tokenBlacklistService.isRevoked(refreshToken)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Refresh token has been revoked"));
         }
 
         String username = jwtUtil.getUsernameFromToken(refreshToken);

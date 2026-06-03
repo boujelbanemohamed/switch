@@ -24,15 +24,13 @@ public class PciEncryptionService {
     private final SecretKey key;
 
     public PciEncryptionService(@Value("${switch.security.encryption.key:}") String base64Key) {
-        if (base64Key != null && !base64Key.isBlank()) {
-            byte[] decoded = Base64.getDecoder().decode(base64Key);
-            this.key = new SecretKeySpec(decoded, "AES");
-        } else {
-            byte[] keyBytes = new byte[32];
-            new SecureRandom().nextBytes(keyBytes);
-            this.key = new SecretKeySpec(keyBytes, "AES");
-            log.warn("Using auto-generated encryption key. Set switch.security.encryption.key in production.");
+        if (base64Key == null || base64Key.isBlank()) {
+            throw new IllegalStateException(
+                    "switch.security.encryption.key must be set in production. " +
+                    "Generate with: openssl rand -base64 32");
         }
+        byte[] decoded = Base64.getDecoder().decode(base64Key);
+        this.key = new SecretKeySpec(decoded, "AES");
     }
 
     public String encrypt(String plaintext) {

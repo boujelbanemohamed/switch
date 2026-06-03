@@ -29,7 +29,7 @@ public class CardholderService {
             throw new IllegalArgumentException("Email already exists: " + cardholder.getEmail());
         }
         cardholder.setStatus(Cardholder.CardholderStatus.ACTIVE);
-        cardholder.setKycLevel("1");
+        cardholder.setKycLevel(1);
         cardholder.setCreatedAt(OffsetDateTime.now());
         cardholder.setUpdatedAt(OffsetDateTime.now());
 
@@ -89,8 +89,7 @@ public class CardholderService {
     public Cardholder updateKycLevel(UUID id, int level) {
         Cardholder cardholder = cardholderRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Cardholder not found: " + id));
-        String newLevel = String.valueOf(level);
-        cardholder.setKycLevel(newLevel);
+        cardholder.setKycLevel(level);
         cardholder.setUpdatedAt(OffsetDateTime.now());
         Cardholder saved = cardholderRepository.save(cardholder);
         log.info("Updated KYC level for cardholder {} to {}", id, level);

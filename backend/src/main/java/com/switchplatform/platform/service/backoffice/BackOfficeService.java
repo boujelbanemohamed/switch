@@ -54,6 +54,7 @@ public class BackOfficeService {
     }
 
     public Report createReport(Report report) {
+        report.setId(null);
         report.setStatus(Report.Status.PENDING);
         Report saved = reportRepository.save(report);
         log.info("Report created: {} ({})", saved.getName(), saved.getReportType());

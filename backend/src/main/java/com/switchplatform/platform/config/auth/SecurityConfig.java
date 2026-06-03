@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
@@ -30,6 +31,7 @@ public class SecurityConfig {
     private final RateLimitingFilter rateLimitingFilter;
     private final AuthUserService authUserService;
     private final PasswordEncoder passwordEncoder;
+    private final Environment environment;
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
@@ -41,13 +43,19 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        boolean isProd = environment.matchesProfiles("prod");
         http
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register",
+            .authorizeHttpRequests(auth -> {
+                if (!isProd) {
+                    auth.requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll();
+                }
+                auth
+                .requestMatchers("/api/v1/auth/login",
                         "/api/v1/auth/refresh", "/api/v1/auth/mfa/authenticate").permitAll()
+                .requestMatchers("/api/v1/auth/register").hasAnyRole(AuthUser.Role.ADMIN.name(), AuthUser.Role.OPERATOR.name())
                 .requestMatchers("/api/v1/auth/mfa/setup",
                         "/api/v1/auth/mfa/verify", "/api/v1/auth/mfa/disable").authenticated()
                 .requestMatchers("/api/v1/auth/users/**",
@@ -55,6 +63,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/me").authenticated()
                 .requestMatchers("/api/v1/backoffice/monitoring/events").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/api/v1/admin/live-config/**").hasRole(AuthUser.Role.ADMIN.name())
                 .requestMatchers("/api/v1/admin/**").hasRole(AuthUser.Role.ADMIN.name())
 
                 .requestMatchers(HttpMethod.GET, "/api/v1/fraud/alerts/**",
@@ -104,14 +113,20 @@ public class SecurityConfig {
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name())
 
-                .requestMatchers("/api/v1/merchant-portal/**")
-                    .hasAnyRole(
+                .requestMatchers("/api/v1/disputes/**").hasAnyRole(
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name(),
-                        AuthUser.Role.ANALYST.name(),
-                        AuthUser.Role.MERCHANT.name())
-                .anyRequest().authenticated()
-            )
+                        AuthUser.Role.ANALYST.name())
+
+                .requestMatchers("/api/v1/batch/**").hasAnyRole("ADMIN", "OPERATOR")
+                .requestMatchers("/api/v1/netting/**").hasAnyRole("ADMIN", "OPERATOR")
+                .requestMatchers("/api/v1/fees/**").hasAnyRole("ADMIN", "OPERATOR", "ANALYST")
+                .requestMatchers("/api/v1/issuing/programs/**").hasAnyRole(
+                        "ADMIN", "OPERATOR", "ANALYST")
+                .requestMatchers("/api/v1/kyc/**").hasAnyRole(
+                        "ADMIN", "OPERATOR", "ANALYST")
+                .anyRequest().authenticated();
+            })
             .authenticationProvider(authenticationProvider())
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {

@@ -64,6 +64,7 @@ export function Users() {
     ANALYST: '#3b82f6',
     AUDITOR: '#8b5cf6',
     VIEWER: '#6b7280',
+    MERCHANT: '#22c55e',
   };
 
   const isAdmin = currentUser?.role === 'ADMIN';
@@ -168,6 +169,7 @@ export function Users() {
                         <option value="ANALYST">ANALYST</option>
                         <option value="AUDITOR">AUDITOR</option>
                         <option value="VIEWER">VIEWER</option>
+                        <option value="MERCHANT">MERCHANT</option>
                       </select>
                     ) : (
                       <span style={{
@@ -281,6 +283,7 @@ function CreateUserForm({ onSave, onCancel }: { onSave: (data: RegisterRequest) 
               <option value="ANALYST">ANALYST</option>
               <option value="AUDITOR">AUDITOR</option>
               <option value="VIEWER">VIEWER</option>
+              <option value="MERCHANT">MERCHANT</option>
             </select>
           </div>
         </div>

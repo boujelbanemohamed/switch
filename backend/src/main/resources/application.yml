@@ -31,10 +31,11 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      retries: 3
       properties:
         max.block.ms: 3000
         request.timeout.ms: 2000
-      retries: 0
+        retry.backoff.ms: 500
     consumer:
       group-id: switch-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -55,6 +56,12 @@ spring:
     serialization:
       fail-on-empty-beans: false
 
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
 management:
   endpoints:
     web:
@@ -70,6 +77,11 @@ logging:
     org.springframework: WARN
 
 switch:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  security:
+    encryption:
+      key: ${PCI_ENCRYPTION_KEY}
   iso8583:
     header: "ISO015000077"
     max-message-length: 4096

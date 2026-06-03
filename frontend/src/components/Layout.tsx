@@ -5,7 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, Repeat, Building2, Network, GitCompare,
   CreditCard, Store, ShieldCheck, Siren, DollarSign, Settings, ShoppingCart,
-  LogIn, User, Users as UsersIcon, Briefcase,
+  LogIn, User, Users as UsersIcon, Briefcase, Scale, Timer, GitMerge, Receipt, Layers, CreditCard as VirtualCardIcon, IdCard,
+  FileText, Sliders,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -21,25 +22,43 @@ export function Layout({ children }: LayoutProps) {
     document.title = t('app.title');
   }, [t]);
 
+  const role = user?.role;
+
+  const canSeeAdmin = role === 'ADMIN' || role === 'OPERATOR';
+  const canSeeAnalyst = canSeeAdmin || role === 'ANALYST';
+  const isMerchant = role === 'MERCHANT';
+  const isViewer = role === 'VIEWER';
+
   const mainNavItems = [
-    { to: '/', icon: LayoutDashboard, label: t('nav.dashboard') },
-    { to: '/transactions', icon: Repeat, label: t('nav.transactions') },
-    { to: '/participants', icon: Building2, label: t('nav.participants') },
-    { to: '/routing', icon: GitCompare, label: t('nav.routingRules') },
-    { to: '/bin-tables', icon: Network, label: t('nav.binTables') },
+    { to: '/', icon: LayoutDashboard, label: t('nav.dashboard'), show: !isMerchant },
+    { to: '/transactions', icon: Repeat, label: t('nav.transactions'), show: !isMerchant },
+    { to: '/participants', icon: Building2, label: t('nav.participants'), show: canSeeAdmin },
+    { to: '/routing', icon: GitCompare, label: t('nav.routingRules'), show: canSeeAdmin },
+    { to: '/bin-tables', icon: Network, label: t('nav.binTables'), show: canSeeAdmin },
   ];
 
-  const moduleNavItems = [
-    { to: '/issuing', icon: CreditCard, label: t('nav.issuing') },
-    { to: '/acquiring', icon: Store, label: t('nav.acquiring') },
-    { to: '/authorization', icon: ShieldCheck, label: t('nav.authorization') },
-    { to: '/fraud', icon: Siren, label: t('nav.fraud') },
-    { to: '/clearing', icon: DollarSign, label: t('nav.clearing') },
-    { to: '/backoffice', icon: Settings, label: t('nav.backoffice') },
-    { to: '/ecommerce', icon: ShoppingCart, label: t('nav.ecommerce') },
-    { to: '/merchant-portal', icon: Briefcase, label: t('nav.merchantPortal') },
-    { to: '/profile', icon: User, label: t('nav.auth') },
-    { to: '/users', icon: UsersIcon, label: t('nav.users') },
+  const moduleNavItems = isMerchant ? [
+    { to: '/merchant-portal', icon: Briefcase, label: t('nav.merchantPortal'), show: true },
+  ] : [
+    { to: '/issuing', icon: CreditCard, label: t('nav.issuing'), show: canSeeAdmin },
+    { to: '/acquiring', icon: Store, label: t('nav.acquiring'), show: canSeeAdmin },
+    { to: '/authorization', icon: ShieldCheck, label: t('nav.authorization'), show: canSeeAnalyst },
+    { to: '/fraud', icon: Siren, label: t('nav.fraud'), show: canSeeAnalyst },
+    { to: '/clearing', icon: DollarSign, label: t('nav.clearing'), show: canSeeAdmin },
+    { to: '/batch', icon: Timer, label: t('nav.batch'), show: canSeeAdmin },
+    { to: '/netting', icon: GitMerge, label: t('nav.netting'), show: canSeeAdmin },
+    { to: '/fees', icon: Receipt, label: t('nav.fees'), show: canSeeAnalyst },
+    { to: '/card-programs', icon: Layers, label: t('nav.cardPrograms'), show: canSeeAnalyst },
+    { to: '/virtual-cards', icon: VirtualCardIcon, label: t('nav.virtualCards'), show: canSeeAdmin },
+    { to: '/kyc', icon: IdCard, label: t('nav.kyc'), show: canSeeAnalyst },
+    { to: '/backoffice', icon: Settings, label: t('nav.backoffice'), show: canSeeAdmin },
+    { to: '/disputes', icon: Scale, label: t('nav.disputes'), show: canSeeAnalyst },
+    { to: '/ecommerce', icon: ShoppingCart, label: t('nav.ecommerce'), show: canSeeAdmin },
+    { to: '/merchant-portal', icon: Briefcase, label: t('nav.merchantPortal'), show: true },
+    { to: '/profile', icon: User, label: t('nav.auth'), show: true },
+    { to: '/users', icon: UsersIcon, label: t('nav.users'), show: role === 'ADMIN' },
+    { to: '/reports', icon: FileText, label: t('nav.reports'), show: canSeeAdmin },
+    { to: '/config-live', icon: Sliders, label: t('nav.configLive'), show: role === 'ADMIN' },
   ];
 
   return (
@@ -64,7 +83,7 @@ export function Layout({ children }: LayoutProps) {
         <div style={{ padding: '0 1.5rem', marginBottom: 8, fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>
           {t('nav.general')}
         </div>
-        {mainNavItems.map(item => (
+        {mainNavItems.filter(i => i.show).map(item => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -90,7 +109,7 @@ export function Layout({ children }: LayoutProps) {
         <div style={{ padding: '0 1.5rem', marginTop: 16, marginBottom: 8, fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>
           {t('nav.modules')}
         </div>
-        {moduleNavItems.map(item => (
+        {moduleNavItems.filter(i => i.show).map(item => (
           <NavLink
             key={item.to}
             to={item.to}

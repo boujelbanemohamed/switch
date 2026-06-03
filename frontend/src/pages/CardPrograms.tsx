@@ -56,15 +56,15 @@ export function CardPrograms() {
   const fetchPrograms = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/issuing/programs');
+      const data = await api.get<CardProgram[]>('/issuing/programs');
       setPrograms(data || []);
     } catch { setPrograms([]); } finally { setLoading(false); }
   };
 
   const fetchProducts = async (programId: string) => {
     try {
-      const { data } = await api.get(`/issuing/programs/${programId}/products`);
-      setProducts(p => ({ ...p, [programId]: data || [] }));
+      const data = await api.get<CardProduct[]>(`/issuing/programs/${programId}/products`);
+      setProducts(p => ({ ...p, [programId]: (data as CardProduct[]) || [] }));
     } catch { setProducts(p => ({ ...p, [programId]: [] })); }
   };
 
@@ -273,7 +273,7 @@ function ProductForm({ programId, onSave }: { programId: string | null; onSave: 
   });
 
   useEffect(() => {
-    api.get('/issuing/programs').then(({ data }) => setPrograms(data || [])).catch(() => {});
+    api.get<CardProgram[]>('/issuing/programs').then(data => setPrograms(data || [])).catch(() => {});
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -28,7 +28,7 @@ export function Batch() {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/batch/history');
+      const data = await api.get<BatchJob[]>('/batch/history');
       setJobs(data || []);
     } catch {
       setJobs([]);

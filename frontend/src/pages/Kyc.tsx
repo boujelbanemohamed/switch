@@ -31,6 +31,7 @@ interface KycVerification {
   verifiedAt: string | null;
   notes: string | null;
   rejectionReason: string | null;
+  createdAt: string;
 }
 
 interface Cardholder {
@@ -63,7 +64,7 @@ export function Kyc() {
   const fetchDocuments = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/kyc/documents');
+      const data = await api.get<KycDocument[]>('/kyc/documents');
       setDocuments(data || []);
     } catch { setDocuments([]); } finally { setLoading(false); }
   };
@@ -71,7 +72,7 @@ export function Kyc() {
   const fetchVerifications = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/kyc/verifications');
+      const data = await api.get<KycVerification[]>('/kyc/verifications');
       setVerifications(data || []);
     } catch { setVerifications([]); } finally { setLoading(false); }
   };
@@ -79,7 +80,7 @@ export function Kyc() {
   const fetchCardholders = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/issuing/cardholders');
+      const data = await api.get<Cardholder[]>('/issuing/cardholders');
       setCardholders(data || []);
     } catch { setCardholders([]); } finally { setLoading(false); }
   };
@@ -255,7 +256,7 @@ export function Kyc() {
                   <td className="p-3 text-center">{statusBadge(ch.status)}</td>
                   <td className="p-3 text-center">
                     <button onClick={async () => {
-                      await api.get(`/kyc/documents?cardholderId=${ch.id}`).then(({ data }) => setDocuments(data || []));
+                      api.get<KycDocument[]>(`/kyc/documents?cardholderId=${ch.id}`).then(data => setDocuments(data || []));
                       setActiveTab('documents');
                     }}
                       className="text-xs px-2 py-1 rounded bg-gray-700 hover:bg-gray-600">

@@ -1,11 +1,17 @@
 package com.switchplatform.platform.service.backoffice;
 
+import com.switchplatform.platform.model.Transaction;
 import com.switchplatform.platform.model.backoffice.AuditLog;
 import com.switchplatform.platform.model.backoffice.MonitoringEvent;
 import com.switchplatform.platform.model.backoffice.Report;
+import com.switchplatform.platform.model.clearing.ClearingRecord;
+import com.switchplatform.platform.model.fraud.FraudAlert;
+import com.switchplatform.platform.repository.TransactionRepository;
 import com.switchplatform.platform.repository.backoffice.AuditLogRepository;
 import com.switchplatform.platform.repository.backoffice.MonitoringEventRepository;
 import com.switchplatform.platform.repository.backoffice.ReportRepository;
+import com.switchplatform.platform.repository.clearing.ClearingRecordRepository;
+import com.switchplatform.platform.repository.fraud.FraudAlertRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,6 +40,9 @@ public class BackOfficeService {
     private final AuditLogRepository auditLogRepository;
     private final ReportRepository reportRepository;
     private final MonitoringEventRepository monitoringEventRepository;
+    private final TransactionRepository transactionRepository;
+    private final ClearingRecordRepository clearingRecordRepository;
+    private final FraudAlertRepository fraudAlertRepository;
 
     @Value("${switch.reports.directory:./reports}")
     private String reportsDirectory;
@@ -125,15 +134,44 @@ public class BackOfficeService {
     }
 
     private void appendTransactionCsv(StringBuilder sb) {
-        sb.append("Transaction ID,Timestamp,Type,Amount,Currency,Status,Merchant,Terminal\n");
+        sb.append("Transaction ID,Timestamp,Type,Amount,Currency,Status\n");
+        transactionRepository.findAll(PageRequest.of(0, 1000,
+                Sort.by(Sort.Direction.DESC, "createdAt"))).getContent()
+            .forEach(t -> sb.append(safe(t.getId())).append(",")
+                .append(safe(t.getCreatedAt())).append(",")
+                .append(safe(t.getMessageType())).append(",")
+                .append(safe(t.getAmount())).append(",")
+                .append(safe(t.getCurrencyCode())).append(",")
+                .append(safe(t.getStatus())).append("\n"));
     }
 
     private void appendSettlementCsv(StringBuilder sb) {
-        sb.append("Settlement ID,Date,Participant,Amount,Currency,Status,Transaction Count\n");
+        sb.append("Clearing ID,Date,Transaction ID,Amount,Fee,Status\n");
+        clearingRecordRepository.findAll(PageRequest.of(0, 1000,
+                Sort.by(Sort.Direction.DESC, "clearingDate"))).getContent()
+            .forEach(r -> sb.append(safe(r.getId())).append(",")
+                .append(safe(r.getClearingDate())).append(",")
+                .append(safe(r.getTransactionId())).append(",")
+                .append(safe(r.getAmount())).append(",")
+                .append(safe(r.getFeeAmount())).append(",")
+                .append(safe(r.getStatus())).append("\n"));
     }
 
     private void appendFraudCsv(StringBuilder sb) {
-        sb.append("Alert ID,Timestamp,Card,S core,Type,Status,Merchant\n");
+        sb.append("Alert ID,Timestamp,Transaction ID,Score,Type,Status\n");
+        fraudAlertRepository.findAll(PageRequest.of(0, 1000,
+                Sort.by(Sort.Direction.DESC, "createdAt"))).getContent()
+            .forEach(a -> sb.append(safe(a.getId())).append(",")
+                .append(safe(a.getCreatedAt())).append(",")
+                .append(safe(a.getTransactionId())).append(",")
+                .append(safe(a.getScore())).append(",")
+                .append(safe(a.getAlertType())).append(",")
+                .append(safe(a.getStatus())).append("\n"));
+    }
+
+    private String safe(Object o) {
+        if (o == null) return "";
+        return o.toString().replace(",", ";").replace("\n", " ");
     }
 
     private void appendAuditCsv(StringBuilder sb) {

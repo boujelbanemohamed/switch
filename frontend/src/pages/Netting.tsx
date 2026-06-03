@@ -34,10 +34,10 @@ export function Netting() {
   const fetchLatest = async () => {
     setLoading(true);
     try {
-      const { data: s } = await api.get('/netting/latest');
+      const s = await api.get<NettingSession | null>('/netting/latest');
       if (s) {
         setSession(s);
-        const { data: pos } = await api.get(`/netting/${s.id}/positions`);
+        const pos = await api.get<Position[]>(`/netting/${s.id}/positions`);
         setPositions(pos || []);
       }
     } catch { /* empty */ } finally { setLoading(false); }
@@ -47,24 +47,24 @@ export function Netting() {
 
   const handleCalculate = async () => {
     try {
-      const { data: s } = await api.post('/netting/calculate');
+      const s = await api.post<NettingSession>('/netting/calculate');
       setSession(s);
-      const { data: pos } = await api.get(`/netting/${s.id}/positions`);
+      const pos = await api.get<Position[]>(`/netting/${s.id}/positions`);
       setPositions(pos || []);
     } catch (e) { console.error(e); }
   };
 
   const handleConfirm = async () => {
     if (!session) return;
-    const { data: s } = await api.post(`/netting/${session.id}/confirm`);
+    const s = await api.post<NettingSession>(`/netting/${session.id}/confirm`);
     setSession(s);
   };
 
   const handleSettle = async () => {
     if (!session) return;
-    const { data: s } = await api.post(`/netting/${session.id}/settle`);
+    const s = await api.post<NettingSession>(`/netting/${session.id}/settle`);
     setSession(s);
-    const { data: pos } = await api.get(`/netting/${session.id}/positions`);
+    const pos = await api.get<Position[]>(`/netting/${session.id}/positions`);
     setPositions(pos || []);
   };
 

@@ -49,14 +49,14 @@ export function FeeSchedules() {
   const fetchSchedules = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/fees/schedules');
+      const data = await api.get<FeeSchedule[]>('/fees/schedules');
       setSchedules(data || []);
     } catch { setSchedules([]); } finally { setLoading(false); }
   };
 
   const fetchRules = async (id: string) => {
     try {
-      const { data } = await api.get(`/fees/schedules/${id}/rules`);
+      const data = await api.get<FeeRule[]>(`/fees/schedules/${id}/rules`);
       setRules(data || []);
     } catch { setRules([]); }
   };
@@ -254,7 +254,7 @@ function ScheduleForm({ onSave }: { onSave: () => void }) {
         onChange={v => setForm(p => ({ ...p, scheduleType: v }))} />
       <div className="grid grid-cols-2 gap-3">
         <Input label={t('fees.priority')} type="number" value={String(form.priority)}
-          onChange={v => setForm(p => ({ ...p, priority: v }))} />
+          onChange={v => setForm(p => ({ ...p, priority: parseInt(v) || 0 }))} />
         <Input label={t('fees.currency')} value={form.currencyCode}
           onChange={v => setForm(p => ({ ...p, currencyCode: v }))} />
       </div>
@@ -303,7 +303,7 @@ function RuleForm({ scheduleId, onSave }: { scheduleId: string; onSave: () => vo
       <Input label={t('fees.ruleName')} value={form.ruleName} onChange={v => setForm(p => ({ ...p, ruleName: v }))} required />
       <div className="grid grid-cols-2 gap-3">
         <Input label={t('fees.order')} type="number" value={String(form.ruleOrder)}
-          onChange={v => setForm(p => ({ ...p, ruleOrder: v }))} />
+          onChange={v => setForm(p => ({ ...p, ruleOrder: parseInt(v) || 0 }))} />
         <Select label={t('fees.method')} value={form.calcMethod}
           options={['FLAT', 'PERCENTAGE', 'TIERED', 'MIXED', 'INTERCHANGE_LOOKUP']}
           onChange={v => setForm(p => ({ ...p, calcMethod: v }))} />

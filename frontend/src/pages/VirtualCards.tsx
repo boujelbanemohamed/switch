@@ -41,7 +41,7 @@ export function VirtualCards() {
       const url = status && status !== 'ALL'
         ? `/issuing/virtual-cards/by-status/${status}`
         : '/issuing/virtual-cards';
-      const { data } = await api.get(url);
+      const data = await api.get<VirtualCard[]>(url);
       setCards(data || []);
     } catch { setCards([]); } finally { setLoading(false); }
   };

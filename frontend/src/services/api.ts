@@ -124,7 +124,7 @@ export const api = {
   },
   issuing: {
     cardholders: {
-      list: () => request<import('../types').Cardholder[]>('/issuing/cardholders'),
+      list: () => request<import('../types').Cardholder[]>('/issuing/cardholders').then(r => ((r as any).content ?? r) as import('../types').Cardholder[]),
       get: (id: string) => request<import('../types').Cardholder>(`/issuing/cardholders/${id}`),
       getByEmail: (email: string) => request<import('../types').Cardholder>(`/issuing/cardholders/by-email/${email}`),
       create: (data: Partial<import('../types').Cardholder>) =>

@@ -207,7 +207,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [token, refreshTokenValue, refreshAccessToken]);
 
   const fetchUsers = useCallback(async () => {
-    return authFetch('/auth/users') as Promise<AuthUser[]>;
+    const data = await authFetch('/auth/users') as any;
+    return (data.content ?? data) as AuthUser[];
   }, [authFetch]);
 
   const updateUser = useCallback(async (id: string, data: Partial<AuthUser>) => {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
+import { SectionHeader } from '../components/SectionHeader';
 import {
   Plus, Pencil, Trash2, ToggleLeft, ToggleRight,
   CreditCard, RefreshCw, ChevronDown, ChevronRight,
@@ -115,6 +116,8 @@ export function CardPrograms() {
           </button>
         </div>
       </div>
+
+      <SectionHeader sectionKey="cardPrograms" />
 
       {loading ? (
         <p className="text-gray-500">{t('common.loading')}</p>

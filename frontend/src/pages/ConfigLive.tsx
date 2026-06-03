@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { request } from '../services/api';
+import { SectionHeader } from '../components/SectionHeader';
 
 interface ConfigItem {
   id: string;
@@ -78,6 +79,8 @@ export function ConfigLive() {
           {t('common.refresh')}
         </button>
       </div>
+
+      <SectionHeader sectionKey="configLive" />
 
       {categoryOrder.filter(cat => grouped[cat]).map(category => (
         <div key={category} style={{ marginBottom: 28 }}>

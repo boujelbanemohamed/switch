@@ -49,13 +49,7 @@ public class EpgService {
                 .currencyCode(currencyCode)
                 .status(EpgTransaction.Status.INITIATED)
                 .deviceChannel(EpgTransaction.DeviceChannel.WEB)
-                .createdAt(OffsetDateTime.now())
-                .updatedAt(OffsetDateTime.now())
                 .build();
-
-        if (txn.getId() == null) {
-            txn.setId(UUID.randomUUID());
-        }
 
         epgTransactionRepository.save(txn);
         log.info("EPG transaction initiated: id={}, merchant={}, txn={}, amount={}",
@@ -211,16 +205,10 @@ public class EpgService {
                 .apiSecretHash(apiSecretHash)
                 .webhookUrl(webhookUrl)
                 .isActive(true)
-                .createdAt(OffsetDateTime.now())
-                .updatedAt(OffsetDateTime.now())
                 .build();
 
-        if (config.getId() == null) {
-            config.setId(UUID.randomUUID());
-        }
-
         epgMerchantConfigRepository.save(config);
-        log.info("EPG merchant config created: merchantId={}", merchantId);
+        log.info("EPG merchant config created: merchantId={}, id={}", merchantId, config.getId());
         return config;
     }
 

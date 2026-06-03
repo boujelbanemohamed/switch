@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { request } from '../services/api';
+import { SectionHeader } from '../components/SectionHeader';
 
 interface ReportItem {
   id: string;
@@ -87,6 +88,8 @@ export function Reports() {
   return (
     <div>
       <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('reports.title')}</h2>
+
+      <SectionHeader sectionKey="reports" />
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' }}>
         <select value={filterType} onChange={e => setFilterType(e.target.value)}

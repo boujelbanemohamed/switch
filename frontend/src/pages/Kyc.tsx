@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
+import { SectionHeader } from '../components/SectionHeader';
 import {
   FileText, CheckCircle, XCircle, Clock, Upload, Shield,
   RefreshCw, Plus, Search,
@@ -128,6 +129,8 @@ export function Kyc() {
           </button>
         )}
       </div>
+
+      <SectionHeader sectionKey="kyc" />
 
       <div className="flex gap-1 bg-gray-800 rounded-lg p-1 w-fit">
         {tabs.map(t => (

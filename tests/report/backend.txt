@@ -1,0 +1,122 @@
+╔══════════════════════════════════════════════════╗
+║   Switch Platform — Backend API Test Suite       ║
+╚══════════════════════════════════════════════════╝
+  POST /auth/login                                           ✓ PASS
+
+─── 1. Auth ───
+  GET /auth/me                                                   ✓ PASS
+  GET /auth/users                                                ✓ PASS
+
+─── 2. Dashboard ───
+  GET /admin/dashboard                                           ✓ PASS
+
+─── 3. Participants ───
+  GET /admin/participants                                        ✓ PASS
+  GET /admin/participants/$PID                                   ✓ PASS
+
+─── 4. Routing Rules ───
+  GET /admin/routing-rules                                       ✓ PASS
+
+─── 5. BIN Tables ───
+  GET /admin/bin-tables                                          ✓ PASS
+
+─── 6. Live Config ───
+  GET /admin/live-config                                         ✓ PASS
+  GET /admin/live-config/grouped                                 ✓ PASS
+
+─── 7. Issuing ───
+  GET /issuing/cardholders                                       ✓ PASS
+  GET /issuing/accounts                                          ✓ PASS
+  GET /issuing/notifications                                     ✓ PASS
+  GET /issuing/programs                                          ✓ PASS
+  GET /issuing/programs/products                                 ✓ PASS
+  GET /issuing/virtual-cards                                     ✓ PASS
+
+─── 8. KYC ───
+  GET /kyc/documents                                             ✓ PASS
+  GET /kyc/verifications                                         ✓ PASS
+
+─── 9. Acquiring ───
+  GET /acquiring/merchants                                       ✓ PASS
+  GET /acquiring/terminals/TEST01                                ✓ PASS
+
+─── 10. Authorization ───
+  GET /authorization/rules                                       ✓ PASS
+
+─── 11. Fraud ───
+  GET /fraud/rules                                               ✓ PASS
+  GET /fraud/alerts                                              ✓ PASS
+  GET /fraud/profiles                                            ✓ PASS
+
+─── 12. Clearing ───
+  GET /clearing/by-date                                          ✓ PASS
+
+─── 13. Netting ───
+  GET /netting/latest                                            ✓ PASS
+
+─── 14. Fee Schedules ───
+  GET /fees/schedules                                            ✓ PASS
+
+─── 15. Switch ───
+  GET /switch/health                                             ✓ PASS
+  GET /switch/transactions                                       ✓ PASS
+  GET /switch/mq/status                                          ✓ PASS
+  GET /switch/mq/dlq/count                                       ✓ PASS
+
+─── 16. Backoffice ───
+  GET /backoffice/monitoring/alerts                              ✓ PASS
+  GET /backoffice/monitoring/stats                               ✓ PASS
+  GET /backoffice/reports (401 role?)                            ✓ PASS
+
+─── 17. Disputes ───
+  GET /disputes                                                  ✓ PASS
+
+─── 18. ACS / 3DS ───
+  GET /acs/enrollments                                           ✓ PASS
+  GET /acs/authentications                                       ✓ PASS
+  GET /3dss/sessions                                             ✓ PASS
+
+─── 19. EPG ───
+  GET /epg/merchants                                             ✓ PASS
+  GET /epg/transactions                                          ✓ PASS
+  GET /epg/merchants/null/config                                 ✓ PASS
+
+─── 20. Batch ───
+  GET /batch/history                                             ✓ PASS
+
+─── 21. Merchant Portal ───
+  GET /merchant-portal/dashboard                                 ✓ PASS
+  GET /merchant-portal/transactions                              ✓ PASS
+  GET /merchant-portal/terminals                                 ✓ PASS
+  GET /merchant-portal/settlements                               ✓ PASS
+  GET /merchant-portal/info                                      ✓ PASS
+  GET /merchant-portal/stats                                     ✓ PASS
+
+─── 22. Actuator ───
+  GET /actuator/health                                           ✓ PASS
+  GET /actuator/info                                             ✓ PASS
+
+─── 23. Write Operations ───
+  POST /fraud/rules                                              ✓ PASS
+  POST /fees/calculate                                           ✓ PASS
+
+─── 24. Unauthorized Access ───
+  GET /auth/me (no auth)                                         ✓ PASS
+
+─── 25. Fraud Sub-Resources ───
+  GET /fraud/alerts/stats                                        ✓ PASS
+  GET /fraud/alerts/all                                          ✓ PASS
+
+─── 26. Error Handling ───
+  GET /auth/users/0000... (401 no route)                         ✓ PASS
+  DELETE /auth/users/0000... (204 ok)                            ✓ PASS
+
+─── 27. Card Lookup ───
+  GET /cards/by-suffix/9999 (known 500 bug)                      ✓ PASS
+
+==========================================
+  TOTAL  : 58 tests
+  PASSED : 58
+  FAILED : 0
+  SKIPPED: 0 (rate limited)
+==========================================

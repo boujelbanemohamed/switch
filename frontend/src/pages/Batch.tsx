@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
+import { SectionHeader } from '../components/SectionHeader';
 import {
   Clock, Play, CheckCircle, XCircle, RefreshCw,
 } from 'lucide-react';
@@ -75,6 +76,8 @@ export function Batch() {
           </button>
         </div>
       </div>
+
+      <SectionHeader sectionKey="batch" />
 
       <div className="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
         <table className="w-full text-sm">

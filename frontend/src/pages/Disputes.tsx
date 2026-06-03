@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { Dispute, DisputeEvidence, DisputeTimeline } from '../types';
+import { SectionHeader } from '../components/SectionHeader';
 
 type Tab = 'all' | 'open' | 'resolved';
 
@@ -138,6 +139,8 @@ export function Disputes() {
           {t('disputes.openNew')}
         </button>
       </div>
+
+      <SectionHeader sectionKey="disputes" />
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         {tabs.map(t => (

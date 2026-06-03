@@ -1,0 +1,938 @@
+
+Running 39 tests using 4 workers
+
+  ✓   1 [setup] › e2e/auth.setup.ts:3:1 › authenticate (740ms)
+  ✘   4 [chromium] › e2e/01-issuing.spec.ts:9:3 › Issuing - Émission Cartes & Wallets › affiche les cartes statistiques (Total Cardholders, Active Cards, KYC) (1.4s)
+  ✘   2 [chromium] › e2e/00-dashboard.spec.ts:4:3 › Dashboard - Vue d'ensemble › affiche le titre et les statistiques (5.9s)
+  ✘   3 [chromium] › e2e/01-issuing.spec.ts:4:3 › Issuing - Émission Cartes & Wallets › affiche le titre Issuing (6.0s)
+  ✘   5 [chromium] › e2e/00-dashboard.spec.ts:12:3 › Dashboard - Vue d'ensemble › affiche les graphiques (6.0s)
+  ✘   6 [chromium] › e2e/01-issuing.spec.ts:17:3 › Issuing - Émission Cartes & Wallets › affiche le tableau des cardholders (5.5s)
+  ✘   8 [chromium] › e2e/02-acquiring.spec.ts:9:3 › Acquiring - Acceptation Commerçants › affiche les statistiques marchands (1.0s)
+  ✘  11 [chromium] › e2e/03-authorization.spec.ts:9:3 › Authorization - Moteur d'Autorisation › affiche les statistiques (Total Rules, Active, Success Rate, Decisions) (851ms)
+  ✘   7 [chromium] › e2e/02-acquiring.spec.ts:4:3 › Acquiring - Acceptation Commerçants › affiche le titre Acquiring (5.7s)
+  ✘   9 [chromium] › e2e/02-acquiring.spec.ts:17:3 › Acquiring - Acceptation Commerçants › affiche le tableau des marchands avec Code, Name, Category, Country, Status (5.7s)
+  ✘  10 [chromium] › e2e/03-authorization.spec.ts:4:3 › Authorization - Moteur d'Autorisation › affiche le titre Authorization (5.5s)
+  ✘  12 [chromium] › e2e/03-authorization.spec.ts:17:3 › Authorization - Moteur d'Autorisation › affiche le tableau des règles avec Name, Type, Priority, Status, Success, Failures (5.3s)
+  ✘  13 [chromium] › e2e/04-switching.spec.ts:4:3 › Switching - Routage & BIN Tables › affiche le titre Routing Rules (5.4s)
+  ✘  14 [chromium] › e2e/04-switching.spec.ts:9:3 › Switching - Routage & BIN Tables › affiche le titre BIN Tables (5.4s)
+  ✘  15 [chromium] › e2e/04-switching.spec.ts:14:3 › Switching - Routage & BIN Tables › affiche la page BIN Tables avec les en-têtes (5.4s)
+  ✘  18 [chromium] › e2e/05-clearing.spec.ts:9:3 › Clearing & Settlement - Compensation et Règlement › affiche les statistiques (Total Cleared, Total Fees, Net, Disputes) (770ms)
+  ✘  19 [chromium] › e2e/05-clearing.spec.ts:17:3 › Clearing & Settlement - Compensation et Règlement › affiche deux sections: Clearing Records et Netting Results (811ms)
+  ✘  20 [chromium] › e2e/05-clearing.spec.ts:27:3 › Clearing & Settlement - Compensation et Règlement › affiche les tableaux avec Amount, Fee, Status (798ms)
+  ✘  22 [chromium] › e2e/06-fraud.spec.ts:9:3 › Fraud & Risk - Détection de Fraude › affiche les statistiques (Total Alerts, Open, Confirmed, High Score) (752ms)
+  ✘  17 [chromium] › e2e/05-clearing.spec.ts:4:3 › Clearing & Settlement - Compensation et Règlement › affiche le titre Clearing (5.3s)
+  ✘  21 [chromium] › e2e/06-fraud.spec.ts:4:3 › Fraud & Risk - Détection de Fraude › affiche le titre Fraud (5.3s)
+  ✘  25 [chromium] › e2e/07-backoffice.spec.ts:9:3 › Back-office & Reporting › affiche les statistiques (Audit, Critical, Warnings, Events) (757ms)
+  ✘  23 [chromium] › e2e/06-fraud.spec.ts:17:3 › Fraud & Risk - Détection de Fraude › affiche le tableau des alertes avec Rule, Score, Status, Decision (5.3s)
+  ✘  26 [chromium] › e2e/07-backoffice.spec.ts:17:3 › Back-office & Reporting › affiche les sections Audit Log et Monitoring Events (759ms)
+  ✘  24 [chromium] › e2e/07-backoffice.spec.ts:4:3 › Back-office & Reporting › affiche le titre Back Office (5.3s)
+  ✘  28 [chromium] › e2e/08-ecommerce.spec.ts:9:3 › E-Commerce (ACS, EPG, 3DSS) › affiche les trois onglets: ACS, EPG, 3DSS (376ms)
+  ✘  30 [chromium] › e2e/08-ecommerce.spec.ts:38:3 › E-Commerce (ACS, EPG, 3DSS) › affiche les champs du formulaire ACS (362ms)
+  ✘  27 [chromium] › e2e/08-ecommerce.spec.ts:4:3 › E-Commerce (ACS, EPG, 3DSS) › affiche le titre E-Commerce (5.3s)
+  ✘  29 [chromium] › e2e/08-ecommerce.spec.ts:19:3 › E-Commerce (ACS, EPG, 3DSS) › bascule entre les onglets ACS, EPG, 3DSS (5.3s)
+  ✘  31 [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Dashboard (5.4s)
+  ✘  32 [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Issuing (5.3s)
+  ✘  33 [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Acquiring (5.3s)
+  ✘  34 [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Authorization Engine (5.3s)
+  ✘  16 [chromium] › e2e/04-switching.spec.ts:21:3 › Switching - Routage & BIN Tables › navigation: retour au Dashboard depuis Switching (30.0s)
+  ✘  38 [chromium] › e2e/09-navigation.spec.ts:21:3 › Navigation générale › la sidebar contient tous les liens de navigation (381ms)
+  ✘  35 [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Fraud Detection (5.3s)
+  ✘  36 [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Clearing & Settlement (5.3s)
+  ✘  37 [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Back Office (5.3s)
+  ✘  39 [chromium] › e2e/09-navigation.spec.ts:40:3 › Navigation générale › le lien actif est mis en évidence (5.3s)
+
+
+  1) [chromium] › e2e/00-dashboard.spec.ts:4:3 › Dashboard - Vue d'ensemble › affiche le titre et les statistiques 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"Dashboard"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      4 |   test('affiche le titre et les statistiques', async ({ page }) => {
+      5 |     await page.goto('/');
+    > 6 |     await expect(page.locator('h2')).toHaveText('Dashboard');
+        |                                      ^
+      7 |     const cards = page.locator('main > div > div').nth(1).locator('> div');
+      8 |     const count = await cards.count();
+      9 |     expect(count).toBeGreaterThanOrEqual(3);
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/00-dashboard.spec.ts:6:38
+
+    Error Context: test-results/00-dashboard-Dashboard---V-1985f-e-titre-et-les-statistiques-chromium/error-context.md
+
+  2) [chromium] › e2e/00-dashboard.spec.ts:12:3 › Dashboard - Vue d'ensemble › affiche les graphiques 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m1[39m
+    Received:    [31m0[39m
+
+      14 |     await page.waitForSelector('.recharts-responsive-container', { timeout: 5000 }).catch(() => {});
+      15 |     const charts = page.locator('.recharts-responsive-container');
+    > 16 |     expect(await charts.count()).toBeGreaterThanOrEqual(1);
+         |                                  ^
+      17 |   });
+      18 | });
+      19 |
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/00-dashboard.spec.ts:16:34
+
+    Error Context: test-results/00-dashboard-Dashboard---V-33b71-mble-affiche-les-graphiques-chromium/error-context.md
+
+  3) [chromium] › e2e/01-issuing.spec.ts:4:3 › Issuing - Émission Cartes & Wallets › affiche le titre Issuing 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"Issuing"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      4 |   test('affiche le titre Issuing', async ({ page }) => {
+      5 |     await page.goto('/issuing');
+    > 6 |     await expect(page.locator('h2')).toHaveText('Issuing');
+        |                                      ^
+      7 |   });
+      8 |
+      9 |   test('affiche les cartes statistiques (Total Cardholders, Active Cards, KYC)', async ({ page }) => {
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/01-issuing.spec.ts:6:38
+
+    Error Context: test-results/01-issuing-Issuing---Émiss-cb245-ts-affiche-le-titre-Issuing-chromium/error-context.md
+
+  4) [chromium] › e2e/01-issuing.spec.ts:9:3 › Issuing - Émission Cartes & Wallets › affiche les cartes statistiques (Total Cardholders, Active Cards, KYC) 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m3[39m
+    Received:    [31m0[39m
+
+      12 |     const statCards = page.locator('main > div > div').nth(1).locator('> div');
+      13 |     const count = await statCards.count();
+    > 14 |     expect(count).toBeGreaterThanOrEqual(3);
+         |                   ^
+      15 |   });
+      16 |
+      17 |   test('affiche le tableau des cardholders', async ({ page }) => {
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/01-issuing.spec.ts:14:19
+
+    Error Context: test-results/01-issuing-Issuing---Émiss-34930-rdholders-Active-Cards-KYC--chromium/error-context.md
+
+  5) [chromium] › e2e/01-issuing.spec.ts:17:3 › Issuing - Émission Cartes & Wallets › affiche le tableau des cardholders 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('table')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('table')[22m
+
+
+      18 |     await page.goto('/issuing');
+      19 |     const table = page.locator('table');
+    > 20 |     await expect(table).toBeVisible();
+         |                         ^
+      21 |     const headers = table.locator('thead th');
+      22 |     const texts = await headers.allTextContents();
+      23 |     expect(texts.join(', ')).toContain('Name');
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/01-issuing.spec.ts:20:25
+
+    Error Context: test-results/01-issuing-Issuing---Émiss-80452--le-tableau-des-cardholders-chromium/error-context.md
+
+  6) [chromium] › e2e/02-acquiring.spec.ts:4:3 › Acquiring - Acceptation Commerçants › affiche le titre Acquiring 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"Acquiring"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      4 |   test('affiche le titre Acquiring', async ({ page }) => {
+      5 |     await page.goto('/acquiring');
+    > 6 |     await expect(page.locator('h2')).toHaveText('Acquiring');
+        |                                      ^
+      7 |   });
+      8 |
+      9 |   test('affiche les statistiques marchands', async ({ page }) => {
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/02-acquiring.spec.ts:6:38
+
+    Error Context: test-results/02-acquiring-Acquiring---A-71bcf--affiche-le-titre-Acquiring-chromium/error-context.md
+
+  7) [chromium] › e2e/02-acquiring.spec.ts:9:3 › Acquiring - Acceptation Commerçants › affiche les statistiques marchands 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m3[39m
+    Received:    [31m0[39m
+
+      12 |     const statCards = page.locator('main > div > div').nth(1).locator('> div');
+      13 |     const count = await statCards.count();
+    > 14 |     expect(count).toBeGreaterThanOrEqual(3);
+         |                   ^
+      15 |   });
+      16 |
+      17 |   test('affiche le tableau des marchands avec Code, Name, Category, Country, Status', async ({ page }) => {
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/02-acquiring.spec.ts:14:19
+
+    Error Context: test-results/02-acquiring-Acquiring---A-05755--les-statistiques-marchands-chromium/error-context.md
+
+  8) [chromium] › e2e/02-acquiring.spec.ts:17:3 › Acquiring - Acceptation Commerçants › affiche le tableau des marchands avec Code, Name, Category, Country, Status 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('table')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('table')[22m
+
+
+      18 |     await page.goto('/acquiring');
+      19 |     const table = page.locator('table');
+    > 20 |     await expect(table).toBeVisible();
+         |                         ^
+      21 |     const headers = table.locator('thead th');
+      22 |     const texts = await headers.allTextContents();
+      23 |     expect(texts.join(', ')).toContain('Code');
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/02-acquiring.spec.ts:20:25
+
+    Error Context: test-results/02-acquiring-Acquiring---A-95db7-ame-Category-Country-Status-chromium/error-context.md
+
+  9) [chromium] › e2e/03-authorization.spec.ts:4:3 › Authorization - Moteur d'Autorisation › affiche le titre Authorization 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"Authorization Engine"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      4 |   test('affiche le titre Authorization', async ({ page }) => {
+      5 |     await page.goto('/authorization');
+    > 6 |     await expect(page.locator('h2')).toHaveText('Authorization Engine');
+        |                                      ^
+      7 |   });
+      8 |
+      9 |   test('affiche les statistiques (Total Rules, Active, Success Rate, Decisions)', async ({ page }) => {
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/03-authorization.spec.ts:6:38
+
+    Error Context: test-results/03-authorization-Authoriza-bc468-iche-le-titre-Authorization-chromium/error-context.md
+
+  10) [chromium] › e2e/03-authorization.spec.ts:9:3 › Authorization - Moteur d'Autorisation › affiche les statistiques (Total Rules, Active, Success Rate, Decisions) 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m3[39m
+    Received:    [31m0[39m
+
+      12 |     const statCards = page.locator('main > div > div').nth(1).locator('> div');
+      13 |     const count = await statCards.count();
+    > 14 |     expect(count).toBeGreaterThanOrEqual(3);
+         |                   ^
+      15 |   });
+      16 |
+      17 |   test('affiche le tableau des règles avec Name, Type, Priority, Status, Success, Failures', async ({ page }) => {
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/03-authorization.spec.ts:14:19
+
+    Error Context: test-results/03-authorization-Authoriza-69e2f-ive-Success-Rate-Decisions--chromium/error-context.md
+
+  11) [chromium] › e2e/03-authorization.spec.ts:17:3 › Authorization - Moteur d'Autorisation › affiche le tableau des règles avec Name, Type, Priority, Status, Success, Failures 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('table')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('table')[22m
+
+
+      18 |     await page.goto('/authorization');
+      19 |     const table = page.locator('table');
+    > 20 |     await expect(table).toBeVisible();
+         |                         ^
+      21 |     const headers = table.locator('thead th');
+      22 |     const texts = await headers.allTextContents();
+      23 |     expect(texts.join(', ')).toContain('Name');
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/03-authorization.spec.ts:20:25
+
+    Error Context: test-results/03-authorization-Authoriza-122be-ity-Status-Success-Failures-chromium/error-context.md
+
+  12) [chromium] › e2e/04-switching.spec.ts:4:3 › Switching - Routage & BIN Tables › affiche le titre Routing Rules 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"Routing Rules"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      4 |   test('affiche le titre Routing Rules', async ({ page }) => {
+      5 |     await page.goto('/routing');
+    > 6 |     await expect(page.locator('h2')).toHaveText('Routing Rules');
+        |                                      ^
+      7 |   });
+      8 |
+      9 |   test('affiche le titre BIN Tables', async ({ page }) => {
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/04-switching.spec.ts:6:38
+
+    Error Context: test-results/04-switching-Switching---R-7e1fb-iche-le-titre-Routing-Rules-chromium/error-context.md
+
+  13) [chromium] › e2e/04-switching.spec.ts:9:3 › Switching - Routage & BIN Tables › affiche le titre BIN Tables 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"BIN Tables"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+       9 |   test('affiche le titre BIN Tables', async ({ page }) => {
+      10 |     await page.goto('/bin-tables');
+    > 11 |     await expect(page.locator('h2')).toHaveText('BIN Tables');
+         |                                      ^
+      12 |   });
+      13 |
+      14 |   test('affiche la page BIN Tables avec les en-têtes', async ({ page }) => {
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/04-switching.spec.ts:11:38
+
+    Error Context: test-results/04-switching-Switching---R-4fc28-affiche-le-titre-BIN-Tables-chromium/error-context.md
+
+  14) [chromium] › e2e/04-switching.spec.ts:14:3 › Switching - Routage & BIN Tables › affiche la page BIN Tables avec les en-têtes 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"BIN Tables"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      14 |   test('affiche la page BIN Tables avec les en-têtes', async ({ page }) => {
+      15 |     await page.goto('/bin-tables');
+    > 16 |     await expect(page.locator('h2')).toHaveText('BIN Tables');
+         |                                      ^
+      17 |     const contentArea = page.locator('main > div');
+      18 |     await expect(contentArea).toBeVisible();
+      19 |   });
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/04-switching.spec.ts:16:38
+
+    Error Context: test-results/04-switching-Switching---R-f9db5-IN-Tables-avec-les-en-têtes-chromium/error-context.md
+
+  15) [chromium] › e2e/04-switching.spec.ts:21:3 › Switching - Routage & BIN Tables › navigation: retour au Dashboard depuis Switching 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('a[href="/"]')[22m
+
+
+      21 |   test('navigation: retour au Dashboard depuis Switching', async ({ page }) => {
+      22 |     await page.goto('/routing');
+    > 23 |     await page.click('a[href="/"]');
+         |                ^
+      24 |     await expect(page.locator('h2')).toHaveText('Dashboard');
+      25 |   });
+      26 | });
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/04-switching.spec.ts:23:16
+
+    Error Context: test-results/04-switching-Switching---R-b4473--Dashboard-depuis-Switching-chromium/error-context.md
+
+  16) [chromium] › e2e/05-clearing.spec.ts:4:3 › Clearing & Settlement - Compensation et Règlement › affiche le titre Clearing 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"Clearing & Settlement"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      4 |   test('affiche le titre Clearing', async ({ page }) => {
+      5 |     await page.goto('/clearing');
+    > 6 |     await expect(page.locator('h2')).toHaveText('Clearing & Settlement');
+        |                                      ^
+      7 |   });
+      8 |
+      9 |   test('affiche les statistiques (Total Cleared, Total Fees, Net, Disputes)', async ({ page }) => {
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/05-clearing.spec.ts:6:38
+
+    Error Context: test-results/05-clearing-Clearing-Settl-9f6b0-t-affiche-le-titre-Clearing-chromium/error-context.md
+
+  17) [chromium] › e2e/05-clearing.spec.ts:9:3 › Clearing & Settlement - Compensation et Règlement › affiche les statistiques (Total Cleared, Total Fees, Net, Disputes) 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m3[39m
+    Received:    [31m0[39m
+
+      12 |     const statCards = page.locator('main > div > div').nth(1).locator('> div');
+      13 |     const count = await statCards.count();
+    > 14 |     expect(count).toBeGreaterThanOrEqual(3);
+         |                   ^
+      15 |   });
+      16 |
+      17 |   test('affiche deux sections: Clearing Records et Netting Results', async ({ page }) => {
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/05-clearing.spec.ts:14:19
+
+    Error Context: test-results/05-clearing-Clearing-Settl-5bb7e-ed-Total-Fees-Net-Disputes--chromium/error-context.md
+
+  18) [chromium] › e2e/05-clearing.spec.ts:17:3 › Clearing & Settlement - Compensation et Règlement › affiche deux sections: Clearing Records et Netting Results 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoContain[2m([22m[32mexpected[39m[2m) // indexOf[22m
+
+    Expected substring: [32m"Clearing Records"[39m
+    Received string:    [31m""[39m
+
+      21 |     const texts = await subHeadings.allTextContents();
+      22 |     const joined = texts.join('|');
+    > 23 |     expect(joined).toContain('Clearing Records');
+         |                    ^
+      24 |     expect(joined).toContain('Netting Results');
+      25 |   });
+      26 |
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/05-clearing.spec.ts:23:20
+
+    Error Context: test-results/05-clearing-Clearing-Settl-1c197--Records-et-Netting-Results-chromium/error-context.md
+
+  19) [chromium] › e2e/05-clearing.spec.ts:27:3 › Clearing & Settlement - Compensation et Règlement › affiche les tableaux avec Amount, Fee, Status 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m1[39m
+    Received:    [31m0[39m
+
+      30 |     const tables = page.locator('table');
+      31 |     const count = await tables.count();
+    > 32 |     expect(count).toBeGreaterThanOrEqual(1);
+         |                   ^
+      33 |     const headers = tables.first().locator('thead th');
+      34 |     const texts = await headers.allTextContents();
+      35 |     expect(texts.join(', ')).toContain('Amount');
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/05-clearing.spec.ts:32:19
+
+    Error Context: test-results/05-clearing-Clearing-Settl-cfe7a-eaux-avec-Amount-Fee-Status-chromium/error-context.md
+
+  20) [chromium] › e2e/06-fraud.spec.ts:4:3 › Fraud & Risk - Détection de Fraude › affiche le titre Fraud 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"Fraud Detection"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      4 |   test('affiche le titre Fraud', async ({ page }) => {
+      5 |     await page.goto('/fraud');
+    > 6 |     await expect(page.locator('h2')).toHaveText('Fraud Detection');
+        |                                      ^
+      7 |   });
+      8 |
+      9 |   test('affiche les statistiques (Total Alerts, Open, Confirmed, High Score)', async ({ page }) => {
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/06-fraud.spec.ts:6:38
+
+    Error Context: test-results/06-fraud-Fraud-Risk---Déte-904e9-aude-affiche-le-titre-Fraud-chromium/error-context.md
+
+  21) [chromium] › e2e/06-fraud.spec.ts:9:3 › Fraud & Risk - Détection de Fraude › affiche les statistiques (Total Alerts, Open, Confirmed, High Score) 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m3[39m
+    Received:    [31m0[39m
+
+      12 |     const statCards = page.locator('main > div > div').nth(2).locator('> div');
+      13 |     const count = await statCards.count();
+    > 14 |     expect(count).toBeGreaterThanOrEqual(3);
+         |                   ^
+      15 |   });
+      16 |
+      17 |   test('affiche le tableau des alertes avec Rule, Score, Status, Decision', async ({ page }) => {
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/06-fraud.spec.ts:14:19
+
+    Error Context: test-results/06-fraud-Fraud-Risk---Déte-fc29c--Open-Confirmed-High-Score--chromium/error-context.md
+
+  22) [chromium] › e2e/06-fraud.spec.ts:17:3 › Fraud & Risk - Détection de Fraude › affiche le tableau des alertes avec Rule, Score, Status, Decision 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('table')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('table')[22m
+
+
+      18 |     await page.goto('/fraud');
+      19 |     const table = page.locator('table');
+    > 20 |     await expect(table).toBeVisible();
+         |                         ^
+      21 |     const headers = table.locator('thead th');
+      22 |     const texts = await headers.allTextContents();
+      23 |     expect(texts.join(', ')).toContain('Rule');
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/06-fraud.spec.ts:20:25
+
+    Error Context: test-results/06-fraud-Fraud-Risk---Déte-08567--Rule-Score-Status-Decision-chromium/error-context.md
+
+  23) [chromium] › e2e/07-backoffice.spec.ts:4:3 › Back-office & Reporting › affiche le titre Back Office 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"Back Office"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      4 |   test('affiche le titre Back Office', async ({ page }) => {
+      5 |     await page.goto('/backoffice');
+    > 6 |     await expect(page.locator('h2')).toHaveText('Back Office');
+        |                                      ^
+      7 |   });
+      8 |
+      9 |   test('affiche les statistiques (Audit, Critical, Warnings, Events)', async ({ page }) => {
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/07-backoffice.spec.ts:6:38
+
+    Error Context: test-results/07-backoffice-Back-office--eef4b-ffiche-le-titre-Back-Office-chromium/error-context.md
+
+  24) [chromium] › e2e/07-backoffice.spec.ts:9:3 › Back-office & Reporting › affiche les statistiques (Audit, Critical, Warnings, Events) 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m3[39m
+    Received:    [31m0[39m
+
+      12 |     const statCards = page.locator('main > div > div').nth(1).locator('> div');
+      13 |     const count = await statCards.count();
+    > 14 |     expect(count).toBeGreaterThanOrEqual(3);
+         |                   ^
+      15 |   });
+      16 |
+      17 |   test('affiche les sections Audit Log et Monitoring Events', async ({ page }) => {
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/07-backoffice.spec.ts:14:19
+
+    Error Context: test-results/07-backoffice-Back-office--82c18-t-Critical-Warnings-Events--chromium/error-context.md
+
+  25) [chromium] › e2e/07-backoffice.spec.ts:17:3 › Back-office & Reporting › affiche les sections Audit Log et Monitoring Events 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoContain[2m([22m[32mexpected[39m[2m) // indexOf[22m
+
+    Expected substring: [32m"Audit"[39m
+    Received string:    [31m""[39m
+
+      21 |     const texts = await subHeadings.allTextContents();
+      22 |     const joined = texts.join('|');
+    > 23 |     expect(joined).toContain('Audit');
+         |                    ^
+      24 |     expect(joined).toContain('Monitoring');
+      25 |   });
+      26 | });
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/07-backoffice.spec.ts:23:20
+
+    Error Context: test-results/07-backoffice-Back-office--e4a9e-it-Log-et-Monitoring-Events-chromium/error-context.md
+
+  26) [chromium] › e2e/08-ecommerce.spec.ts:4:3 › E-Commerce (ACS, EPG, 3DSS) › affiche le titre E-Commerce 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"E-Commerce"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      4 |   test('affiche le titre E-Commerce', async ({ page }) => {
+      5 |     await page.goto('/ecommerce');
+    > 6 |     await expect(page.locator('h2')).toHaveText('E-Commerce');
+        |                                      ^
+      7 |   });
+      8 |
+      9 |   test('affiche les trois onglets: ACS, EPG, 3DSS', async ({ page }) => {
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/08-ecommerce.spec.ts:6:38
+
+    Error Context: test-results/08-ecommerce-E-Commerce-AC-0198c-affiche-le-titre-E-Commerce-chromium/error-context.md
+
+  27) [chromium] › e2e/08-ecommerce.spec.ts:9:3 › E-Commerce (ACS, EPG, 3DSS) › affiche les trois onglets: ACS, EPG, 3DSS 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoContain[2m([22m[32mexpected[39m[2m) // indexOf[22m
+
+    Expected substring: [32m"ACS"[39m
+    Received string:    [31m""[39m
+
+      12 |     const texts = await tabs.allTextContents();
+      13 |     const joined = texts.join('|');
+    > 14 |     expect(joined).toContain('ACS');
+         |                    ^
+      15 |     expect(joined).toContain('EPG');
+      16 |     expect(joined).toContain('3DSS');
+      17 |   });
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/08-ecommerce.spec.ts:14:20
+
+    Error Context: test-results/08-ecommerce-E-Commerce-AC-9b29d--trois-onglets-ACS-EPG-3DSS-chromium/error-context.md
+
+  28) [chromium] › e2e/08-ecommerce.spec.ts:19:3 › E-Commerce (ACS, EPG, 3DSS) › bascule entre les onglets ACS, EPG, 3DSS 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h3').first()
+    Expected: [32m"Create Authentication"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h3').first()[22m
+
+
+      21 |
+      22 |     // Vérifie l'onglet ACS par défaut
+    > 23 |     await expect(page.locator('h3').first()).toHaveText('Create Authentication');
+         |                                              ^
+      24 |
+      25 |     // Clique sur EPG
+      26 |     await page.locator('button', { hasText: 'EPG' }).click();
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/08-ecommerce.spec.ts:23:46
+
+    Error Context: test-results/08-ecommerce-E-Commerce-AC-f0176-re-les-onglets-ACS-EPG-3DSS-chromium/error-context.md
+
+  29) [chromium] › e2e/08-ecommerce.spec.ts:38:3 › E-Commerce (ACS, EPG, 3DSS) › affiche les champs du formulaire ACS 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: >= [32m3[39m
+    Received:    [31m0[39m
+
+      40 |     const inputs = page.locator('input');
+      41 |     const inputCount = await inputs.count();
+    > 42 |     expect(inputCount).toBeGreaterThanOrEqual(3);
+         |                        ^
+      43 |   });
+      44 | });
+      45 |
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/08-ecommerce.spec.ts:42:24
+
+    Error Context: test-results/08-ecommerce-E-Commerce-AC-3be08-es-champs-du-formulaire-ACS-chromium/error-context.md
+
+  30) [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Dashboard 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"Dashboard"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      15 |     test(`navigation et titre: ${section.title}`, async ({ page }) => {
+      16 |       await page.goto(section.path);
+    > 17 |       await expect(page.locator('h2')).toHaveText(section.title);
+         |                                        ^
+      18 |     });
+      19 |   }
+      20 |
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/09-navigation.spec.ts:17:40
+
+    Error Context: test-results/09-navigation-Navigation-g-1be1b-vigation-et-titre-Dashboard-chromium/error-context.md
+
+  31) [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Issuing 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"Issuing"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      15 |     test(`navigation et titre: ${section.title}`, async ({ page }) => {
+      16 |       await page.goto(section.path);
+    > 17 |       await expect(page.locator('h2')).toHaveText(section.title);
+         |                                        ^
+      18 |     });
+      19 |   }
+      20 |
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/09-navigation.spec.ts:17:40
+
+    Error Context: test-results/09-navigation-Navigation-g-ec6e1-navigation-et-titre-Issuing-chromium/error-context.md
+
+  32) [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Acquiring 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"Acquiring"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      15 |     test(`navigation et titre: ${section.title}`, async ({ page }) => {
+      16 |       await page.goto(section.path);
+    > 17 |       await expect(page.locator('h2')).toHaveText(section.title);
+         |                                        ^
+      18 |     });
+      19 |   }
+      20 |
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/09-navigation.spec.ts:17:40
+
+    Error Context: test-results/09-navigation-Navigation-g-fab68-vigation-et-titre-Acquiring-chromium/error-context.md
+
+  33) [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Authorization Engine 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"Authorization Engine"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      15 |     test(`navigation et titre: ${section.title}`, async ({ page }) => {
+      16 |       await page.goto(section.path);
+    > 17 |       await expect(page.locator('h2')).toHaveText(section.title);
+         |                                        ^
+      18 |     });
+      19 |   }
+      20 |
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/09-navigation.spec.ts:17:40
+
+    Error Context: test-results/09-navigation-Navigation-g-b8a56--titre-Authorization-Engine-chromium/error-context.md
+
+  34) [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Fraud Detection 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"Fraud Detection"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      15 |     test(`navigation et titre: ${section.title}`, async ({ page }) => {
+      16 |       await page.goto(section.path);
+    > 17 |       await expect(page.locator('h2')).toHaveText(section.title);
+         |                                        ^
+      18 |     });
+      19 |   }
+      20 |
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/09-navigation.spec.ts:17:40
+
+    Error Context: test-results/09-navigation-Navigation-g-76c59-on-et-titre-Fraud-Detection-chromium/error-context.md
+
+  35) [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Clearing & Settlement 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"Clearing & Settlement"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      15 |     test(`navigation et titre: ${section.title}`, async ({ page }) => {
+      16 |       await page.goto(section.path);
+    > 17 |       await expect(page.locator('h2')).toHaveText(section.title);
+         |                                        ^
+      18 |     });
+      19 |   }
+      20 |
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/09-navigation.spec.ts:17:40
+
+    Error Context: test-results/09-navigation-Navigation-g-6782d-t-titre-Clearing-Settlement-chromium/error-context.md
+
+  36) [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Back Office 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('h2')
+    Expected: [32m"Back Office"[39m
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveText" with timeout 5000ms[22m
+    [2m  - waiting for locator('h2')[22m
+
+
+      15 |     test(`navigation et titre: ${section.title}`, async ({ page }) => {
+      16 |       await page.goto(section.path);
+    > 17 |       await expect(page.locator('h2')).toHaveText(section.title);
+         |                                        ^
+      18 |     });
+      19 |   }
+      20 |
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/09-navigation.spec.ts:17:40
+
+    Error Context: test-results/09-navigation-Navigation-g-51bbe-gation-et-titre-Back-Office-chromium/error-context.md
+
+  37) [chromium] › e2e/09-navigation.spec.ts:21:3 › Navigation générale › la sidebar contient tous les liens de navigation 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoContain[2m([22m[32mexpected[39m[2m) // indexOf[22m
+
+    Expected substring: [32m"Dashboard"[39m
+    Received string:    [31m""[39m
+
+      24 |     const texts = await navLinks.allTextContents();
+      25 |     const joined = texts.join('|');
+    > 26 |     expect(joined).toContain('Dashboard');
+         |                    ^
+      27 |     expect(joined).toContain('Issuing');
+      28 |     expect(joined).toContain('Acquiring');
+      29 |     expect(joined).toContain('Authorization');
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/09-navigation.spec.ts:26:20
+
+    Error Context: test-results/09-navigation-Navigation-g-28c11-ous-les-liens-de-navigation-chromium/error-context.md
+
+  38) [chromium] › e2e/09-navigation.spec.ts:40:3 › Navigation générale › le lien actif est mis en évidence 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('nav a[href="/acquiring"]')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('nav a[href="/acquiring"]')[22m
+
+
+      41 |     await page.goto('/acquiring');
+      42 |     const activeLink = page.locator('nav a[href="/acquiring"]');
+    > 43 |     await expect(activeLink).toBeVisible();
+         |                              ^
+      44 |     const color = await activeLink.evaluate(el => getComputedStyle(el).color);
+      45 |     expect(color).toBe('rgb(96, 165, 250)');
+      46 |   });
+        at /Users/mohamedboujelbane/Desktop/serveur monetique/frontend/e2e/09-navigation.spec.ts:43:30
+
+    Error Context: test-results/09-navigation-Navigation-g-47161-n-actif-est-mis-en-évidence-chromium/error-context.md
+
+  38 failed
+    [chromium] › e2e/00-dashboard.spec.ts:4:3 › Dashboard - Vue d'ensemble › affiche le titre et les statistiques 
+    [chromium] › e2e/00-dashboard.spec.ts:12:3 › Dashboard - Vue d'ensemble › affiche les graphiques 
+    [chromium] › e2e/01-issuing.spec.ts:4:3 › Issuing - Émission Cartes & Wallets › affiche le titre Issuing 
+    [chromium] › e2e/01-issuing.spec.ts:9:3 › Issuing - Émission Cartes & Wallets › affiche les cartes statistiques (Total Cardholders, Active Cards, KYC) 
+    [chromium] › e2e/01-issuing.spec.ts:17:3 › Issuing - Émission Cartes & Wallets › affiche le tableau des cardholders 
+    [chromium] › e2e/02-acquiring.spec.ts:4:3 › Acquiring - Acceptation Commerçants › affiche le titre Acquiring 
+    [chromium] › e2e/02-acquiring.spec.ts:9:3 › Acquiring - Acceptation Commerçants › affiche les statistiques marchands 
+    [chromium] › e2e/02-acquiring.spec.ts:17:3 › Acquiring - Acceptation Commerçants › affiche le tableau des marchands avec Code, Name, Category, Country, Status 
+    [chromium] › e2e/03-authorization.spec.ts:4:3 › Authorization - Moteur d'Autorisation › affiche le titre Authorization 
+    [chromium] › e2e/03-authorization.spec.ts:9:3 › Authorization - Moteur d'Autorisation › affiche les statistiques (Total Rules, Active, Success Rate, Decisions) 
+    [chromium] › e2e/03-authorization.spec.ts:17:3 › Authorization - Moteur d'Autorisation › affiche le tableau des règles avec Name, Type, Priority, Status, Success, Failures 
+    [chromium] › e2e/04-switching.spec.ts:4:3 › Switching - Routage & BIN Tables › affiche le titre Routing Rules 
+    [chromium] › e2e/04-switching.spec.ts:9:3 › Switching - Routage & BIN Tables › affiche le titre BIN Tables 
+    [chromium] › e2e/04-switching.spec.ts:14:3 › Switching - Routage & BIN Tables › affiche la page BIN Tables avec les en-têtes 
+    [chromium] › e2e/04-switching.spec.ts:21:3 › Switching - Routage & BIN Tables › navigation: retour au Dashboard depuis Switching 
+    [chromium] › e2e/05-clearing.spec.ts:4:3 › Clearing & Settlement - Compensation et Règlement › affiche le titre Clearing 
+    [chromium] › e2e/05-clearing.spec.ts:9:3 › Clearing & Settlement - Compensation et Règlement › affiche les statistiques (Total Cleared, Total Fees, Net, Disputes) 
+    [chromium] › e2e/05-clearing.spec.ts:17:3 › Clearing & Settlement - Compensation et Règlement › affiche deux sections: Clearing Records et Netting Results 
+    [chromium] › e2e/05-clearing.spec.ts:27:3 › Clearing & Settlement - Compensation et Règlement › affiche les tableaux avec Amount, Fee, Status 
+    [chromium] › e2e/06-fraud.spec.ts:4:3 › Fraud & Risk - Détection de Fraude › affiche le titre Fraud 
+    [chromium] › e2e/06-fraud.spec.ts:9:3 › Fraud & Risk - Détection de Fraude › affiche les statistiques (Total Alerts, Open, Confirmed, High Score) 
+    [chromium] › e2e/06-fraud.spec.ts:17:3 › Fraud & Risk - Détection de Fraude › affiche le tableau des alertes avec Rule, Score, Status, Decision 
+    [chromium] › e2e/07-backoffice.spec.ts:4:3 › Back-office & Reporting › affiche le titre Back Office 
+    [chromium] › e2e/07-backoffice.spec.ts:9:3 › Back-office & Reporting › affiche les statistiques (Audit, Critical, Warnings, Events) 
+    [chromium] › e2e/07-backoffice.spec.ts:17:3 › Back-office & Reporting › affiche les sections Audit Log et Monitoring Events 
+    [chromium] › e2e/08-ecommerce.spec.ts:4:3 › E-Commerce (ACS, EPG, 3DSS) › affiche le titre E-Commerce 
+    [chromium] › e2e/08-ecommerce.spec.ts:9:3 › E-Commerce (ACS, EPG, 3DSS) › affiche les trois onglets: ACS, EPG, 3DSS 
+    [chromium] › e2e/08-ecommerce.spec.ts:19:3 › E-Commerce (ACS, EPG, 3DSS) › bascule entre les onglets ACS, EPG, 3DSS 
+    [chromium] › e2e/08-ecommerce.spec.ts:38:3 › E-Commerce (ACS, EPG, 3DSS) › affiche les champs du formulaire ACS 
+    [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Dashboard 
+    [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Issuing 
+    [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Acquiring 
+    [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Authorization Engine 
+    [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Fraud Detection 
+    [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Clearing & Settlement 
+    [chromium] › e2e/09-navigation.spec.ts:15:5 › Navigation générale › navigation et titre: Back Office 
+    [chromium] › e2e/09-navigation.spec.ts:21:3 › Navigation générale › la sidebar contient tous les liens de navigation 
+    [chromium] › e2e/09-navigation.spec.ts:40:3 › Navigation générale › le lien actif est mis en évidence 
+  1 passed (56.4s)

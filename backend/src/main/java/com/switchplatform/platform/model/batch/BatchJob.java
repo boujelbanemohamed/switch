@@ -61,7 +61,7 @@ public class BatchJob {
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
-    @Column(name = "result_summary", columnDefinition = "JSONB")
+    @Column(name = "result_summary", columnDefinition = "TEXT")
     private String resultSummary;
 
     @Column(name = "triggered_by", length = 64)

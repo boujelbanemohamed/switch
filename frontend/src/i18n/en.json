@@ -637,7 +637,10 @@
     "generateAfterCreate": "Generate immediately after creation",
     "generate": "Generate",
     "create": "Create",
-    "noReports": "No reports found"
+    "noReports": "No reports found",
+    "sectionDescription": "Centralized report generation engine for the switch platform. Provides configurable reports for transaction activity, settlement summaries, fee analysis, and participant performance.",
+    "sectionRole": "Enables operators and analysts to generate, schedule, and export reports covering all aspects of platform operations — transactions, clearing, settlements, fees, and participant statistics.",
+    "sectionUsage": "Click 'New Report' to create a report. Select the report type, provide a name and description, then click 'Create'. Toggle 'Generate immediately after creation' to run the report right away. Generated reports can be downloaded from the table."
   },
   "configLive": {
     "title": "Live Configuration",
@@ -649,7 +652,10 @@
     "edit": "Edit",
     "save": "Save",
     "cancel": "Cancel",
-    "noConfigs": "No configuration found"
+    "noConfigs": "No configuration found",
+    "sectionDescription": "Live configuration management for the switch platform. Allows operators to view and update runtime configuration parameters without restarting the application.",
+    "sectionRole": "Provides a centralized interface for managing platform configuration in real-time. Changes take effect immediately, enabling operators to tune system behavior on the fly.",
+    "sectionUsage": "Browse the list of configuration keys and their current values. To modify a value, click 'Edit', update the field, and click 'Save'. The configuration is applied immediately."
   },
   "merchantPortal": {
     "title": "Merchant Portal",
@@ -736,7 +742,10 @@
     "webhookEvents": "Events (comma separated)",
     "webhookStatus": "Status",
     "noWebhooks": "No webhooks found",
-    "create": "Create"
+    "create": "Create",
+    "sectionDescription": "Dedicated merchant portal providing merchants with self-service access to their transaction history, settlement reports, terminal management, and refund processing.",
+    "sectionRole": "Empowers merchants to independently manage their payment operations — view transaction logs, monitor settlement status, manage terminal fleet, process refunds, and generate business reports.",
+    "sectionUsage": "Enter your merchant code to log in to your merchant dashboard. Navigate between Transactions, Terminals, Settlements, and Reports tabs. Use the refund feature to process EPG transaction refunds. API keys and webhooks can be managed from the merchant info panel."
   },
   "batch": {
     "title": "Batch Jobs",
@@ -746,7 +755,10 @@
     "processed": "Processed",
     "failed": "Failed",
     "scheduledAt": "Scheduled",
-    "completedAt": "Completed"
+    "completedAt": "Completed",
+    "sectionDescription": "Automated batch processing engine for scheduled jobs including end-of-day clearing, settlement calculation, fee computation, and report generation.",
+    "sectionRole": "Orchestrates and monitors all scheduled and on-demand batch jobs. Ensures critical financial processes like clearing, netting, and settlement runs are executed reliably and on time.",
+    "sectionUsage": "The page displays a table of batch jobs with their name, type, status, and progress. Monitor the processed/failed counts to track job execution. Jobs are triggered automatically based on schedule or can be started manually."
   },
   "netting": {
     "title": "Multilateral Netting",
@@ -763,7 +775,10 @@
     "calculate": "Calculate",
     "confirm": "Confirm",
     "settle": "Settle",
-      "noSession": "No netting session. Click \"Calculate\" to start."
+      "noSession": "No netting session. Click \"Calculate\" to start.",
+      "sectionDescription": "Multilateral netting engine that calculates net settlement positions between participants. Aggregates gross obligations and computes the net amount each participant must pay or receive.",
+      "sectionRole": "Reduces settlement costs and liquidity requirements by netting reciprocal obligations between participants. Determines final settlement positions after clearing and fee computation.",
+      "sectionUsage": "Click 'Calculate' to generate a new netting session for the current date. The efficiency metric shows how much the gross obligation was reduced. Review each participant's gross credit, gross debit, and net position. Click 'Confirm' to approve the session and 'Settle' to execute."
     },
     "fees": {
       "title": "Fee Schedules",
@@ -795,7 +810,10 @@
       "mccFilter": "MCC",
       "create": "Create",
       "actions": "",
-      "id": "ID"
+      "id": "ID",
+      "sectionDescription": "Configurable fee schedule engine that defines interchange fees, scheme fees, and processing charges. Supports multiple fee methods, currency-specific rates, and brand/card type filters.",
+      "sectionRole": "Provides the fee calculation rules for the switch platform. Each schedule contains ordered rules that determine how fees are computed for each transaction based on method (percentage, flat, tiered), brand, card type, and MCC.",
+      "sectionUsage": "Browse existing fee schedules or create a new one. Select a schedule to view its rules. Each rule defines a fee method (percentage of amount, flat fee, or tiered) with optional brand, card type, and MCC filters. Rules are evaluated in order — the first matching rule applies."
     },
     "cardPrograms": {
       "title": "Card Programs & Products",
@@ -827,7 +845,10 @@
       "singleTxnLimit": "Single TXN Limit",
       "create": "Create",
       "actions": "",
-      "status": "Status"
+      "status": "Status",
+      "sectionDescription": "Card program and product definition module. Manages card programs (issuing schemes) and their associated products with configurable features, limits, and lifecycle rules.",
+      "sectionRole": "Enables issuers to define and manage card programs and products. Each program can have multiple products with distinct features (contactless, online, international, e-commerce, ATM), fee structures, and default transaction limits.",
+      "sectionUsage": "Create a program first, then add products under it. Configure each product's network (Visa, MasterCard, etc.), annual fee, supported features, and default spending limits (daily, weekly, monthly, per transaction). Toggle features on/off and set renewable options."
     },
     "virtualCards": {
       "title": "Virtual Cards",
@@ -849,7 +870,10 @@
       "currency": "Currency",
       "amountLimit": "Amount Limit",
       "maxTransactions": "Max Transactions",
-      "merchantLocked": "Merchant Lock"
+      "merchantLocked": "Merchant Lock",
+      "sectionDescription": "Virtual card issuance and management module. Creates and manages single-use, multi-use, and merchant-locked virtual cards for secure online payments.",
+      "sectionRole": "Provides a complete virtual card lifecycle — create with configurable limits, activate, suspend, resume, and cancel. Supports merchant-locked cards restricted to specific merchants and usage-type tracking.",
+      "sectionUsage": "Click 'Create Virtual Card' to open the creation form. Fill in the cardholder ID, usage type (single/multi/merchant-locked), amount limit, and optional merchant binding. The card list shows status, expiry, limit, usage, and transaction count. Use the action buttons to activate, suspend, resume, or cancel cards."
     },
     "kyc": {
       "title": "KYC Management",
@@ -878,7 +902,10 @@
       "email": "Email",
       "kycLevel": "KYC Level",
       "cardholderId": "Cardholder ID",
-      "viewDocs": "View Docs"
+      "viewDocs": "View Docs",
+      "sectionDescription": "Know Your Customer (KYC) management module for identity verification and compliance. Handles document submission, verification workflows, and cardholder KYC level tracking.",
+      "sectionRole": "Ensures regulatory compliance by managing the identity verification lifecycle. Cardholders submit identification documents which are reviewed and either approved or rejected. Each cardholder has a KYC level reflecting their verification status.",
+      "sectionUsage": "Switch between Documents, Verifications, and Cardholders tabs. In Documents, upload and review identification documents — approve or reject with notes. The Verifications tab shows verification requests with requested and current KYC levels. The Cardholders tab lists all cardholders with their current KYC level."
     },
     "disputes": {
     "title": "Disputes & Chargebacks",
@@ -907,7 +934,10 @@
     "merchant": "Merchant",
     "issuer": "Issuer",
     "acquirer": "Acquirer",
-    "all": "All"
+    "all": "All",
+    "sectionDescription": "Dispute and chargeback management module. Handles the full lifecycle of transaction disputes between cardholders, merchants, issuers, and acquirers.",
+    "sectionRole": "Manages the dispute resolution process in compliance with card scheme rules. Tracks dispute status, evidence deadlines, resolution deadlines, and allows status transitions with evidence submission.",
+    "sectionUsage": "View all disputes in the table with their type, amount, status, and deadlines. Filter by Open or Resolved tabs. Click 'Open Dispute' to create a new dispute. Select a dispute to view its timeline and submit evidence. Use the transition status dropdown to advance the dispute through its lifecycle."
   },
   "common": {
     "loading": "Loading...",

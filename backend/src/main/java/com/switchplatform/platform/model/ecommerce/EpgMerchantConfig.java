@@ -33,10 +33,10 @@ public class EpgMerchantConfig {
     @Column(name = "callback_url", length = 512)
     private String callbackUrl;
 
-    @Column(name = "allowed_currencies", columnDefinition = "VARCHAR(3)[]")
+    @Column(name = "allowed_currencies", length = 512)
     private String allowedCurrencies;
 
-    @Column(name = "allowed_card_brands", columnDefinition = "VARCHAR(20)[]")
+    @Column(name = "allowed_card_brands", length = 512)
     private String allowedCardBrands;
 
     @Column(name = "min_amount", precision = 18, scale = 3)

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
+import { SectionHeader } from '../components/SectionHeader';
 import { DollarSign, ArrowUpCircle, ArrowDownCircle, MinusCircle, RefreshCw } from 'lucide-react';
 
 interface NettingSession {
@@ -84,24 +85,14 @@ export function Netting() {
             className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">
             <DollarSign className="w-4 h-4" /> {t('netting.calculate')}
           </button>
-          {session?.status === 'CALCULATED' && (
-            <button onClick={handleConfirm}
-              className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
-              {t('netting.confirm')}
-            </button>
-          )}
-          {session?.status === 'CONFIRMED' && (
-            <button onClick={handleSettle}
-              className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
-              {t('netting.settle')}
-            </button>
-          )}
           <button onClick={fetchLatest}
             className="flex items-center gap-1 px-3 py-1.5 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm">
             <RefreshCw className="w-4 h-4" />
           </button>
         </div>
       </div>
+
+      <SectionHeader sectionKey="netting" />
 
       {loading ? (
         <p className="text-gray-500">{t('common.loading')}</p>

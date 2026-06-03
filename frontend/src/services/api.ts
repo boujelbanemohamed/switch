@@ -427,6 +427,9 @@ export const api = {
     getTimeline: (id: string) => safeRequest<import('../types').DisputeTimeline[]>(`/disputes/${id}/timeline`),
     getByTransaction: (transactionId: string) => safeRequest<import('../types').Dispute[]>(`/disputes/transaction/${transactionId}`),
   },
+  get: <T = unknown>(path: string) => request<T>(path),
+  post: <T = unknown>(path: string, body?: Record<string, unknown>) =>
+    request<T>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined }),
   auth: {
     login: (data: import('../types').LoginRequest) =>
       request<import('../types').LoginResponse>('/auth/login', { method: 'POST', body: JSON.stringify(data) }),

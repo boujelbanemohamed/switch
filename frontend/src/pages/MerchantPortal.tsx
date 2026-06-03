@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { request } from '../services/api';
+import { SectionHeader } from '../components/SectionHeader';
 
 type MerchantTab = 'dashboard' | 'transactions' | 'terminals' | 'settlements' | 'refunds' | 'reports' | 'info' | 'apiKeys' | 'webhooks';
 
@@ -259,6 +260,8 @@ export function MerchantPortal() {
           }}>{t('auth.logout')}</button>
         </div>
       </div>
+
+      <SectionHeader sectionKey="merchantPortal" />
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
         {tabs.map(tabItem => (

@@ -637,7 +637,10 @@
     "generateAfterCreate": "Générer immédiatement après la création",
     "generate": "Générer",
     "create": "Créer",
-    "noReports": "Aucun rapport trouvé"
+    "noReports": "Aucun rapport trouvé",
+    "sectionDescription": "Moteur centralisé de génération de rapports pour la plateforme de switch. Fournit des rapports configurables sur l'activité des transactions, les résumés de règlement, l'analyse des frais et la performance des participants.",
+    "sectionRole": "Permet aux opérateurs et analystes de générer, planifier et exporter des rapports couvrant tous les aspects des opérations de la plateforme — transactions, compensation, règlements, frais et statistiques des participants.",
+    "sectionUsage": "Cliquez sur 'Nouveau rapport' pour créer un rapport. Sélectionnez le type de rapport, fournissez un nom et une description, puis cliquez sur 'Créer'. Activez 'Générer immédiatement après la création' pour exécuter le rapport immédiatement. Les rapports générés peuvent être téléchargés depuis le tableau."
   },
   "configLive": {
     "title": "Configuration Live",
@@ -649,7 +652,10 @@
     "edit": "Modifier",
     "save": "Enregistrer",
     "cancel": "Annuler",
-    "noConfigs": "Aucune configuration trouvée"
+    "noConfigs": "Aucune configuration trouvée",
+    "sectionDescription": "Gestion de la configuration live de la plateforme de switch. Permet aux opérateurs de visualiser et modifier les paramètres d'exécution sans redémarrer l'application.",
+    "sectionRole": "Fournit une interface centralisée pour la gestion de la configuration de la plateforme en temps réel. Les modifications prennent effet immédiatement, permettant aux opérateurs d'ajuster le comportement du système à la volée.",
+    "sectionUsage": "Parcourez la liste des clés de configuration et leurs valeurs actuelles. Pour modifier une valeur, cliquez sur 'Modifier', mettez à jour le champ, puis cliquez sur 'Enregistrer'. La configuration est appliquée immédiatement."
   },
   "merchantPortal": {
     "title": "Portail Marchand",
@@ -736,7 +742,10 @@
     "webhookEvents": "Événements (séparés par des virgules)",
     "webhookStatus": "Statut",
     "noWebhooks": "Aucun webhook trouvé",
-    "create": "Créer"
+    "create": "Créer",
+    "sectionDescription": "Portail marchand dédié offrant aux commerçants un accès en libre-service à leur historique de transactions, rapports de règlement, gestion des terminaux et traitement des remboursements.",
+    "sectionRole": "Permet aux commerçants de gérer indépendamment leurs opérations de paiement — consulter les journaux de transactions, suivre l'état des règlements, gérer le parc de terminaux, traiter les remboursements et générer des rapports d'activité.",
+    "sectionUsage": "Entrez votre code marchand pour vous connecter à votre tableau de bord marchand. Naviguez entre les onglets Transactions, Terminaux, Règlements et Rapports. Utilisez la fonction de remboursement pour traiter les remboursements de transactions EPG. Les clés API et webhooks peuvent être gérés depuis le panneau d'information marchand."
   },
   "batch": {
     "title": "Tâches Batch",
@@ -746,7 +755,10 @@
     "processed": "Traités",
     "failed": "Échoués",
     "scheduledAt": "Planifié",
-    "completedAt": "Terminé"
+    "completedAt": "Terminé",
+    "sectionDescription": "Moteur de traitement par lots automatisé pour les tâches planifiées, notamment la compensation de fin de journée, le calcul des règlements, le calcul des frais et la génération de rapports.",
+    "sectionRole": "Orchestre et surveille tous les travaux par lots planifiés et à la demande. Garantit que les processus financiers critiques comme la compensation, le netting et les règlements sont exécutés de manière fiable et à temps.",
+    "sectionUsage": "La page affiche un tableau des travaux par lots avec leur nom, type, statut et progression. Surveillez les compteurs traités/échoués pour suivre l'exécution. Les travaux sont déclenchés automatiquement selon le planning ou peuvent être démarrés manuellement."
   },
   "netting": {
     "title": "Netting Multilatéral",
@@ -763,7 +775,10 @@
     "calculate": "Calculer",
     "confirm": "Confirmer",
     "settle": "Régler",
-      "noSession": "Aucune session. Cliquez \"Calculer\" pour commencer."
+      "noSession": "Aucune session. Cliquez \"Calculer\" pour commencer.",
+      "sectionDescription": "Moteur de netting multilatéral qui calcule les positions nettes de règlement entre les participants. Agrège les obligations brutes et calcule le montant net que chaque participant doit payer ou recevoir.",
+      "sectionRole": "Réduit les coûts de règlement et les besoins de liquidité en compensant les obligations réciproques entre participants. Détermine les positions de règlement finales après la compensation et le calcul des frais.",
+      "sectionUsage": "Cliquez sur 'Calculer' pour générer une nouvelle session de netting pour la date du jour. L'indicateur d'efficacité montre la réduction de l'obligation brute. Examinez le crédit brut, le débit brut et la position nette de chaque participant. Cliquez sur 'Confirmer' pour approuver la session et sur 'Régler' pour exécuter."
     },
     "fees": {
       "title": "Barèmes de frais",
@@ -795,7 +810,10 @@
       "mccFilter": "MCC",
       "create": "Créer",
       "actions": "",
-      "id": "ID"
+      "id": "ID",
+      "sectionDescription": "Moteur de barèmes de frais configurable qui définit les frais d'interchange, les frais de réseau et les charges de traitement. Prend en charge plusieurs méthodes de frais, des taux spécifiques par devise et des filtres par réseau et type de carte.",
+      "sectionRole": "Fournit les règles de calcul des frais pour la plateforme de switch. Chaque barème contient des règles ordonnées qui déterminent comment les frais sont calculés pour chaque transaction en fonction de la méthode (pourcentage, forfait, paliers), du réseau, du type de carte et du MCC.",
+      "sectionUsage": "Parcourez les barèmes existants ou créez-en un nouveau. Sélectionnez un barème pour voir ses règles. Chaque règle définit une méthode de calcul (pourcentage du montant, montant forfaitaire ou par paliers) avec des filtres optionnels par réseau, type de carte et MCC. Les règles sont évaluées dans l'ordre — la première règle correspondante s'applique."
     },
     "cardPrograms": {
       "title": "Programmes & Produits cartes",
@@ -827,7 +845,10 @@
       "singleTxnLimit": "Limite par transaction",
       "create": "Créer",
       "actions": "",
-      "status": "Statut"
+      "status": "Statut",
+      "sectionDescription": "Module de définition des programmes et produits cartes. Gère les programmes d'émission (schémas) et leurs produits associés avec des fonctionnalités, limites et règles de cycle de vie configurables.",
+      "sectionRole": "Permet aux émetteurs de définir et gérer les programmes et produits cartes. Chaque programme peut avoir plusieurs produits avec des fonctionnalités distinctes (sans contact, en ligne, international, e-commerce, DAB), des structures de frais et des limites de transaction par défaut.",
+      "sectionUsage": "Créez d'abord un programme, puis ajoutez des produits sous celui-ci. Configurez le réseau (Visa, MasterCard, etc.), les frais annuels, les fonctionnalités prises en charge et les limites de dépenses par défaut (quotidienne, hebdomadaire, mensuelle, par transaction) de chaque produit. Activez/désactivez les fonctionnalités et définissez les options de renouvellement."
     },
     "virtualCards": {
       "title": "Cartes virtuelles",
@@ -849,7 +870,10 @@
       "currency": "Devise",
       "amountLimit": "Plafond montant",
       "maxTransactions": "Max transactions",
-      "merchantLocked": "Marchand verrouillé"
+      "merchantLocked": "Marchand verrouillé",
+      "sectionDescription": "Module d'émission et de gestion de cartes virtuelles. Crée et gère des cartes virtuelles à usage unique, multi-usage et verrouillées par marchand pour les paiements en ligne sécurisés.",
+      "sectionRole": "Fournit un cycle de vie complet des cartes virtuelles — création avec limites configurables, activation, suspension, reprise et annulation. Prend en charge les cartes verrouillées par marchand et le suivi par type d'usage.",
+      "sectionUsage": "Cliquez sur 'Créer une carte virtuelle' pour ouvrir le formulaire de création. Renseignez l'ID du porteur, le type d'usage (unique/multi/verrouillé-marchand), la limite de montant et l'éventuelle restriction marchand. La liste des cartes affiche le statut, la date d'expiration, la limite, l'utilisation et le nombre de transactions. Utilisez les boutons d'action pour activer, suspendre, reprendre ou annuler des cartes."
     },
     "kyc": {
       "title": "Gestion KYC",
@@ -878,7 +902,10 @@
       "email": "Email",
       "kycLevel": "Niveau KYC",
       "cardholderId": "ID porteur",
-      "viewDocs": "Voir docs"
+      "viewDocs": "Voir docs",
+      "sectionDescription": "Module de gestion KYC (Know Your Customer) pour la vérification d'identité et la conformité réglementaire. Gère la soumission de documents, les workflows de vérification et le suivi du niveau KYC des porteurs.",
+      "sectionRole": "Assure la conformité réglementaire en gérant le cycle de vie de la vérification d'identité. Les porteurs soumettent des documents d'identification qui sont examinés et approuvés ou rejetés. Chaque porteur a un niveau KYC reflétant son statut de vérification.",
+      "sectionUsage": "Basculez entre les onglets Documents, Vérifications et Porteurs. Dans l'onglet Documents, importez et examinez les pièces d'identité — approuvez ou rejetez avec des notes. L'onglet Vérifications affiche les demandes avec les niveaux KYC demandé et actuel. L'onglet Porteurs liste tous les porteurs avec leur niveau KYC actuel."
     },
     "disputes": {
     "title": "Litiges & Contestations",
@@ -907,7 +934,10 @@
     "merchant": "Marchand",
     "issuer": "Émetteur",
     "acquirer": "Acquéreur",
-    "all": "Tous"
+    "all": "Tous",
+    "sectionDescription": "Module de gestion des litiges et contestations. Gère le cycle de vie complet des contestations de transactions entre porteurs, commerçants, émetteurs et acquéreurs.",
+    "sectionRole": "Gère le processus de résolution des litiges conformément aux règles des schémas de cartes. Suit le statut du litige, les délais de preuve, les délais de résolution et permet les transitions de statut avec soumission de preuves.",
+    "sectionUsage": "Consultez tous les litiges dans le tableau avec leur type, montant, statut et délais. Filtrez par les onglets Ouverts ou Résolus. Cliquez sur 'Ouvrir un litige' pour créer un nouveau litige. Sélectionnez un litige pour voir sa chronologie et soumettre des preuves. Utilisez le menu déroulant de changement de statut pour faire avancer le litige dans son cycle de vie."
   },
   "common": {
     "loading": "Chargement...",

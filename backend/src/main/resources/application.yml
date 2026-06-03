@@ -74,8 +74,10 @@ management:
 
 logging:
   level:
-    com.switch: INFO
+    com.switch: DEBUG
     org.springframework: WARN
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE
 
 switch:
   cors:

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
+import { SectionHeader } from '../components/SectionHeader';
 import {
   Plus, Play, Pause, XCircle, RefreshCw, CreditCard,
 } from 'lucide-react';
@@ -93,6 +94,8 @@ export function VirtualCards() {
           </button>
         </div>
       </div>
+
+      <SectionHeader sectionKey="virtualCards" />
 
       <div className="flex gap-2">
         {filters.map(f => (

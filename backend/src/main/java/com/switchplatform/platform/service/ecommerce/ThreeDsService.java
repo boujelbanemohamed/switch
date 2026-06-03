@@ -17,6 +17,21 @@ public class ThreeDsService {
 
     private final ThreeDsSessionRepository threeDsSessionRepository;
 
+    @Transactional(readOnly = true)
+    public List<ThreeDsSession> getAllSessions() {
+        return threeDsSessionRepository.findAll();
+    }
+
+    @Transactional
+    public ThreeDsSession cancelSession(UUID sessionId) {
+        ThreeDsSession session = getOrThrow(sessionId);
+        session.setStatus(ThreeDsSession.Status.TIMEOUT);
+        session.setErrorDescription("Cancelled by operator");
+        session.setUpdatedAt(OffsetDateTime.now());
+        log.info("3DS session cancelled: id={}", sessionId);
+        return session;
+    }
+
     @Transactional
     public ThreeDsSession createSession(String transactionId, UUID epgTransactionId,
                                          UUID cardId, String notificationUrl) {

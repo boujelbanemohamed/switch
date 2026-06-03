@@ -22,6 +22,11 @@ public class AcsController {
 
     private final AcsService acsService;
 
+    @GetMapping("/authentications")
+    public ResponseEntity<List<AcsAuthentication>> getAllAuthentications() {
+        return ResponseEntity.ok(acsService.getAllAuthentications());
+    }
+
     @PostMapping("/authentications")
     public ResponseEntity<AcsAuthentication> createAuthentication(@Valid @RequestBody Map<String, Object> request) {
         UUID cardId = request.get("cardId") != null

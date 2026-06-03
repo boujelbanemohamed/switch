@@ -380,6 +380,7 @@ export interface AcsAuthentication {
   id: string;
   transactionId: string;
   cardId?: string;
+  panHash?: string;
   merchantName?: string;
   amount: number;
   currencyCode: string;
@@ -400,6 +401,37 @@ export interface AcsChallenge {
   expiresAt: string;
   verifiedAt?: string;
   createdAt: string;
+}
+
+export interface AcsEnrollment {
+  id: string;
+  cardId: string;
+  cardholderId?: string;
+  merchantId?: string;
+  status: string;
+  enrolledAt: string;
+  cardBrand?: string;
+  cardType?: string;
+  phoneNumber?: string;
+  email?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface EpgMerchantConfig {
+  id: string;
+  merchantId: string;
+  isActive: boolean;
+  apiKeyHash?: string;
+  apiSecretHash?: string;
+  webhookUrl?: string;
+  callbackUrl?: string;
+  allowedCurrencies?: string;
+  allowedCardBrands?: string;
+  minAmount?: number;
+  maxAmount?: number;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface EpgTransaction {
@@ -427,5 +459,12 @@ export interface ThreeDsSession {
   acsUrl?: string;
   acsTransId?: string;
   dsTransId?: string;
+  notificationUrl?: string;
   createdAt: string;
+}
+
+export interface ThreeDsSessionCancelResponse {
+  id: string;
+  status: string;
+  message?: string;
 }

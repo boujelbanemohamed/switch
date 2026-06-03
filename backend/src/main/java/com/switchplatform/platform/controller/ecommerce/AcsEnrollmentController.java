@@ -77,4 +77,14 @@ public class AcsEnrollmentController {
     public ResponseEntity<AcsCardEnrollment> cancelEnrollment(@PathVariable UUID id) {
         return ResponseEntity.ok(enrollmentService.cancelEnrollment(id));
     }
+
+    @PostMapping("/{id}/unenroll")
+    public ResponseEntity<AcsCardEnrollment> unenroll(@PathVariable UUID id) {
+        return ResponseEntity.ok(enrollmentService.cancelEnrollment(id));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<AcsCardEnrollment>> getAllEnrollments() {
+        return ResponseEntity.ok(enrollmentService.getAllEnrollments());
+    }
 }

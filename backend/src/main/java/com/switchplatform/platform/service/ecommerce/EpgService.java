@@ -194,8 +194,65 @@ public class EpgService {
     }
 
     @Transactional(readOnly = true)
+    public List<EpgMerchantConfig> getAllMerchantConfigs() {
+        return epgMerchantConfigRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
     public EpgMerchantConfig getMerchantConfig(UUID merchantId) {
         return epgMerchantConfigRepository.findByMerchantId(merchantId).orElse(null);
+    }
+
+    @Transactional
+    public EpgMerchantConfig createMerchantConfig(UUID merchantId, String apiKeyHash, String apiSecretHash, String webhookUrl) {
+        EpgMerchantConfig config = EpgMerchantConfig.builder()
+                .merchantId(merchantId)
+                .apiKeyHash(apiKeyHash)
+                .apiSecretHash(apiSecretHash)
+                .webhookUrl(webhookUrl)
+                .isActive(true)
+                .createdAt(OffsetDateTime.now())
+                .updatedAt(OffsetDateTime.now())
+                .build();
+
+        if (config.getId() == null) {
+            config.setId(UUID.randomUUID());
+        }
+
+        epgMerchantConfigRepository.save(config);
+        log.info("EPG merchant config created: merchantId={}", merchantId);
+        return config;
+    }
+
+    @Transactional
+    public EpgMerchantConfig updateMerchantConfig(UUID id, UUID merchantId, String apiKeyHash, String apiSecretHash, String webhookUrl, Boolean isActive) {
+        EpgMerchantConfig config = epgMerchantConfigRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Merchant config not found: " + id));
+
+        if (merchantId != null) config.setMerchantId(merchantId);
+        if (apiKeyHash != null) config.setApiKeyHash(apiKeyHash);
+        if (apiSecretHash != null) config.setApiSecretHash(apiSecretHash);
+        if (webhookUrl != null) config.setWebhookUrl(webhookUrl);
+        if (isActive != null) config.setIsActive(isActive);
+
+        config.setUpdatedAt(OffsetDateTime.now());
+        epgMerchantConfigRepository.save(config);
+        log.info("EPG merchant config updated: id={}", id);
+        return config;
+    }
+
+    @Transactional
+    public void deleteMerchantConfig(UUID id) {
+        if (!epgMerchantConfigRepository.existsById(id)) {
+            throw new IllegalArgumentException("Merchant config not found: " + id);
+        }
+        epgMerchantConfigRepository.deleteById(id);
+        log.info("EPG merchant config deleted: id={}", id);
+    }
+
+    @Transactional(readOnly = true)
+    public List<EpgTransaction> getAllTransactions() {
+        return epgTransactionRepository.findAll();
     }
 
     private EpgTransaction getOrThrow(UUID txnId) {

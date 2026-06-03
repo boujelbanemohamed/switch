@@ -4,6 +4,23 @@ function getToken(): string | null {
   return localStorage.getItem('accessToken');
 }
 
+export async function safeRequest<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const token = getToken();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: { ...headers, ...(options?.headers as Record<string, string>) },
+    ...options,
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`API error ${res.status}: ${err}`);
+  }
+  return res.json();
+}
+
 export async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   const token = getToken();
@@ -307,10 +324,19 @@ export const api = {
     },
   },
   acs: {
+    enrollments: {
+      list: () => safeRequest<import('../types').AcsEnrollment[]>('/acs/enrollments'),
+      get: (id: string) => safeRequest<import('../types').AcsEnrollment>(`/acs/enrollments/${id}`),
+      enroll: (data: Record<string, unknown>) =>
+        safeRequest<import('../types').AcsEnrollment>('/acs/enrollments', { method: 'POST', body: JSON.stringify(data) }),
+      unenroll: (id: string) =>
+        safeRequest<import('../types').AcsEnrollment>(`/acs/enrollments/${id}/unenroll`, { method: 'POST' }),
+    },
     authentications: {
       create: (data: Record<string, unknown>) =>
         request<import('../types').AcsAuthentication>('/acs/authentications', { method: 'POST', body: JSON.stringify(data) }),
       get: (id: string) => request<import('../types').AcsAuthentication>(`/acs/authentications/${id}`),
+      list: () => safeRequest<import('../types').AcsAuthentication[]>('/acs/authentications'),
       listByCard: (cardId: string) => request<import('../types').AcsAuthentication[]>(`/acs/authentications/by-card/${cardId}`),
       requestChallenge: (id: string) =>
         request<import('../types').AcsAuthentication>(`/acs/authentications/${id}/challenge`, { method: 'POST' }),
@@ -327,10 +353,20 @@ export const api = {
     },
   },
   epg: {
+    merchants: {
+      list: () => safeRequest<import('../types').EpgMerchantConfig[]>('/epg/merchants'),
+      get: (id: string) => safeRequest<import('../types').EpgMerchantConfig>(`/epg/merchants/${id}`),
+      create: (data: Record<string, unknown>) =>
+        safeRequest<import('../types').EpgMerchantConfig>('/epg/merchants', { method: 'POST', body: JSON.stringify(data) }),
+      update: (id: string, data: Record<string, unknown>) =>
+        safeRequest<import('../types').EpgMerchantConfig>(`/epg/merchants/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      delete: (id: string) => safeRequest<void>(`/epg/merchants/${id}`, { method: 'DELETE' }),
+    },
     transactions: {
       initiate: (merchantId: string, merchantTransactionId: string, amount: number, currencyCode: string) =>
         request<import('../types').EpgTransaction>('/epg/transactions', { method: 'POST', body: JSON.stringify({ merchantId, merchantTransactionId, amount, currencyCode }) }),
       get: (id: string) => request<import('../types').EpgTransaction>(`/epg/transactions/${id}`),
+      list: () => safeRequest<import('../types').EpgTransaction[]>('/epg/transactions'),
       listByMerchant: (merchantId: string) =>
         request<import('../types').EpgTransaction[]>(`/epg/merchants/${merchantId}/transactions`),
       authorize: (id: string, cavv: string, eci: string) =>
@@ -348,9 +384,12 @@ export const api = {
       create: (data: Record<string, unknown>) =>
         request<import('../types').ThreeDsSession>('/3dss/sessions', { method: 'POST', body: JSON.stringify(data) }),
       get: (id: string) => request<import('../types').ThreeDsSession>(`/3dss/sessions/${id}`),
+      list: () => safeRequest<import('../types').ThreeDsSession[]>('/3dss/sessions'),
       getByTxn: (transactionId: string) => request<import('../types').ThreeDsSession>(`/3dss/sessions/by-txn/${transactionId}`),
       complete: (id: string, authenticationValue: string) =>
         request<import('../types').ThreeDsSession>(`/3dss/sessions/${id}/complete`, { method: 'POST', body: JSON.stringify({ authenticationValue }) }),
+      cancel: (id: string) =>
+        safeRequest<import('../types').ThreeDsSessionCancelResponse>(`/3dss/sessions/${id}/cancel`, { method: 'POST' }),
       fail: (id: string, errorDescription: string) =>
         request<import('../types').ThreeDsSession>(`/3dss/sessions/${id}/fail`, { method: 'POST', body: JSON.stringify({ errorDescription }) }),
     },

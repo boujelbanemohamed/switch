@@ -46,8 +46,13 @@ public class AcsService {
     }
 
     @Transactional(readOnly = true)
-    public AcsAuthentication getAuthentication(UUID authId) {
-        return authRepository.findById(authId).orElse(null);
+    public List<AcsAuthentication> getAllAuthentications() {
+        return authRepository.findAll();
+    }
+
+    @Transactional(readOnly = true)
+    public AcsAuthentication getAuthentication(UUID id) {
+        return authRepository.findById(id).orElse(null);
     }
 
     @Transactional(readOnly = true)

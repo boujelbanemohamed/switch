@@ -66,6 +66,11 @@ public class AcsEnrollmentService {
     }
 
     @Transactional(readOnly = true)
+    public List<AcsCardEnrollment> getAllEnrollments() {
+        return repository.findAll();
+    }
+
+    @Transactional(readOnly = true)
     public AcsCardEnrollment getEnrollment(UUID enrollmentId) {
         return repository.findById(enrollmentId).orElse(null);
     }

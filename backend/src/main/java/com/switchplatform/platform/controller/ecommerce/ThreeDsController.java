@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -89,9 +90,19 @@ public class ThreeDsController {
 
     @PostMapping("/sessions/{id}/fail")
     public ResponseEntity<ThreeDsSession> failSession(@PathVariable UUID id,
-                                                       @Valid @RequestBody Map<String, String> request) {
+                                                        @Valid @RequestBody Map<String, String> request) {
         ThreeDsSession session = threeDsService.failSession(id,
                 request.get("errorDescription"));
         return ResponseEntity.ok(session);
+    }
+
+    @GetMapping("/sessions")
+    public ResponseEntity<List<ThreeDsSession>> getAllSessions() {
+        return ResponseEntity.ok(threeDsService.getAllSessions());
+    }
+
+    @PostMapping("/sessions/{id}/cancel")
+    public ResponseEntity<ThreeDsSession> cancelSession(@PathVariable UUID id) {
+        return ResponseEntity.ok(threeDsService.cancelSession(id));
     }
 }

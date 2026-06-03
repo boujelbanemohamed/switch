@@ -98,4 +98,42 @@ public class EpgController {
         if (config == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(config);
     }
+
+    @GetMapping("/merchants")
+    public ResponseEntity<List<EpgMerchantConfig>> getAllMerchantConfigs() {
+        return ResponseEntity.ok(epgService.getAllMerchantConfigs());
+    }
+
+    @PostMapping("/merchants")
+    public ResponseEntity<EpgMerchantConfig> createMerchantConfig(@Valid @RequestBody Map<String, Object> request) {
+        EpgMerchantConfig config = epgService.createMerchantConfig(
+                UUID.fromString((String) request.get("merchantId")),
+                (String) request.get("apiKeyHash"),
+                (String) request.get("apiSecretHash"),
+                (String) request.get("webhookUrl"));
+        return ResponseEntity.ok(config);
+    }
+
+    @PutMapping("/merchants/{id}")
+    public ResponseEntity<EpgMerchantConfig> updateMerchantConfig(@PathVariable UUID id,
+                                                                   @Valid @RequestBody Map<String, Object> request) {
+        EpgMerchantConfig config = epgService.updateMerchantConfig(id,
+                request.get("merchantId") != null ? UUID.fromString((String) request.get("merchantId")) : null,
+                (String) request.get("apiKeyHash"),
+                (String) request.get("apiSecretHash"),
+                (String) request.get("webhookUrl"),
+                request.get("isActive") != null ? Boolean.valueOf(request.get("isActive").toString()) : null);
+        return ResponseEntity.ok(config);
+    }
+
+    @DeleteMapping("/merchants/{id}")
+    public ResponseEntity<Void> deleteMerchantConfig(@PathVariable UUID id) {
+        epgService.deleteMerchantConfig(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/transactions")
+    public ResponseEntity<List<EpgTransaction>> getAllTransactions() {
+        return ResponseEntity.ok(epgService.getAllTransactions());
+    }
 }

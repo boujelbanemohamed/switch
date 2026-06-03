@@ -97,6 +97,23 @@ public class AuthUserService implements UserDetailsService {
     }
 
     @Transactional
+    public AuthUser changePassword(UUID userId, String currentPassword, String newPassword) {
+        AuthUser user = authUserRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(false);
+        user.setPasswordChangedAt(OffsetDateTime.now());
+        user.setUpdatedAt(OffsetDateTime.now());
+        authUserRepository.save(user);
+        log.info("Password changed for user: {}", user.getUsername());
+        return user;
+    }
+
     public AuthUser registerUser(String username, String password, String email,
                                   String displayName, AuthUser.Role role) {
         if (findByUsername(username) != null) {
@@ -118,6 +135,7 @@ public class AuthUserService implements UserDetailsService {
                 .accountNonLocked(true)
                 .mfaEnabled(false)
                 .failedAttempts(0)
+                .mustChangePassword(false)
                 .createdAt(OffsetDateTime.now())
                 .updatedAt(OffsetDateTime.now())
                 .build();

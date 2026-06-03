@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-@Repository
+@Repository("backofficeAuditLogRepository")
 public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
     Page<AuditLog> findByCreatedAtBetweenOrderByCreatedAtDesc(

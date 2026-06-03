@@ -8,12 +8,19 @@ import com.switchplatform.platform.repository.backoffice.MonitoringEventReposito
 import com.switchplatform.platform.repository.backoffice.ReportRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,6 +35,9 @@ public class BackOfficeService {
     private final ReportRepository reportRepository;
     private final MonitoringEventRepository monitoringEventRepository;
 
+    @Value("${switch.reports.directory:./reports}")
+    private String reportsDirectory;
+
     public AuditLog logAudit(AuditLog logEntry) {
         if (logEntry.getStatus() == null) {
             logEntry.setStatus(AuditLog.Status.SUCCESS);
@@ -39,15 +49,22 @@ public class BackOfficeService {
     }
 
     public List<AuditLog> getAuditLogs(String resourceType, String resourceId, int limit) {
-        return auditLogRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream()
-                .filter(l -> (resourceType == null || resourceType.equals(l.getResourceType()))
-                        && (resourceId == null || resourceId.equals(l.getResourceId())))
-                .limit(limit)
-                .collect(Collectors.toList());
+        if (resourceType != null || resourceId != null) {
+            return auditLogRepository.findAll(PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt")))
+                    .stream()
+                    .filter(l -> (resourceType == null || resourceType.equals(l.getResourceType()))
+                            && (resourceId == null || resourceId.equals(l.getResourceId())))
+                    .limit(limit)
+                    .collect(Collectors.toList());
+        }
+        return auditLogRepository.findAll(
+                PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"))).getContent();
     }
 
     public List<AuditLog> getAuditLogsByUser(String userId, int limit) {
-        return auditLogRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream()
+        return auditLogRepository.findAll(
+                PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt")))
+                .stream()
                 .filter(l -> userId.equals(l.getUserId()))
                 .limit(limit)
                 .collect(Collectors.toList());
@@ -64,11 +81,84 @@ public class BackOfficeService {
     public Report generateReport(UUID reportId) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new IllegalArgumentException("Report not found: " + reportId));
-        report.setStatus(Report.Status.COMPLETED);
-        report.setGeneratedAt(OffsetDateTime.now());
-        Report saved = reportRepository.save(report);
-        log.info("Report generated: {}", reportId);
-        return saved;
+        report.setStatus(Report.Status.GENERATING);
+        reportRepository.save(report);
+
+        try {
+            String csv = generateCsv(report);
+            String fileName = report.getReportType().name().toLowerCase() + "_"
+                    + LocalDate.now() + "_" + reportId.toString().substring(0, 8) + ".csv";
+            Path dir = Path.of(reportsDirectory);
+            Files.createDirectories(dir);
+            Path filePath = dir.resolve(fileName);
+            try (FileWriter fw = new FileWriter(filePath.toFile())) {
+                fw.write(csv);
+            }
+            report.setFilePath(filePath.toAbsolutePath().toString());
+            report.setFileFormat(Report.FileFormat.CSV);
+            report.setStatus(Report.Status.COMPLETED);
+            report.setGeneratedAt(OffsetDateTime.now());
+            log.info("Report generated: {} -> {}", reportId, filePath);
+        } catch (Exception e) {
+            log.error("Report generation failed: {}", reportId, e);
+            report.setStatus(Report.Status.FAILED);
+            report.setErrorMessage(e.getMessage());
+        }
+
+        return reportRepository.save(report);
+    }
+
+    private String generateCsv(Report report) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Report: ").append(report.getName()).append("\n");
+        sb.append("Type: ").append(report.getReportType()).append("\n");
+        sb.append("Generated: ").append(OffsetDateTime.now()).append("\n\n");
+
+        switch (report.getReportType()) {
+            case TRANSACTION -> appendTransactionCsv(sb);
+            case SETTLEMENT -> appendSettlementCsv(sb);
+            case FRAUD -> appendFraudCsv(sb);
+            case AUDIT -> appendAuditCsv(sb);
+            default -> appendDefaultCsv(sb, report);
+        }
+        return sb.toString();
+    }
+
+    private void appendTransactionCsv(StringBuilder sb) {
+        sb.append("Transaction ID,Timestamp,Type,Amount,Currency,Status,Merchant,Terminal\n");
+    }
+
+    private void appendSettlementCsv(StringBuilder sb) {
+        sb.append("Settlement ID,Date,Participant,Amount,Currency,Status,Transaction Count\n");
+    }
+
+    private void appendFraudCsv(StringBuilder sb) {
+        sb.append("Alert ID,Timestamp,Card,S core,Type,Status,Merchant\n");
+    }
+
+    private void appendAuditCsv(StringBuilder sb) {
+        sb.append("ID,Timestamp,User,Action,Resource Type,Resource ID,Status,IP Address\n");
+        List<AuditLog> logs = auditLogRepository.findAll(
+                PageRequest.of(0, 1000, Sort.by(Sort.Direction.DESC, "createdAt"))).getContent();
+        for (AuditLog log : logs) {
+            sb.append(log.getId()).append(",")
+              .append(log.getCreatedAt()).append(",")
+              .append(log.getUserId()).append(",")
+              .append(log.getAction()).append(",")
+              .append(log.getResourceType()).append(",")
+              .append(log.getResourceId()).append(",")
+              .append(log.getStatus()).append(",")
+              .append(log.getIpAddress()).append("\n");
+        }
+    }
+
+    private void appendDefaultCsv(StringBuilder sb, Report report) {
+        sb.append("Report ID,Name,Type,Status,Created\n");
+        sb.append(report.getId()).append(",")
+          .append(report.getName()).append(",")
+          .append(report.getReportType()).append(",")
+          .append(report.getStatus()).append(",")
+          .append(report.getCreatedAt()).append("\n");
     }
 
     public List<Report> getReportsByType(String type) {

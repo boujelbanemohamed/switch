@@ -74,7 +74,7 @@ management:
 
 logging:
   level:
-    com.switch: DEBUG
+    com.switchplatform: DEBUG
     org.springframework: WARN
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql: TRACE

@@ -16,5 +16,25 @@ public final class TopicConstants {
     public static final String TOPIC_PIN_FAILED = "switch.pin.failed";
     public static final String TOPIC_DLQ = "switch.dlq";
 
+    // Batch topics
+    public static final String TOPIC_BATCH_EOD_STARTED = "switch.batch.eod.started";
+    public static final String TOPIC_BATCH_EOD_COMPLETED = "switch.batch.eod.completed";
+    public static final String TOPIC_BATCH_BOD_STARTED = "switch.batch.bod.started";
+    public static final String TOPIC_BATCH_BOD_COMPLETED = "switch.batch.bod.completed";
+
+    // Dispute topics
+    public static final String TOPIC_DISPUTE_OPENED = "switch.dispute.opened";
+    public static final String TOPIC_DISPUTE_RESOLVED = "switch.dispute.resolved";
+    public static final String TOPIC_DISPUTE_TRANSITIONED = "switch.dispute.transitioned";
+
+    // Netting topic
+    public static final String TOPIC_NETTING_CALCULATED = "switch.netting.calculated";
+
+    // KYC topic
+    public static final String TOPIC_KYC_UPDATED = "switch.kyc.updated";
+
+    // Virtual card topic
+    public static final String TOPIC_VIRTUAL_CARD_ISSUED = "switch.virtual_card.issued";
+
     private TopicConstants() {}
 }

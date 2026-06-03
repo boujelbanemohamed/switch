@@ -1,4 +1,5 @@
-const BASE_URL = '/api/v1';
+const VITE_API_URL = (typeof import.meta !== 'undefined' && (import.meta as Record<string, any>).env?.VITE_API_URL) as string | undefined;
+const BASE_URL = VITE_API_URL || '/api/v1';
 
 // TODO: Migrate access token to httpOnly cookie for XSS protection
 function getToken(): string | null {

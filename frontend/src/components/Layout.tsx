@@ -54,7 +54,6 @@ export function Layout({ children }: LayoutProps) {
     { to: '/backoffice', icon: Settings, label: t('nav.backoffice'), show: canSeeAdmin },
     { to: '/disputes', icon: Scale, label: t('nav.disputes'), show: canSeeAnalyst },
     { to: '/ecommerce', icon: ShoppingCart, label: t('nav.ecommerce'), show: canSeeAdmin },
-    { to: '/merchant-portal', icon: Briefcase, label: t('nav.merchantPortal'), show: true },
     { to: '/profile', icon: User, label: t('nav.auth'), show: true },
     { to: '/users', icon: UsersIcon, label: t('nav.users'), show: role === 'ADMIN' },
     { to: '/reports', icon: FileText, label: t('nav.reports'), show: canSeeAdmin },

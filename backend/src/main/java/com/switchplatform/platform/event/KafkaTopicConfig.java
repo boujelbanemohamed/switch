@@ -84,4 +84,54 @@ public class KafkaTopicConfig {
                 .replicas(1)
                 .build();
     }
+
+    @Bean
+    public NewTopic topicBatchEodStarted() {
+        return createTopic(TopicConstants.TOPIC_BATCH_EOD_STARTED);
+    }
+
+    @Bean
+    public NewTopic topicBatchEodCompleted() {
+        return createTopic(TopicConstants.TOPIC_BATCH_EOD_COMPLETED);
+    }
+
+    @Bean
+    public NewTopic topicBatchBodStarted() {
+        return createTopic(TopicConstants.TOPIC_BATCH_BOD_STARTED);
+    }
+
+    @Bean
+    public NewTopic topicBatchBodCompleted() {
+        return createTopic(TopicConstants.TOPIC_BATCH_BOD_COMPLETED);
+    }
+
+    @Bean
+    public NewTopic topicDisputeOpened() {
+        return createTopic(TopicConstants.TOPIC_DISPUTE_OPENED);
+    }
+
+    @Bean
+    public NewTopic topicDisputeResolved() {
+        return createTopic(TopicConstants.TOPIC_DISPUTE_RESOLVED);
+    }
+
+    @Bean
+    public NewTopic topicDisputeTransitioned() {
+        return createTopic(TopicConstants.TOPIC_DISPUTE_TRANSITIONED);
+    }
+
+    @Bean
+    public NewTopic topicNettingCalculated() {
+        return createTopic(TopicConstants.TOPIC_NETTING_CALCULATED);
+    }
+
+    @Bean
+    public NewTopic topicKycUpdated() {
+        return createTopic(TopicConstants.TOPIC_KYC_UPDATED);
+    }
+
+    @Bean
+    public NewTopic topicVirtualCardIssued() {
+        return createTopic(TopicConstants.TOPIC_VIRTUAL_CARD_ISSUED);
+    }
 }

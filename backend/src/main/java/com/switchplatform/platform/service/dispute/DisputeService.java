@@ -1,5 +1,8 @@
 package com.switchplatform.platform.service.dispute;
 
+import com.switchplatform.platform.event.DisputeOpenedEvent;
+import com.switchplatform.platform.event.DisputeResolvedEvent;
+import com.switchplatform.platform.event.EventPublisher;
 import com.switchplatform.platform.model.dispute.Dispute;
 import com.switchplatform.platform.model.dispute.DisputeEvidence;
 import com.switchplatform.platform.model.dispute.DisputeTimeline;
@@ -27,6 +30,7 @@ public class DisputeService {
     private final DisputeRepository disputeRepository;
     private final DisputeEvidenceRepository evidenceRepository;
     private final DisputeTimelineRepository timelineRepository;
+    private final EventPublisher eventPublisher;
 
     private static final Map<Dispute.DisputeStatus, Set<Dispute.DisputeStatus>> VALID_TRANSITIONS = Map.of(
             Dispute.DisputeStatus.OPEN, Set.of(Dispute.DisputeStatus.UNDER_REVIEW, Dispute.DisputeStatus.WITHDRAWN),
@@ -70,6 +74,10 @@ public class DisputeService {
 
         addTimelineEntry(dispute.getId(), "DISPUTE_OPENED", null, Dispute.DisputeStatus.OPEN.name(), "system", reasonDescription);
 
+        eventPublisher.publishDisputeOpened(new DisputeOpenedEvent(
+                dispute.getId(), disputeNumber, transactionId, type.name(),
+                amount.toPlainString(), currency, initiatedBy, OffsetDateTime.now()));
+
         return dispute;
     }
 
@@ -89,6 +97,8 @@ public class DisputeService {
 
         if (newStatus == Dispute.DisputeStatus.WON || newStatus == Dispute.DisputeStatus.LOST || newStatus == Dispute.DisputeStatus.WITHDRAWN) {
             dispute.setResolvedAt(OffsetDateTime.now());
+            eventPublisher.publishDisputeResolved(new DisputeResolvedEvent(
+                    disputeId, dispute.getDisputeNumber(), newStatus.name(), oldStatus.name(), OffsetDateTime.now()));
         }
 
         dispute = disputeRepository.save(dispute);

@@ -68,4 +68,24 @@ public class LoggingEventPublisher implements EventPublisher {
     public void publishPinFailed(PinFailedEvent event) {
         log.debug("Event: pinFailed - {}", event);
     }
+
+    @Override
+    public void publishBatchJobStarted(BatchJobStartedEvent event) {
+        log.debug("Event: batchJobStarted - {}", event);
+    }
+
+    @Override
+    public void publishBatchJobCompleted(BatchJobCompletedEvent event) {
+        log.debug("Event: batchJobCompleted - {}", event);
+    }
+
+    @Override
+    public void publishDisputeOpened(DisputeOpenedEvent event) {
+        log.debug("Event: disputeOpened - {}", event);
+    }
+
+    @Override
+    public void publishDisputeResolved(DisputeResolvedEvent event) {
+        log.debug("Event: disputeResolved - {}", event);
+    }
 }

@@ -76,10 +76,12 @@ public class AuthController {
                 user.getUsername(), user.getRole().name());
         String refreshToken = jwtUtil.generateRefreshToken(user.getUsername());
 
-        return ResponseEntity.ok(new AuthResponse(
+        AuthResponse authResponse = new AuthResponse(
                 accessToken, refreshToken,
                 user.getUsername(), user.getRole().name(),
-                user.getDisplayName(), user.getEmail()));
+                user.getDisplayName(), user.getEmail());
+        authResponse.setMustChangePassword(user.isMustChangePassword());
+        return ResponseEntity.ok(authResponse);
     }
 
     @PostMapping("/mfa/setup")
@@ -204,6 +206,29 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth.getName();
+            AuthUser user = authUserService.findByUsername(username);
+
+            authUserService.changePassword(user.getId(), request.getCurrentPassword(), request.getNewPassword());
+
+            auditService.record("CHANGE_PASSWORD", "AUTH", username, "Password changed", "SUCCESS", username, user.getId(), null);
+
+            String newAccessToken = jwtUtil.generateAccessToken(username, user.getRole().name());
+            String newRefreshToken = jwtUtil.generateRefreshToken(username);
+
+            return ResponseEntity.ok(new AuthResponse(
+                    newAccessToken, newRefreshToken,
+                    user.getUsername(), user.getRole().name(),
+                    user.getDisplayName(), user.getEmail()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@Valid @RequestBody Map<String, String> body) {
         String refreshToken = body.get("refreshToken");
@@ -255,7 +280,8 @@ public class AuthController {
         return ResponseEntity.ok(new UserProfile(
                 user.getId(), user.getUsername(), user.getEmail(),
                 user.getDisplayName(), user.getRole().name(),
-                user.isEnabled(), user.getLastLogin(), user.isMfaEnabled()));
+                user.isEnabled(), user.getLastLogin(), user.isMfaEnabled(),
+                user.isMustChangePassword()));
     }
 
     @GetMapping("/users")
@@ -312,6 +338,14 @@ public class AuthController {
     }
 
     @Data
+    public static class ChangePasswordRequest {
+        @NotBlank
+        private String currentPassword;
+        @NotBlank @Size(min = 6, max = 128)
+        private String newPassword;
+    }
+
+    @Data
     public static class RegisterRequest {
         @NotBlank @Size(min = 3, max = 64)
         private String username;
@@ -332,6 +366,7 @@ public class AuthController {
         private final String displayName;
         private final String email;
         private final String tokenType = "Bearer";
+        private boolean mustChangePassword = false;
     }
 
     @Data
@@ -344,6 +379,7 @@ public class AuthController {
         private final boolean enabled;
         private final java.time.OffsetDateTime lastLogin;
         private final boolean mfaEnabled;
+        private final boolean mustChangePassword;
     }
 
     @Data

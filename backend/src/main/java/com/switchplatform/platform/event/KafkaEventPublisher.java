@@ -83,6 +83,32 @@ public class KafkaEventPublisher implements EventPublisher {
         publish(TopicConstants.TOPIC_PIN_FAILED, event.cardId().toString(), event);
     }
 
+    @Override
+    public void publishBatchJobStarted(BatchJobStartedEvent event) {
+        String topic = "EOD_CLEARING".equals(event.jobType())
+                ? TopicConstants.TOPIC_BATCH_EOD_STARTED
+                : TopicConstants.TOPIC_BATCH_BOD_STARTED;
+        publish(topic, event.jobId().toString(), event);
+    }
+
+    @Override
+    public void publishBatchJobCompleted(BatchJobCompletedEvent event) {
+        String topic = "EOD_CLEARING".equals(event.jobType())
+                ? TopicConstants.TOPIC_BATCH_EOD_COMPLETED
+                : TopicConstants.TOPIC_BATCH_BOD_COMPLETED;
+        publish(topic, event.jobId().toString(), event);
+    }
+
+    @Override
+    public void publishDisputeOpened(DisputeOpenedEvent event) {
+        publish(TopicConstants.TOPIC_DISPUTE_OPENED, event.disputeId().toString(), event);
+    }
+
+    @Override
+    public void publishDisputeResolved(DisputeResolvedEvent event) {
+        publish(TopicConstants.TOPIC_DISPUTE_RESOLVED, event.disputeId().toString(), event);
+    }
+
     private void publish(String topic, String key, Object event) {
         try {
             byte[] payload = objectMapper.writeValueAsBytes(event);

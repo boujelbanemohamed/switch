@@ -14,4 +14,9 @@ public interface EventPublisher {
     void publishFeePosted(FeePostedEvent event);
     void publishPinVerified(PinVerifiedEvent event);
     void publishPinFailed(PinFailedEvent event);
+
+    void publishBatchJobStarted(BatchJobStartedEvent event);
+    void publishBatchJobCompleted(BatchJobCompletedEvent event);
+    void publishDisputeOpened(DisputeOpenedEvent event);
+    void publishDisputeResolved(DisputeResolvedEvent event);
 }

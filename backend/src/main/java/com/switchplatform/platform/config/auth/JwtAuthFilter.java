@@ -1,5 +1,6 @@
 package com.switchplatform.platform.config.auth;
 
+import com.switchplatform.platform.model.auth.AuthUser;
 import com.switchplatform.platform.service.auth.AuthUserService;
 import com.switchplatform.platform.service.auth.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
@@ -54,6 +55,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     authentication.setDetails(
                             new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                    AuthUser authUser = authUserService.findByUsername(username);
+                    if (authUser != null && authUser.isMustChangePassword()
+                            && !request.getRequestURI().equals("/api/v1/auth/change-password")
+                            && !request.getRequestURI().equals("/api/v1/auth/logout")
+                            && !request.getRequestURI().equals("/api/v1/auth/me")) {
+                        response.setStatus(426);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"error\":\"Password change required\",\"mustChangePassword\":true}");
+                        response.getWriter().flush();
+                        return;
+                    }
+
                     log.debug("Authenticated user: {}", username);
                 }
             } catch (Exception e) {

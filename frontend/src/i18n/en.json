@@ -28,7 +28,11 @@
     "kyc": "KYC",
     "reports": "Reports",
     "configLive": "Config Live",
-    "interchangeFees": "Interchange Fees"
+    "interchangeFees": "Interchange Fees",
+    "standIn": "Stand-in / STIP",
+    "cof": "COF / Recurring",
+    "fx": "FX Rates",
+    "regulatory": "Regulatory Reports"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -359,7 +363,21 @@
     "net": "Net",
     "sectionDescription": "End-of-day clearing and settlement processing. Reconciles transactions between issuing and acquiring participants, calculates fees, and performs multilateral netting.",
     "sectionRole": "Ensures that all parties in a transaction are correctly settled. Aggregates daily transaction volumes, computes interchange fees, resolves disputes, and generates net settlement positions for each participant.",
-    "sectionUsage": "The page loads clearing records and netting results for the current date. Summary cards show total cleared amount, total fees, net amount, and dispute count. The Clearing Records table lists each cleared transaction with its amount, fee, and status. The Netting Results table shows each participant's gross debit, gross credit, and net position."
+    "sectionUsage": "The page loads clearing records and netting results for the current date. Summary cards show total cleared amount, total fees, net amount, and dispute count. The Clearing Records table lists each cleared transaction with its amount, fee, and status. The Netting Results table shows each participant's gross debit, gross credit, and net position.",
+    "files": {
+      "generateTitle": "Generate Clearing File",
+      "date": "Clearing Date",
+      "participantId": "Participant ID",
+      "format": "Format",
+      "generate": "Generate & Download",
+      "uploadTitle": "Upload Incoming File",
+      "uploadPlaceholder": "Paste CSV content here...",
+      "upload": "Upload & Reconcile",
+      "reconciliationTitle": "Reconciliation Result",
+      "total": "Total Records",
+      "matched": "Matched",
+      "unmatched": "Unmatched"
+    }
   },
   "ecommerce": {
     "title": "E-Commerce",
@@ -955,6 +973,85 @@
     "sectionRole": "Manages the dispute resolution process in compliance with card scheme rules. Tracks dispute status, evidence deadlines, resolution deadlines, and allows status transitions with evidence submission.",
     "sectionUsage": "View all disputes in the table with their type, amount, status, and deadlines. Filter by Open or Resolved tabs. Click 'Open Dispute' to create a new dispute. Select a dispute to view its timeline and submit evidence. Use the transition status dropdown to advance the dispute through its lifecycle."
   },
+  "standIn": {
+    "title": "Stand-in / STIP",
+    "rules": "Rules",
+    "authorizations": "Authorizations",
+    "newRule": "New Rule",
+    "issuer": "Issuer",
+    "cardBrand": "Card Brand",
+    "enabled": "Enabled",
+    "maxAmount": "Max Amount",
+    "dailyCount": "Daily Count Limit",
+    "dailyAmount": "Daily Amount Limit",
+    "allowedMcc": "Allowed MCCs",
+    "declineIfNoRule": "Decline if no rule",
+    "actions": "Actions",
+    "transactionId": "Transaction ID",
+    "cardSuffix": "Card Suffix",
+    "amount": "Amount",
+    "currency": "Currency",
+    "decision": "Decision",
+    "reason": "Reason",
+    "reconciled": "Reconciled",
+    "date": "Date",
+    "pending": "Pending",
+    "global": "Global",
+    "deleteConfirm": "Delete this stand-in rule?",
+    "pendingReconciliation": "stand-in authorizations pending reconciliation",
+    "sectionDescription": "Stand-in / STIP processing module. Automatically authorizes transactions when the issuer is unreachable, based on configurable rules and limits.",
+    "sectionRole": "Ensures transaction continuity when the issuer bank cannot be reached. Defines per-issuer rules including maximum amounts, daily counters, and MCC restrictions. Tracks all stand-in authorizations for later reconciliation.",
+    "sectionUsage": "Manage stand-in rules in the top table — create, edit, or delete rules per issuer. The bottom table lists all stand-in authorizations with their decision and reconciliation status. The pending count in the header shows how many authorizations await reconciliation. The reconciliation batch runs automatically at 6:30 AM daily."
+  },
+  "cof": {
+    "title": "COF / Recurring Payments",
+    "tokens": "COF Tokens",
+    "schedules": "Recurring Schedules",
+    "panDisplay": "PAN",
+    "panReference": "PAN Reference",
+    "tokenType": "Type",
+    "status": "Status",
+    "amount": "Amount",
+    "frequency": "Frequency",
+    "nextRunDate": "Next Run",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "sectionDescription": "Card-On-File token management and recurring payment scheduling. Create and manage COF tokens for merchant-initiated transactions (MIT) and set up recurring billing schedules.",
+    "sectionRole": "Enables recurring payments and card-on-file scenarios. Tokens securely reference PANs for repeated use. Schedules automate periodic payments with configurable frequency, amount, and duration limits.",
+    "sectionUsage": "The COF Tokens table lists all stored card references. Use 'Add Token' to register a new card. The Recurring Schedules table shows all active schedules. Use 'Add Schedule' to create a new recurring payment linked to an existing COF token."
+  },
+  "fx": {
+    "title": "FX / Multi-Currency",
+    "rates": "Exchange Rates",
+    "converter": "Currency Converter",
+    "pair": "Pair",
+    "rate": "Rate",
+    "margin": "Margin",
+    "effectiveDate": "Effective",
+    "amount": "Amount",
+    "from": "From",
+    "to": "To",
+    "convert": "Convert",
+    "result": "Conversion Result",
+    "convertedAmount": "Converted",
+    "dccAmount": "DCC (with margin)",
+    "sectionDescription": "Foreign exchange rate management and currency conversion. Configure FX rates, margins, and preview Dynamic Currency Conversion (DCC) proposals.",
+    "sectionRole": "Supports multi-currency transaction processing and DCC. Stores exchange rates with configurable margins. Enables conversion calculations for cross-currency transactions and merchant DCC offers.",
+    "sectionUsage": "The Exchange Rates table lists all configured FX pairs with their rates and margins. Use 'Add' to configure a new rate. The Currency Converter panel lets you test conversions and see DCC proposals with margin applied."
+  },
+  "regulatory": {
+    "title": "Regulatory Reports",
+    "templates": "Report Templates",
+    "generateTitle": "Generate Report",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "format": "Format",
+    "generate": "Generate & Download",
+    "sectionDescription": "Regulatory compliance reporting for BCT (Banque Centrale de Tunisie) and SIBTEL. Generate standard reports in CSV format for regulatory submission.",
+    "sectionRole": "Ensures compliance with Tunisian central banking regulations and SIBTEL reporting requirements. Provides pre-configured templates for daily and monthly regulatory submissions.",
+    "sectionUsage": "Select a report template from the list, choose the date range and format, then click 'Generate & Download'. The report will be compiled and downloaded as a CSV file ready for submission."
+  },
   "common": {
     "loading": "Loading...",
     "noData": "No data available",
@@ -969,6 +1066,9 @@
     "cancel": "Cancel",
     "create": "Create",
     "save": "Save",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "yes": "Yes",
+    "no": "No",
+    "add": "Add"
   }
 }

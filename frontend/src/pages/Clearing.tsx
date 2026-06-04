@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
-import type { ClearingRecord, NettingRecord } from '../types';
+import type { ClearingRecord, NettingRecord, ReconciliationResult } from '../types';
 import { SectionHeader } from '../components/SectionHeader';
 
 export function Clearing() {
@@ -9,6 +9,13 @@ export function Clearing() {
   const [records, setRecords] = useState<ClearingRecord[]>([]);
   const [netting, setNetting] = useState<NettingRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [reconciliation, setReconciliation] = useState<ReconciliationResult | null>(null);
+  const [fileDate, setFileDate] = useState(new Date().toISOString().split('T')[0]);
+  const [participantId, setParticipantId] = useState('');
+  const [fileFormat, setFileFormat] = useState('CSV');
+  const [uploadContent, setUploadContent] = useState('');
   const today = new Date().toISOString().split('T')[0];
 
   useEffect(() => {
@@ -117,6 +124,78 @@ export function Clearing() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 24 }}>
+        <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('clearing.files.generateTitle')}</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('clearing.files.date')}</label>
+              <input type="date" value={fileDate} onChange={e => setFileDate(e.target.value)}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('clearing.files.participantId')}</label>
+              <input type="text" value={participantId} onChange={e => setParticipantId(e.target.value)} placeholder="UUID"
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('clearing.files.format')}</label>
+              <select value={fileFormat} onChange={e => setFileFormat(e.target.value)}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }}>
+                <option value="CSV">CSV</option>
+                <option value="ISO20022">ISO 20022</option>
+              </select>
+            </div>
+            <button onClick={async () => {
+              setGenerating(true);
+              try {
+                const content = await api.clearing.files.generateOutgoing(fileDate, participantId, fileFormat);
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `clearing-${fileDate}-${participantId}.${fileFormat.toLowerCase()}`;
+                a.click();
+                URL.revokeObjectURL(url);
+              } catch (e) { console.error(e); }
+              finally { setGenerating(false); }
+            }} disabled={generating || !participantId}
+              style={{ width: '100%', padding: '10px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: generating || !participantId ? 'not-allowed' : 'pointer', opacity: generating || !participantId ? 0.6 : 1 }}>
+              {generating ? t('common.loading') : t('clearing.files.generate')}
+            </button>
+          </div>
+        </div>
+
+        <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('clearing.files.uploadTitle')}</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <textarea value={uploadContent} onChange={e => setUploadContent(e.target.value)}
+              placeholder={t('clearing.files.uploadPlaceholder')}
+              rows={6}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontFamily: 'monospace', fontSize: 12, resize: 'vertical' }} />
+            <button onClick={async () => {
+              setUploading(true);
+              try {
+                const result = await api.clearing.files.uploadIncoming(uploadContent, fileFormat);
+                setReconciliation(result);
+              } catch (e) { console.error(e); }
+              finally { setUploading(false); }
+            }} disabled={uploading || !uploadContent.trim()}
+              style={{ width: '100%', padding: '10px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: uploading || !uploadContent.trim() ? 'not-allowed' : 'pointer', opacity: uploading || !uploadContent.trim() ? 0.6 : 1 }}>
+              {uploading ? t('common.loading') : t('clearing.files.upload')}
+            </button>
+            {reconciliation && (
+              <div style={{ padding: 12, borderRadius: 8, background: '#22c55e11', border: '1px solid #22c55e33' }}>
+                <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{t('clearing.files.reconciliationTitle')}</p>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{t('clearing.files.total')}: {reconciliation.totalRecords}</p>
+                <p style={{ fontSize: 12, color: '#22c55e' }}>{t('clearing.files.matched')}: {reconciliation.matched}</p>
+                <p style={{ fontSize: 12, color: '#ef4444' }}>{t('clearing.files.unmatched')}: {reconciliation.unmatched}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -134,4 +134,9 @@ public class KafkaTopicConfig {
     public NewTopic topicVirtualCardIssued() {
         return createTopic(TopicConstants.TOPIC_VIRTUAL_CARD_ISSUED);
     }
+
+    @Bean
+    public NewTopic topicStandInUsed() {
+        return createTopic(TopicConstants.TOPIC_STANDIN_USED);
+    }
 }

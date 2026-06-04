@@ -322,6 +322,12 @@ export const api = {
         request<import('../types').InterchangeFee>(`/clearing/interchange/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
       delete: (id: string) => request<void>(`/clearing/interchange/${id}`, { method: 'DELETE' }),
     },
+    files: {
+      generateOutgoing: (date: string, participantId: string, format = 'CSV') =>
+        request<string>(`/clearing/files/outgoing?date=${date}&participantId=${participantId}&format=${format}`),
+      uploadIncoming: (content: string, format = 'CSV') =>
+        request<import('../types').ReconciliationResult>('/clearing/files/incoming', { method: 'POST', body: JSON.stringify({ content, format }) }),
+    },
   },
   backoffice: {
     audit: {
@@ -461,6 +467,67 @@ export const api = {
         request<{ disabled: boolean }>('/auth/mfa/disable', { method: 'POST', body: JSON.stringify({ username, code }) }),
       authenticate: (username: string, code: string) =>
         request<import('../types').LoginResponse>('/auth/mfa/authenticate', { method: 'POST', body: JSON.stringify({ username, code }) }),
+    },
+  },
+  standin: {
+    rules: {
+      list: () => request<import('../types').StandInRule[]>('/standin/rules'),
+      create: (data: Partial<import('../types').StandInRule>) =>
+        request<import('../types').StandInRule>('/standin/rules', { method: 'POST', body: JSON.stringify(data) }),
+      update: (id: string, data: Partial<import('../types').StandInRule>) =>
+        request<import('../types').StandInRule>(`/standin/rules/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      delete: (id: string) => request<void>(`/standin/rules/${id}`, { method: 'DELETE' }),
+    },
+    authorizations: {
+      list: (issuerId?: string) =>
+        request<import('../types').StandInAuthorization[]>(`/standin/authorizations${issuerId ? `?issuerId=${issuerId}` : ''}`),
+    },
+    pendingCount: () => request<{ count: number }>('/standin/pending/count'),
+  },
+  cof: {
+    tokens: {
+      list: (participantId?: string) =>
+        request<import('../types').CofToken[]>(`/ecommerce/cof/tokens${participantId ? `?participantId=${participantId}` : ''}`),
+      get: (id: string) => request<import('../types').CofToken>(`/ecommerce/cof/tokens/${id}`),
+      create: (data: Partial<import('../types').CofToken>) =>
+        request<import('../types').CofToken>('/ecommerce/cof/tokens', { method: 'POST', body: JSON.stringify(data) }),
+      update: (id: string, data: Partial<import('../types').CofToken>) =>
+        request<import('../types').CofToken>(`/ecommerce/cof/tokens/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      delete: (id: string) => request<void>(`/ecommerce/cof/tokens/${id}`, { method: 'DELETE' }),
+    },
+    schedules: {
+      list: (cofTokenId?: string) =>
+        request<import('../types').RecurringSchedule[]>(`/ecommerce/cof/schedules${cofTokenId ? `?cofTokenId=${cofTokenId}` : ''}`),
+      get: (id: string) => request<import('../types').RecurringSchedule>(`/ecommerce/cof/schedules/${id}`),
+      create: (data: Partial<import('../types').RecurringSchedule>) =>
+        request<import('../types').RecurringSchedule>('/ecommerce/cof/schedules', { method: 'POST', body: JSON.stringify(data) }),
+      update: (id: string, data: Partial<import('../types').RecurringSchedule>) =>
+        request<import('../types').RecurringSchedule>(`/ecommerce/cof/schedules/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      delete: (id: string) => request<void>(`/ecommerce/cof/schedules/${id}`, { method: 'DELETE' }),
+    },
+  },
+  fx: {
+    rates: {
+      list: () => request<import('../types').FxRate[]>('/fx/rates'),
+      get: (id: string) => request<import('../types').FxRate>(`/fx/rates/${id}`),
+      create: (data: Partial<import('../types').FxRate>) =>
+        request<import('../types').FxRate>('/fx/rates', { method: 'POST', body: JSON.stringify(data) }),
+      update: (id: string, data: Partial<import('../types').FxRate>) =>
+        request<import('../types').FxRate>(`/fx/rates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      delete: (id: string) => request<void>(`/fx/rates/${id}`, { method: 'DELETE' }),
+    },
+    convert: (amount: number, sourceCurrency: string, targetCurrency: string) =>
+      request<{ amount: number; sourceCurrency: string; targetCurrency: string; convertedAmount: number }>(
+        '/fx/convert', { method: 'POST', body: JSON.stringify({ amount, sourceCurrency, targetCurrency }) }),
+    proposeDcc: (amount: number, sourceCurrency: string, targetCurrency: string) =>
+      request<{ amount: number; sourceCurrency: string; targetCurrency: string; dccAmount: number }>(
+        '/fx/dcc/propose', { method: 'POST', body: JSON.stringify({ amount, sourceCurrency, targetCurrency }) }),
+  },
+  regulatory: {
+    reports: {
+      listTemplates: () => request<import('../types').RegulatoryReportTemplate[]>('/regulatory/reports'),
+      generate: (templateId: string, startDate: string, endDate: string, format = 'CSV') =>
+        request<string>('/regulatory/reports/generate', { method: 'POST', body: JSON.stringify({ templateId, startDate, endDate, format }) }),
     },
   },
 };

@@ -91,6 +91,9 @@ public class Transaction {
     @Column(name = "retry_count")
     private Integer retryCount = 0;
 
+    @Column(name = "stand_in_used", nullable = false)
+    private Boolean standInUsed = false;
+
     @Column(name = "request_at", nullable = false)
     private OffsetDateTime requestAt;
 

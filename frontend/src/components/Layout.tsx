@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Repeat, Building2, Network, GitCompare,
   CreditCard, Store, ShieldCheck, Siren, DollarSign, Settings, ShoppingCart,
   LogIn, User, Users as UsersIcon, Briefcase, Scale, Timer, GitMerge, Receipt, Layers, CreditCard as VirtualCardIcon, IdCard,
-  FileText, Sliders, Percent,
+  FileText, Sliders, Percent, Radio, Repeat2, ArrowLeftRight, FileBarChart,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -49,6 +49,10 @@ export function Layout({ children }: LayoutProps) {
     { to: '/netting', icon: GitMerge, label: t('nav.netting'), show: canSeeAdmin },
     { to: '/fees', icon: Receipt, label: t('nav.fees'), show: canSeeAnalyst },
     { to: '/interchange-fees', icon: Percent, label: t('nav.interchangeFees'), show: canSeeAnalyst },
+    { to: '/stand-in', icon: Radio, label: t('nav.standIn'), show: canSeeAdmin },
+    { to: '/cof', icon: Repeat2, label: t('nav.cof'), show: canSeeAdmin },
+    { to: '/fx-rates', icon: ArrowLeftRight, label: t('nav.fx'), show: canSeeAnalyst },
+    { to: '/regulatory-reports', icon: FileBarChart, label: t('nav.regulatory'), show: canSeeAdmin },
     { to: '/card-programs', icon: Layers, label: t('nav.cardPrograms'), show: canSeeAnalyst },
     { to: '/virtual-cards', icon: VirtualCardIcon, label: t('nav.virtualCards'), show: canSeeAdmin },
     { to: '/kyc', icon: IdCard, label: t('nav.kyc'), show: canSeeAnalyst },

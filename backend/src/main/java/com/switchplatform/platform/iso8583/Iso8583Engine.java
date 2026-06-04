@@ -141,6 +141,72 @@ public class Iso8583Engine {
         return msg;
     }
 
+    public IsoMessage createAuthorizationAdvice(
+            String pan, BigDecimal amount, String currencyCode,
+            String stan, String merchantId, String terminalId) {
+        IsoMessage msg = createMessage("0220");
+        msg.setValue(2, pan, IsoType.LLVAR, 19);
+        msg.setValue(3, "003000", IsoType.NUMERIC, 6);
+        msg.setValue(4, formatAmount(amount), IsoType.AMOUNT, 12);
+        msg.setValue(7, formatDate(new Date()), IsoType.DATE10, 10);
+        msg.setValue(11, stan, IsoType.NUMERIC, 6);
+        msg.setValue(12, formatTime(new Date()), IsoType.TIME, 6);
+        msg.setValue(13, formatMonthDay(new Date()), IsoType.DATE4, 4);
+        msg.setValue(22, "051", IsoType.NUMERIC, 3);
+        msg.setValue(35, pan, IsoType.LLVAR, 37);
+        msg.setValue(37, generateRrn(), IsoType.ALPHA, 12);
+        msg.setValue(41, terminalId, IsoType.ALPHA, 8);
+        msg.setValue(42, merchantId, IsoType.ALPHA, 15);
+        msg.setValue(49, currencyCode, IsoType.ALPHA, 3);
+        return msg;
+    }
+
+    public IsoMessage createAuthorizationAdviceResponse(IsoMessage request, String responseCode) {
+        IsoMessage response = createMessage("0230");
+        copyFields(response, request, 2, 3, 4, 7, 11, 12, 13, 22, 35, 37, 41, 42, 49);
+        response.setValue(39, responseCode, IsoType.ALPHA, 2);
+        return response;
+    }
+
+    public IsoMessage createReversalAdvice(
+            String pan, BigDecimal amount, String stan,
+            String originalStan, String rrn) {
+        IsoMessage msg = createMessage("0420");
+        msg.setValue(2, pan, IsoType.LLVAR, 19);
+        msg.setValue(3, "003000", IsoType.NUMERIC, 6);
+        msg.setValue(4, formatAmount(amount), IsoType.AMOUNT, 12);
+        msg.setValue(7, formatDate(new Date()), IsoType.DATE10, 10);
+        msg.setValue(11, stan, IsoType.NUMERIC, 6);
+        msg.setValue(12, formatTime(new Date()), IsoType.TIME, 6);
+        msg.setValue(37, rrn, IsoType.ALPHA, 12);
+        msg.setValue(90, originalStan + rrn, IsoType.LLVAR, 42);
+        return msg;
+    }
+
+    public IsoMessage createReversalAdviceResponse(IsoMessage request, String responseCode) {
+        IsoMessage response = createMessage("0430");
+        copyFields(response, request, 2, 3, 4, 7, 11, 12, 13, 37, 90);
+        response.setValue(39, responseCode, IsoType.ALPHA, 2);
+        return response;
+    }
+
+    public IsoMessage createNetworkManagementRequest(String functionCode) {
+        IsoMessage msg = createMessage("0800");
+        msg.setValue(7, formatDate(new Date()), IsoType.DATE10, 10);
+        msg.setValue(11, String.format("%06d", (int)(Math.random() * 999999)), IsoType.NUMERIC, 6);
+        msg.setValue(12, formatTime(new Date()), IsoType.TIME, 6);
+        msg.setValue(13, formatMonthDay(new Date()), IsoType.DATE4, 4);
+        msg.setValue(70, functionCode, IsoType.NUMERIC, 3);
+        return msg;
+    }
+
+    public IsoMessage createNetworkManagementResponse(IsoMessage request, String responseCode) {
+        IsoMessage response = createMessage("0810");
+        copyFields(response, request, 7, 11, 12, 13, 70);
+        response.setValue(39, responseCode, IsoType.ALPHA, 2);
+        return response;
+    }
+
     public Map<String, Object> toMap(IsoMessage msg) {
         Map<String, Object> result = new HashMap<>();
         result.put("mti", String.format("%04d", msg.getType()));

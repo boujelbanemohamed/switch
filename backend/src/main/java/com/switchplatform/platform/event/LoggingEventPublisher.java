@@ -88,4 +88,9 @@ public class LoggingEventPublisher implements EventPublisher {
     public void publishDisputeResolved(DisputeResolvedEvent event) {
         log.debug("Event: disputeResolved - {}", event);
     }
+
+    @Override
+    public void publishStandInUsed(StandInUsedEvent event) {
+        log.debug("Event: standInUsed - {}", event);
+    }
 }

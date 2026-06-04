@@ -3,10 +3,13 @@ package com.switchplatform.platform.service.batch;
 import com.switchplatform.platform.event.BatchJobCompletedEvent;
 import com.switchplatform.platform.event.BatchJobStartedEvent;
 import com.switchplatform.platform.event.EventPublisher;
+import com.switchplatform.platform.model.Participant;
 import com.switchplatform.platform.model.batch.BatchJob;
 import com.switchplatform.platform.model.batch.BatchJob.JobType;
 import com.switchplatform.platform.model.batch.BatchJob.Status;
+import com.switchplatform.platform.repository.ParticipantRepository;
 import com.switchplatform.platform.repository.batch.BatchJobRepository;
+import com.switchplatform.platform.service.standin.StandInService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,8 @@ public class BatchService {
     private final BatchJobRepository batchJobRepository;
     private final EntityManager entityManager;
     private final EventPublisher eventPublisher;
+    private final StandInService standInService;
+    private final ParticipantRepository participantRepository;
 
     @Transactional
     public BatchJob scheduleJob(JobType jobType, String jobName) {
@@ -138,5 +143,21 @@ public class BatchService {
 
     public List<BatchJob> getRecentJobs() {
         return batchJobRepository.findByStatusOrderByScheduledAtDesc(Status.SCHEDULED);
+    }
+
+    @Scheduled(cron = "0 30 6 * * *")
+    @Transactional
+    public void reconcileStandInAuthorizations() {
+        log.info("=== Starting stand-in authorization reconciliation ===");
+        List<Participant> issuers = participantRepository.findByTypeAndStatus(
+                Participant.ParticipantType.ISSUER, Participant.ParticipantStatus.ACTIVE);
+        for (Participant issuer : issuers) {
+            try {
+                standInService.reconcilePending(issuer.getId());
+                log.info("Reconciled stand-in authorizations for issuer {}", issuer.getCode());
+            } catch (Exception e) {
+                log.error("Failed to reconcile stand-in for issuer {}: {}", issuer.getCode(), e.getMessage());
+            }
+        }
     }
 }

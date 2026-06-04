@@ -19,4 +19,6 @@ public interface EventPublisher {
     void publishBatchJobCompleted(BatchJobCompletedEvent event);
     void publishDisputeOpened(DisputeOpenedEvent event);
     void publishDisputeResolved(DisputeResolvedEvent event);
+
+    void publishStandInUsed(StandInUsedEvent event);
 }

@@ -16,6 +16,9 @@ import com.switchplatform.platform.service.acquiring.MerchantService;
 import com.switchplatform.platform.service.acquiring.SettlementService;
 import com.switchplatform.platform.service.clearing.ClearingService;
 import com.switchplatform.platform.service.clearing.InterchangeService;
+import com.switchplatform.platform.service.standin.StandInService;
+import com.switchplatform.platform.model.standin.StandInAuthorization;
+import com.switchplatform.platform.service.ledger.LedgerPostingEngine;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +49,8 @@ public class SwitchCore {
     private final ClearingService clearingService;
     private final SettlementService settlementService;
     private final InterchangeService interchangeService;
+    private final StandInService standInService;
+    private final LedgerPostingEngine ledgerPostingEngine;
 
     @Value("${switch.pan.hash-key}")
     private String panHashKey;
@@ -78,6 +83,10 @@ public class SwitchCore {
 
         Participant source = participantService.findByCode(sourceCode);
 
+        if ("0800".equals(mti)) {
+            return handleNetworkManagementRequest(isoMsg, source);
+        }
+
         Map<String, Object> parsedFields = new HashMap<>();
         parsedFields.put("mti", mti);
         for (int i = 2; i <= 128; i++) {
@@ -109,6 +118,20 @@ public class SwitchCore {
 
         transaction = transactionRepository.save(transaction);
 
+        if ("0220".equals(mti)) {
+            transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
+            transaction.setResponseCode("00");
+            transaction.setResponseAt(OffsetDateTime.now());
+            transaction = transactionRepository.save(transaction);
+            try {
+                ledgerPostingEngine.postReversal(transaction.getTransactionId(),
+                        transaction.getAmount(), transaction.getCurrencyCode(), "Advice recorded");
+            } catch (Exception le) {
+                log.warn("Ledger posting failed for advice {}: {}", transaction.getTransactionId(), le.getMessage());
+            }
+            return transaction;
+        }
+
         RoutingContext context = RoutingContext.builder()
                 .pan(pan)
                 .bin(bin)
@@ -136,6 +159,10 @@ public class SwitchCore {
 
             log.warn("Transaction {} rejected: no routing rule matched", transaction.getTransactionId());
             return transaction;
+        }
+
+        if ("0420".equals(mti)) {
+            return processReversal(transaction, routing, rawMessage, pan, mti, sourceCode);
         }
 
         transaction.setDestinationParticipant(routing.getDestinationParticipant());
@@ -170,11 +197,90 @@ public class SwitchCore {
 
         } catch (Exception e) {
             log.error("Transaction {} failed: {}", transaction.getTransactionId(), e.getMessage());
+            StandInAuthorization standIn = standInService.attemptStandIn(
+                    transaction.getTransactionId(),
+                    transaction.getIssuingParticipant() != null ? transaction.getIssuingParticipant().getId() : null,
+                    "VISA",
+                    transaction.getPanHash() != null && transaction.getPanHash().length() >= 4
+                            ? transaction.getPanHash().substring(transaction.getPanHash().length() - 4) : null,
+                    transaction.getAmount(),
+                    transaction.getCurrencyCode() != null ? transaction.getCurrencyCode() : "TND",
+                    null);
+            if (standIn.getDecision() == StandInAuthorization.Decision.APPROVED) {
+                transaction.setResponseCode("00");
+                transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
+                transaction.setStandInUsed(true);
+                log.info("Stand-in approved for transaction {} (issuer unreachable)", transaction.getTransactionId());
+            } else {
+                transaction.setResponseCode("99");
+                transaction.setStatus(Transaction.TransactionStatus.FAILED);
+                log.warn("Stand-in declined for transaction {}: {}", transaction.getTransactionId(), standIn.getReason());
+            }
+            transaction.setResponseAt(OffsetDateTime.now());
+        }
+
+        return transactionRepository.save(transaction);
+    }
+
+    private Transaction processReversal(Transaction transaction, RoutingResult routing,
+                                         byte[] rawMessage, String pan, String mti, String sourceCode) {
+        Participant destination = routing.getDestinationParticipant();
+        transaction.setDestinationParticipant(destination);
+        transaction.setRoutingRule(routingRuleFromResult(routing));
+        transaction.setStatus(Transaction.TransactionStatus.PROCESSING);
+        transactionRepository.save(transaction);
+
+        try {
+            byte[] responseData = messageHandlerService.sendAndReceive(destination, rawMessage);
+            IsoMessage response = iso8583Engine.parse(responseData);
+            String respCode = response.getField(39) != null ?
+                    response.getField(39).toString() : "99";
+
+            transaction.setResponseCode(respCode);
+            transaction.setResponseMessage(bytesToHex(responseData));
+            transaction.setStatus("00".equals(respCode) ?
+                    Transaction.TransactionStatus.COMPLETED :
+                    Transaction.TransactionStatus.FAILED);
+            transaction.setResponseAt(OffsetDateTime.now());
+            transaction.setProcessingTimeMs(calculateProcessingTime(transaction.getRequestAt()));
+
+            if (transaction.getStatus() == Transaction.TransactionStatus.COMPLETED
+                    && transaction.getAmount() != null) {
+                try {
+                    ledgerPostingEngine.postReversal(transaction.getTransactionId(),
+                            transaction.getAmount(), transaction.getCurrencyCode(),
+                            "Network reversal");
+                } catch (Exception le) {
+                    log.warn("Reversal ledger posting failed: {}", le.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Reversal transaction {} failed: {}", transaction.getTransactionId(), e.getMessage());
             transaction.setResponseCode("99");
             transaction.setStatus(Transaction.TransactionStatus.FAILED);
             transaction.setResponseAt(OffsetDateTime.now());
         }
+        return transactionRepository.save(transaction);
+    }
 
+    private Transaction handleNetworkManagementRequest(IsoMessage isoMsg, Participant source) {
+        String functionCode = isoMsg.getField(70) != null ? isoMsg.getField(70).toString() : "301";
+        log.info("Network management request received: functionCode={}", functionCode);
+
+        String txId = UUID.randomUUID().toString().replace("-", "").substring(0, 20) + System.currentTimeMillis();
+        Transaction transaction = Transaction.builder()
+                .transactionId(txId)
+                .messageType("0800")
+                .protocol(Transaction.Protocol.ISO8583)
+                .sourceParticipant(source)
+                .status(Transaction.TransactionStatus.COMPLETED)
+                .responseCode("00")
+                .build();
+
+        IsoMessage response = iso8583Engine.createNetworkManagementResponse(isoMsg, "00");
+        byte[] responseData = iso8583Engine.encode(response);
+        transaction.setResponseMessage(bytesToHex(responseData));
+        transaction.setResponseAt(OffsetDateTime.now());
         return transactionRepository.save(transaction);
     }
 

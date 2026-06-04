@@ -287,6 +287,12 @@ export interface ClearingRecord {
   disputeReason?: string;
 }
 
+export interface ReconciliationResult {
+  totalRecords: number;
+  matched: number;
+  unmatched: number;
+}
+
 export interface NettingRecord {
   id: string;
   participantId: string;
@@ -534,4 +540,80 @@ export interface InterchangeFee {
   mcc: string;
   flatFee: number;
   percentageFee: number;
+}
+
+export interface StandInRule {
+  id: string;
+  issuerParticipantId: string | null;
+  cardBrand: string;
+  enabled: boolean;
+  maxAmount: number;
+  dailyCountLimit: number;
+  dailyAmountLimit: number;
+  allowedMcc: string;
+  declineIfNoRule: boolean;
+  createdAt: string;
+}
+
+export interface StandInAuthorization {
+  id: string;
+  transactionId: string;
+  cardSuffix: string | null;
+  issuerParticipantId: string | null;
+  amount: number;
+  currencyCode: string;
+  decision: 'APPROVED' | 'DECLINED';
+  reason: string | null;
+  reconciled: boolean;
+  authorizedAt: string;
+}
+
+export interface CofToken {
+  id: string;
+  panDisplay: string;
+  panReference: string;
+  expiryMonth: number | null;
+  expiryYear: number | null;
+  cardholderName: string | null;
+  participantId: string | null;
+  tokenType: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RecurringSchedule {
+  id: string;
+  cofTokenId: string;
+  amount: number;
+  currencyCode: string;
+  frequency: string;
+  nextRunDate: string;
+  endDate: string | null;
+  maxOccurrences: number | null;
+  occurrencesProcessed: number;
+  description: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FxRate {
+  id: string;
+  sourceCurrency: string;
+  targetCurrency: string;
+  rate: number;
+  marginPercentage: number;
+  effectiveDate: string;
+  expiryDate: string | null;
+  source: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RegulatoryReportTemplate {
+  id: string;
+  name: string;
+  periodicity: string;
+  description: string;
 }

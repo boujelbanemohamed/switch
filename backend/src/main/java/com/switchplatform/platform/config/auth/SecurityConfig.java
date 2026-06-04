@@ -109,12 +109,16 @@ public class SecurityConfig {
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name())
 
-                .requestMatchers("/api/v1/clearing/interchange/configure").hasRole(AuthUser.Role.ADMIN.name())
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/clearing/interchange/configure")).hasRole(AuthUser.Role.ADMIN.name())
                 .requestMatchers(new AntPathRequestMatcher("/api/v1/clearing/interchange", "GET")).hasAnyRole(
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name(),
                         AuthUser.Role.ANALYST.name())
-                .requestMatchers("/api/v1/clearing/**").hasAnyRole(
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/clearing/**", "GET")).hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name(),
+                        AuthUser.Role.ANALYST.name())
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/clearing/**")).hasAnyRole(
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name())
                 .requestMatchers("/api/v1/issuing/pins/**",
@@ -142,6 +146,17 @@ public class SecurityConfig {
                         AuthUser.Role.OPERATOR.name(),
                         AuthUser.Role.ANALYST.name())
 
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/standin/pending/count", "GET")).hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name(),
+                        AuthUser.Role.ANALYST.name())
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/standin/**", "GET")).hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name(),
+                        AuthUser.Role.ANALYST.name())
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/standin/**")).hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name())
                 .requestMatchers("/api/v1/batch/**").hasAnyRole("ADMIN", "OPERATOR")
                 .requestMatchers("/api/v1/netting/**").hasAnyRole("ADMIN", "OPERATOR")
                 .requestMatchers("/api/v1/fees/**").hasAnyRole("ADMIN", "OPERATOR", "ANALYST")
@@ -149,6 +164,23 @@ public class SecurityConfig {
                         "ADMIN", "OPERATOR", "ANALYST")
                 .requestMatchers("/api/v1/kyc/**").hasAnyRole(
                         "ADMIN", "OPERATOR", "ANALYST")
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/ecommerce/cof/**", "GET")).hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name(),
+                        AuthUser.Role.ANALYST.name())
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/ecommerce/cof/**")).hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name())
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/fx/rates", "GET")).hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name(),
+                        AuthUser.Role.ANALYST.name())
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/fx/**")).hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name())
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/regulatory/**")).hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name())
                 .anyRequest().authenticated();
             })
             .authenticationProvider(authenticationProvider())

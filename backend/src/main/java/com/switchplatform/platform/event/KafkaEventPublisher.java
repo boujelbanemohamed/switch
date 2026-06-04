@@ -109,6 +109,11 @@ public class KafkaEventPublisher implements EventPublisher {
         publish(TopicConstants.TOPIC_DISPUTE_RESOLVED, event.disputeId().toString(), event);
     }
 
+    @Override
+    public void publishStandInUsed(StandInUsedEvent event) {
+        publish(TopicConstants.TOPIC_STANDIN_USED, event.authorizationId().toString(), event);
+    }
+
     private void publish(String topic, String key, Object event) {
         try {
             byte[] payload = objectMapper.writeValueAsBytes(event);

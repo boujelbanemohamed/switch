@@ -28,7 +28,11 @@
     "kyc": "KYC",
     "reports": "Rapports",
     "configLive": "Config Live",
-    "interchangeFees": "Frais d'interchange"
+    "interchangeFees": "Frais d'interchange",
+    "standIn": "Stand-in / STIP",
+    "cof": "COF / Récurrent",
+    "fx": "Taux de change",
+    "regulatory": "Rapports réglementaires"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -359,7 +363,21 @@
     "net": "Net",
     "sectionDescription": "Traitement de compensation et de règlement de fin de journée. Rapproche les transactions entre les participants émetteurs et acquéreurs, calcule les frais et effectue le netting multilatéral.",
     "sectionRole": "Garantit que toutes les parties d'une transaction sont correctement réglées. Agrège les volumes de transactions quotidiens, calcule les commissions d'interchange, résout les litiges et génère les positions de règlement net pour chaque participant.",
-    "sectionUsage": "La page charge les enregistrements de compensation et les résultats de netting pour la date courante. Les cartes récapitulatives montrent le montant total compensé, les frais totaux, le montant net et le nombre de litiges. Le tableau des enregistrements liste chaque transaction compensée avec son montant, ses frais et son statut. Le tableau de netting montre le débit brut, le crédit brut et la position nette de chaque participant."
+    "sectionUsage": "La page charge les enregistrements de compensation et les résultats de netting pour la date courante. Les cartes récapitulatives montrent le montant total compensé, les frais totaux, le montant net et le nombre de litiges. Le tableau des enregistrements liste chaque transaction compensée avec son montant, ses frais et son statut. Le tableau de netting montre le débit brut, le crédit brut et la position nette de chaque participant.",
+    "files": {
+      "generateTitle": "Générer un fichier de compensation",
+      "date": "Date de compensation",
+      "participantId": "ID Participant",
+      "format": "Format",
+      "generate": "Générer & Télécharger",
+      "uploadTitle": "Importer un fichier entrant",
+      "uploadPlaceholder": "Collez le contenu CSV ici...",
+      "upload": "Importer & Rapprocher",
+      "reconciliationTitle": "Résultat du rapprochement",
+      "total": "Total Enregistrements",
+      "matched": "Appariés",
+      "unmatched": "Non appariés"
+    }
   },
   "backoffice": {
     "title": "Back Office",
@@ -955,6 +973,85 @@
     "sectionRole": "Gère le processus de résolution des litiges conformément aux règles des schémas de cartes. Suit le statut du litige, les délais de preuve, les délais de résolution et permet les transitions de statut avec soumission de preuves.",
     "sectionUsage": "Consultez tous les litiges dans le tableau avec leur type, montant, statut et délais. Filtrez par les onglets Ouverts ou Résolus. Cliquez sur 'Ouvrir un litige' pour créer un nouveau litige. Sélectionnez un litige pour voir sa chronologie et soumettre des preuves. Utilisez le menu déroulant de changement de statut pour faire avancer le litige dans son cycle de vie."
   },
+  "standIn": {
+    "title": "Stand-in / STIP",
+    "rules": "Règles",
+    "authorizations": "Autorisations",
+    "newRule": "Nouvelle règle",
+    "issuer": "Émetteur",
+    "cardBrand": "Marque de carte",
+    "enabled": "Activée",
+    "maxAmount": "Montant max",
+    "dailyCount": "Limite quotidienne (nombre)",
+    "dailyAmount": "Limite quotidienne (montant)",
+    "allowedMcc": "MCC autorisés",
+    "declineIfNoRule": "Refuser si aucune règle",
+    "actions": "Actions",
+    "transactionId": "Transaction",
+    "cardSuffix": "Suffixe carte",
+    "amount": "Montant",
+    "currency": "Devise",
+    "decision": "Décision",
+    "reason": "Motif",
+    "reconciled": "Réconcilié",
+    "date": "Date",
+    "pending": "En attente",
+    "global": "Global",
+    "deleteConfirm": "Supprimer cette règle stand-in ?",
+    "pendingReconciliation": "autorisations stand-in en attente de réconciliation",
+    "sectionDescription": "Module de traitement Stand-in / STIP. Autorise automatiquement les transactions lorsque l'émetteur est injoignable, selon des règles et limites configurables.",
+    "sectionRole": "Assure la continuité des transactions lorsque la banque émettrice est injoignable. Définit des règles par émetteur incluant les montants maximums, les compteurs quotidiens et les restrictions MCC. Suit toutes les autorisations stand-in pour réconciliation ultérieure.",
+    "sectionUsage": "Gérez les règles stand-in dans le tableau supérieur — créez, modifiez ou supprimez des règles par émetteur. Le tableau inférieur liste toutes les autorisations stand-in avec leur décision et statut de réconciliation. Le compteur en en-tête indique le nombre d'autorisations en attente de réconciliation. Le batch de réconciliation s'exécute automatiquement à 6h30 chaque jour."
+  },
+  "cof": {
+    "title": "COF / Paiements Récurrents",
+    "tokens": "Jetons COF",
+    "schedules": "Échéanciers récurrents",
+    "panDisplay": "PAN",
+    "panReference": "Référence PAN",
+    "tokenType": "Type",
+    "status": "Statut",
+    "amount": "Montant",
+    "frequency": "Fréquence",
+    "nextRunDate": "Prochaine exécution",
+    "daily": "Quotidien",
+    "weekly": "Hebdomadaire",
+    "monthly": "Mensuel",
+    "sectionDescription": "Gestion des jetons Card-On-File et planification des paiements récurrents. Créez et gérez des jetons COF pour les transactions initiées par le marchand (MIT) et configurez des échéanciers de facturation récurrente.",
+    "sectionRole": "Permet les paiements récurrents et les scénarios de carte enregistrée. Les jetons référencent de façon sécurisée les PAN pour une utilisation répétée. Les échéanciers automatisent les paiements périodiques avec une fréquence, un montant et des limites de durée configurables.",
+    "sectionUsage": "Le tableau des jetons COF liste toutes les références de cartes stockées. Utilisez 'Ajouter un jeton' pour enregistrer une nouvelle carte. Le tableau des échéanciers récurrents montre tous les plans actifs. Utilisez 'Ajouter un échéancier' pour créer un nouveau paiement récurrent lié à un jeton COF existant."
+  },
+  "fx": {
+    "title": "FX / Multi-Dévise",
+    "rates": "Taux de change",
+    "converter": "Convertisseur de devises",
+    "pair": "Paire",
+    "rate": "Taux",
+    "margin": "Marge",
+    "effectiveDate": "Effectif",
+    "amount": "Montant",
+    "from": "De",
+    "to": "Vers",
+    "convert": "Convertir",
+    "result": "Résultat de conversion",
+    "convertedAmount": "Converti",
+    "dccAmount": "DCC (avec marge)",
+    "sectionDescription": "Gestion des taux de change et conversion de devises. Configurez les taux FX, les marges et prévisualisez les propositions de conversion dynamique de devises (DCC).",
+    "sectionRole": "Prend en charge le traitement des transactions multi-devises et le DCC. Stocke les taux de change avec des marges configurables. Permet les calculs de conversion pour les transactions inter-devises et les offres DCC aux marchands.",
+    "sectionUsage": "Le tableau des taux de change liste toutes les paires FX configurées avec leurs taux et marges. Utilisez 'Ajouter' pour configurer un nouveau taux. Le panneau Convertisseur de devises vous permet de tester les conversions et de voir les propositions DCC avec marge appliquée."
+  },
+  "regulatory": {
+    "title": "Rapports Réglementaires",
+    "templates": "Modèles de rapports",
+    "generateTitle": "Générer un rapport",
+    "startDate": "Date de début",
+    "endDate": "Date de fin",
+    "format": "Format",
+    "generate": "Générer et télécharger",
+    "sectionDescription": "Rapports de conformité réglementaire pour la BCT (Banque Centrale de Tunisie) et SIBTEL. Générez des rapports standard au format CSV pour soumission réglementaire.",
+    "sectionRole": "Assure la conformité avec les réglementations de la banque centrale tunisienne et les exigences de déclaration SIBTEL. Fournit des modèles préconfigurés pour les soumissions réglementaires quotidiennes et mensuelles.",
+    "sectionUsage": "Sélectionnez un modèle de rapport dans la liste, choisissez la plage de dates et le format, puis cliquez sur 'Générer et télécharger'. Le rapport sera compilé et téléchargé au format CSV prêt pour soumission."
+  },
   "common": {
     "loading": "Chargement...",
     "noData": "Aucune donnée disponible",
@@ -969,6 +1066,9 @@
     "cancel": "Annuler",
     "create": "Créer",
     "save": "Enregistrer",
-    "dismiss": "Ignorer"
+    "dismiss": "Ignorer",
+    "yes": "Oui",
+    "no": "Non",
+    "add": "Ajouter"
   }
 }

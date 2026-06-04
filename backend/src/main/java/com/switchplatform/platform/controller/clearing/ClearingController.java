@@ -6,6 +6,7 @@ import com.switchplatform.platform.model.clearing.InterchangeResult;
 import com.switchplatform.platform.model.clearing.NettingRecord;
 import com.switchplatform.platform.service.clearing.ClearingService;
 import com.switchplatform.platform.service.clearing.InterchangeService;
+import com.switchplatform.platform.service.clearing.SettlementFileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,7 @@ public class ClearingController {
 
     private final ClearingService clearingService;
     private final InterchangeService interchangeService;
+    private final SettlementFileService settlementFileService;
 
     @PostMapping("/process")
     public ResponseEntity<ClearingRecord> process(@Valid @RequestBody ClearingService.ClearingData data) {
@@ -101,6 +103,26 @@ public class ClearingController {
     public ResponseEntity<Void> deleteInterchangeFee(@PathVariable UUID id) {
         interchangeService.deleteFee(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/files/outgoing")
+    public ResponseEntity<String> downloadOutgoingFile(
+            @RequestParam String date,
+            @RequestParam UUID participantId,
+            @RequestParam(defaultValue = "CSV") String format) {
+        String content = settlementFileService.generateOutgoingClearingFile(LocalDate.parse(date), participantId, format);
+        String filename = "clearing-" + date + "-" + participantId + "." + format.toLowerCase();
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                .body(content);
+    }
+
+    @PostMapping("/files/incoming")
+    public ResponseEntity<SettlementFileService.ReconciliationResult> uploadIncomingFile(
+            @RequestBody Map<String, String> body) {
+        String content = body.get("content");
+        String format = body.getOrDefault("format", "CSV");
+        return ResponseEntity.ok(settlementFileService.ingestIncomingClearingFile(content, format));
     }
 
     @GetMapping("/interchange/calculate")

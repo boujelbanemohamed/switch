@@ -80,6 +80,29 @@ public class ClearingController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/interchange")
+    public ResponseEntity<List<InterchangeFee>> listInterchangeFees() {
+        return ResponseEntity.ok(interchangeService.listAllFees());
+    }
+
+    @PutMapping("/interchange/{id}")
+    public ResponseEntity<InterchangeFee> updateInterchangeFee(
+            @PathVariable UUID id, @RequestBody Map<String, Object> body) {
+        String brand = (String) body.get("brand");
+        String cardType = (String) body.get("cardType");
+        String region = (String) body.get("region");
+        String mcc = (String) body.get("mcc");
+        BigDecimal flatFee = body.get("flatFee") != null ? new BigDecimal(body.get("flatFee").toString()) : null;
+        BigDecimal percentageFee = body.get("percentageFee") != null ? new BigDecimal(body.get("percentageFee").toString()) : null;
+        return ResponseEntity.ok(interchangeService.updateFee(id, brand, cardType, region, mcc, flatFee, percentageFee));
+    }
+
+    @DeleteMapping("/interchange/{id}")
+    public ResponseEntity<Void> deleteInterchangeFee(@PathVariable UUID id) {
+        interchangeService.deleteFee(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/interchange/calculate")
     public ResponseEntity<InterchangeResult> calculateInterchange(
             @RequestParam String brand,

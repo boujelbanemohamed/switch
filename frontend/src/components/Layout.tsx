@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Repeat, Building2, Network, GitCompare,
   CreditCard, Store, ShieldCheck, Siren, DollarSign, Settings, ShoppingCart,
   LogIn, User, Users as UsersIcon, Briefcase, Scale, Timer, GitMerge, Receipt, Layers, CreditCard as VirtualCardIcon, IdCard,
-  FileText, Sliders,
+  FileText, Sliders, Percent,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -48,6 +48,7 @@ export function Layout({ children }: LayoutProps) {
     { to: '/batch', icon: Timer, label: t('nav.batch'), show: canSeeAdmin },
     { to: '/netting', icon: GitMerge, label: t('nav.netting'), show: canSeeAdmin },
     { to: '/fees', icon: Receipt, label: t('nav.fees'), show: canSeeAnalyst },
+    { to: '/interchange-fees', icon: Percent, label: t('nav.interchangeFees'), show: canSeeAnalyst },
     { to: '/card-programs', icon: Layers, label: t('nav.cardPrograms'), show: canSeeAnalyst },
     { to: '/virtual-cards', icon: VirtualCardIcon, label: t('nav.virtualCards'), show: canSeeAdmin },
     { to: '/kyc', icon: IdCard, label: t('nav.kyc'), show: canSeeAnalyst },

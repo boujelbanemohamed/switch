@@ -21,6 +21,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -109,6 +110,10 @@ public class SecurityConfig {
                         AuthUser.Role.OPERATOR.name())
 
                 .requestMatchers("/api/v1/clearing/interchange/configure").hasRole(AuthUser.Role.ADMIN.name())
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/clearing/interchange", "GET")).hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name(),
+                        AuthUser.Role.ANALYST.name())
                 .requestMatchers("/api/v1/clearing/**").hasAnyRole(
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name())

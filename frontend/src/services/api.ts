@@ -316,6 +316,12 @@ export const api = {
       calculate: (date: string) =>
         request<import('../types').NettingRecord[]>(`/clearing/netting/calculate?date=${date}`, { method: 'POST' }),
     },
+    interchange: {
+      list: () => request<import('../types').InterchangeFee[]>('/clearing/interchange'),
+      update: (id: string, data: Record<string, unknown>) =>
+        request<import('../types').InterchangeFee>(`/clearing/interchange/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+      delete: (id: string) => request<void>(`/clearing/interchange/${id}`, { method: 'DELETE' }),
+    },
   },
   backoffice: {
     audit: {

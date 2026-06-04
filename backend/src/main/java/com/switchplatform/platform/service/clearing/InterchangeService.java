@@ -11,7 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -130,5 +132,32 @@ public class InterchangeService {
 
     private static String buildKey(String brand, String cardType, String region, String mcc) {
         return brand + ":" + cardType + ":" + region + ":" + mcc;
+    }
+
+    @Transactional(readOnly = true)
+    public List<InterchangeFee> listAllFees() {
+        return interchangeFeeRepository.findAll();
+    }
+
+    @Transactional
+    public InterchangeFee updateFee(UUID id, String brand, String cardType, String region, String mcc,
+                                     BigDecimal flatFee, BigDecimal percentageFee) {
+        InterchangeFee fee = interchangeFeeRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Interchange fee not found: " + id));
+        if (brand != null) fee.setBrand(brand.toUpperCase());
+        if (cardType != null) fee.setCardType(cardType.toUpperCase());
+        if (region != null) fee.setRegion(region.toUpperCase());
+        if (mcc != null) fee.setMcc(mcc);
+        if (flatFee != null) fee.setFlatFee(flatFee);
+        if (percentageFee != null) fee.setPercentageFee(percentageFee);
+        return interchangeFeeRepository.save(fee);
+    }
+
+    @Transactional
+    public void deleteFee(UUID id) {
+        if (!interchangeFeeRepository.existsById(id)) {
+            throw new IllegalArgumentException("Interchange fee not found: " + id);
+        }
+        interchangeFeeRepository.deleteById(id);
     }
 }

@@ -525,3 +525,13 @@ export interface DisputeTimeline {
   notes?: string;
   createdAt: string;
 }
+
+export interface InterchangeFee {
+  id: string;
+  brand: string;
+  cardType: string;
+  region: string;
+  mcc: string;
+  flatFee: number;
+  percentageFee: number;
+}

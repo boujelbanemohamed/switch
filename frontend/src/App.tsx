@@ -18,6 +18,7 @@ import { Disputes } from './pages/Disputes';
 import { Batch } from './pages/Batch';
 import { Netting } from './pages/Netting';
 import { FeeSchedules } from './pages/FeeSchedules';
+import { InterchangeFees } from './pages/InterchangeFees';
 import { CardPrograms } from './pages/CardPrograms';
 import { VirtualCards } from './pages/VirtualCards';
 import { Kyc } from './pages/Kyc';
@@ -58,6 +59,7 @@ function AppRoutes() {
       <Route path="/batch" element={<ProtectedRoute><Layout><Batch /></Layout></ProtectedRoute>} />
       <Route path="/netting" element={<ProtectedRoute><Layout><Netting /></Layout></ProtectedRoute>} />
       <Route path="/fees" element={<ProtectedRoute><Layout><FeeSchedules /></Layout></ProtectedRoute>} />
+      <Route path="/interchange-fees" element={<ProtectedRoute><Layout><InterchangeFees /></Layout></ProtectedRoute>} />
       <Route path="/card-programs" element={<ProtectedRoute><Layout><CardPrograms /></Layout></ProtectedRoute>} />
       <Route path="/virtual-cards" element={<ProtectedRoute><Layout><VirtualCards /></Layout></ProtectedRoute>} />
       <Route path="/kyc" element={<ProtectedRoute><Layout><Kyc /></Layout></ProtectedRoute>} />

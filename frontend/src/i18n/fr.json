@@ -27,7 +27,8 @@
     "virtualCards": "Cartes virtuelles",
     "kyc": "KYC",
     "reports": "Rapports",
-    "configLive": "Config Live"
+    "configLive": "Config Live",
+    "interchangeFees": "Frais d'interchange"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -815,6 +816,21 @@
       "sectionRole": "Fournit les règles de calcul des frais pour la plateforme de switch. Chaque barème contient des règles ordonnées qui déterminent comment les frais sont calculés pour chaque transaction en fonction de la méthode (pourcentage, forfait, paliers), du réseau, du type de carte et du MCC.",
       "sectionUsage": "Parcourez les barèmes existants ou créez-en un nouveau. Sélectionnez un barème pour voir ses règles. Chaque règle définit une méthode de calcul (pourcentage du montant, montant forfaitaire ou par paliers) avec des filtres optionnels par réseau, type de carte et MCC. Les règles sont évaluées dans l'ordre — la première règle correspondante s'applique."
     },
+  "interchange": {
+    "title": "Frais d'interchange",
+    "newFee": "Nouveau frais",
+    "brand": "Réseau",
+    "cardType": "Type de carte",
+    "region": "Région",
+    "mcc": "MCC",
+    "flatFee": "Frais fixes",
+    "percentageFee": "Pourcentage (%)",
+    "actions": "Actions",
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce frais d'interchange ?",
+    "sectionDescription": "Configuration des frais d'interchange pour le traitement des transactions par réseau de cartes. Définit les frais payés par les acquéreurs aux émetteurs pour chaque transaction selon le réseau, le type de carte, la région et le MCC.",
+    "sectionRole": "Détermine les frais d'interchange appliqués lors de la compensation. Chaque règle spécifie des frais fixes et un taux de pourcentage pour une combinaison donnée de réseau (VISA/MASTERCARD), type de carte (DEBIT/CREDIT), région (TN/INTL) et catégorie marchand (MCC).",
+    "sectionUsage": "Le tableau affiche tous les frais d'interchange configurés. Utilisez l'édition en ligne pour modifier les valeurs directement, ou cliquez sur Supprimer pour retirer une règle. Ajoutez de nouveaux frais avec le bouton 'Nouveau frais'. Les modifications prennent effet à la prochaine exécution de compensation."
+  },
     "cardPrograms": {
       "title": "Programmes & Produits cartes",
       "newProgram": "Nouveau programme",
@@ -952,6 +968,7 @@
     "delete": "Supprimer",
     "cancel": "Annuler",
     "create": "Créer",
+    "save": "Enregistrer",
     "dismiss": "Ignorer"
   }
 }

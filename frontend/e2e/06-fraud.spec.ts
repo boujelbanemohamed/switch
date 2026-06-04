@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('Fraud & Risk - Détection de Fraude', () => {
   test('affiche le titre Fraud', async ({ page }) => {

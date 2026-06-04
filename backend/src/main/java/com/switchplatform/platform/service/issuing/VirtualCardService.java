@@ -2,6 +2,7 @@ package com.switchplatform.platform.service.issuing;
 
 import com.switchplatform.platform.model.issuing.VirtualCard;
 import com.switchplatform.platform.model.issuing.VirtualCard.Status;
+import com.switchplatform.platform.repository.issuing.CardholderRepository;
 import com.switchplatform.platform.repository.issuing.VirtualCardRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,9 +24,14 @@ import java.util.UUID;
 public class VirtualCardService {
 
     private final VirtualCardRepository virtualCardRepository;
+    private final CardholderRepository cardholderRepository;
 
     @Transactional
     public VirtualCard createVirtualCard(VirtualCard card) {
+        if (card.getCardholderId() != null &&
+                !cardholderRepository.existsById(card.getCardholderId())) {
+            throw new IllegalArgumentException("Cardholder not found: " + card.getCardholderId());
+        }
         if (card.getUsageType() == VirtualCard.UsageType.SINGLE_USE) {
             card.setMaxTransactions(1);
         }

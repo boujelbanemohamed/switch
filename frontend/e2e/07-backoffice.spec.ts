@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('Back-office & Reporting', () => {
   test('affiche le titre Back Office', async ({ page }) => {

@@ -28,6 +28,10 @@ public class KycService {
 
     @Transactional
     public KycDocument uploadDocument(KycDocument document) {
+        if (document.getCardholderId() != null &&
+                !cardholderRepository.existsById(document.getCardholderId())) {
+            throw new IllegalArgumentException("Cardholder not found: " + document.getCardholderId());
+        }
         return documentRepository.save(document);
     }
 

@@ -6,6 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import org.hibernate.type.SqlTypes;
+import org.hibernate.annotations.JdbcTypeCode;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -105,6 +108,7 @@ public class VirtualCard {
     @Column(name = "cancel_reason", length = 255)
     private String cancelReason;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSONB")
     private String metadata;
 
@@ -121,6 +125,7 @@ public class VirtualCard {
         if (status == null) status = Status.PENDING_ACTIVATION;
         if (amountUsed == null) amountUsed = BigDecimal.ZERO;
         if (transactionCount == null) transactionCount = 0;
+        if (externalId != null && externalId.isBlank()) externalId = null;
     }
 
     @PreUpdate

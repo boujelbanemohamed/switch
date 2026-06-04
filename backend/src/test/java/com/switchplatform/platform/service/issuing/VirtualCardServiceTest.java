@@ -1,6 +1,7 @@
 package com.switchplatform.platform.service.issuing;
 
 import com.switchplatform.platform.model.issuing.VirtualCard;
+import com.switchplatform.platform.repository.issuing.CardholderRepository;
 import com.switchplatform.platform.repository.issuing.VirtualCardRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,7 @@ class VirtualCardServiceTest {
 
     private VirtualCardService service;
     private VirtualCardRepository repository;
+    private CardholderRepository cardholderRepository;
     private final Map<UUID, VirtualCard> store = new ConcurrentHashMap<>();
     private final AtomicLong counter = new AtomicLong(0);
 
@@ -30,6 +32,8 @@ class VirtualCardServiceTest {
     void setUp() {
         store.clear();
         repository = mock(VirtualCardRepository.class);
+        cardholderRepository = mock(CardholderRepository.class);
+        when(cardholderRepository.existsById(any())).thenReturn(true);
         when(repository.save(any())).thenAnswer(inv -> {
             VirtualCard c = inv.getArgument(0);
             if (c.getId() == null) c.setId(UUID.randomUUID());
@@ -69,7 +73,7 @@ class VirtualCardServiceTest {
             return new org.springframework.data.domain.PageImpl<>(content, p, all.size());
         });
 
-        service = new VirtualCardService(repository);
+        service = new VirtualCardService(repository, cardholderRepository);
     }
 
     private VirtualCard buildCard() {

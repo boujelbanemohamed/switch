@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { SectionHeader } from '../components/SectionHeader';
@@ -41,8 +41,8 @@ export function VirtualCards() {
       const url = status && status !== 'ALL'
         ? `/issuing/virtual-cards/by-status/${status}`
         : '/issuing/virtual-cards';
-      const data = await api.get<VirtualCard[]>(url);
-      setCards(data || []);
+      const data = await api.get<any>(url);
+      setCards(Array.isArray(data) ? data : (data?.content ?? []));
     } catch { setCards([]); } finally { setLoading(false); }
   };
 
@@ -266,10 +266,11 @@ function CreateVirtualCardForm({ onSave }: { onSave: () => void }) {
 function Input({ label, value, onChange, type = 'text', required }: {
   label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean;
 }) {
+  const id = useId();
   return (
     <div>
-      <label className="block text-xs text-gray-400 mb-1">{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} required={required}
+      <label htmlFor={id} className="block text-xs text-gray-400 mb-1">{label}</label>
+      <input id={id} type={type} value={value} onChange={e => onChange(e.target.value)} required={required}
         className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500" />
     </div>
   );

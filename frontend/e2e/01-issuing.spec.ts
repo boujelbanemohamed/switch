@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('Issuing - Émission Cartes & Wallets', () => {
   test('affiche le titre Issuing', async ({ page }) => {

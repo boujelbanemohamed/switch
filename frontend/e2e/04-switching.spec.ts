@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('Switching - Routage & BIN Tables', () => {
   test('affiche le titre Routing Rules', async ({ page }) => {

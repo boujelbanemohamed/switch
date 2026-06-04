@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { SectionHeader } from '../components/SectionHeader';
@@ -56,8 +56,8 @@ export function CardPrograms() {
   const fetchPrograms = async () => {
     setLoading(true);
     try {
-      const data = await api.get<CardProgram[]>('/issuing/programs');
-      setPrograms(data || []);
+      const data = await api.get<any>('/issuing/programs');
+      setPrograms(Array.isArray(data) ? data : (data?.content ?? []));
     } catch { setPrograms([]); } finally { setLoading(false); }
   };
 
@@ -379,10 +379,11 @@ function ProductForm({ programId, onSave }: { programId: string | null; onSave: 
 function Input({ label, value, onChange, type = 'text', required }: {
   label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean;
 }) {
+  const id = useId();
   return (
     <div>
-      <label className="block text-xs text-gray-400 mb-1">{label}</label>
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} required={required}
+      <label htmlFor={id} className="block text-xs text-gray-400 mb-1">{label}</label>
+      <input id={id} type={type} value={value} onChange={e => onChange(e.target.value)} required={required}
         className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500" />
     </div>
   );

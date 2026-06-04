@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('E-Commerce (ACS, EPG, 3DSS)', () => {
   test('affiche le titre E-Commerce', async ({ page }) => {

@@ -25,9 +25,6 @@ public class CardholderService {
 
     @Transactional
     public Cardholder createCardholder(Cardholder cardholder) {
-        if (cardholder.getId() == null) {
-            cardholder.setId(UUID.randomUUID());
-        }
         if (cardholder.getEmail() != null && cardholderRepository.existsByEmail(cardholder.getEmail())) {
             throw new IllegalArgumentException("Email already exists: " + cardholder.getEmail());
         }

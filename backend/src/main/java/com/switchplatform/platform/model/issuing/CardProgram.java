@@ -6,6 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import org.hibernate.type.SqlTypes;
+import org.hibernate.annotations.JdbcTypeCode;
+
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -53,6 +56,7 @@ public class CardProgram {
     @Column(name = "end_date")
     private LocalDate endDate;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSONB")
     private String metadata;
 

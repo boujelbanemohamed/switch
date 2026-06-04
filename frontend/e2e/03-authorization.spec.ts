@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('Authorization - Moteur d\'Autorisation', () => {
   test('affiche le titre Authorization', async ({ page }) => {

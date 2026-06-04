@@ -88,6 +88,7 @@ class KycServiceTest {
             cardholderStore.put(ch.getId(), ch);
             return ch;
         });
+        when(cardholderRepo.existsById(any())).thenReturn(true);
         when(cardholderRepo.findById(any())).thenAnswer(inv ->
                 Optional.ofNullable(cardholderStore.get(inv.getArgument(0))));
 

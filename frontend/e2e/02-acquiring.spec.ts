@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('Acquiring - Acceptation Commerçants', () => {
   test('affiche le titre Acquiring', async ({ page }) => {

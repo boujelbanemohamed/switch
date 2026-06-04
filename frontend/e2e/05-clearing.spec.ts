@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('Clearing & Settlement - Compensation et Règlement', () => {
   test('affiche le titre Clearing', async ({ page }) => {

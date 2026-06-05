@@ -40,4 +40,14 @@ test.describe('P3 — Clearing Files (Generate & Upload)', () => {
     const options = await select.locator('option').allTextContents();
     expect(options.join(', ')).toContain('CSV');
   });
+
+  test('le select contient COMPCONF et CP50', async ({ page }) => {
+    await page.goto('/clearing');
+    await page.waitForLoadState('networkidle');
+    const select = page.locator('main select');
+    const options = await select.locator('option').allTextContents();
+    const joined = options.join(', ');
+    expect(joined).toContain('COMPCONF');
+    expect(joined).toContain('CP50');
+  });
 });

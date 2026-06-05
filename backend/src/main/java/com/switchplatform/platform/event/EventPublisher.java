@@ -21,4 +21,5 @@ public interface EventPublisher {
     void publishDisputeResolved(DisputeResolvedEvent event);
 
     void publishStandInUsed(StandInUsedEvent event);
+    void publishClearingFileGenerated(ClearingFileGeneratedEvent event);
 }

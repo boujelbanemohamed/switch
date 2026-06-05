@@ -1,10 +1,14 @@
 package com.switchplatform.platform.service.clearing;
 
+import com.switchplatform.platform.event.ClearingFileGeneratedEvent;
+import com.switchplatform.platform.event.EventPublisher;
 import com.switchplatform.platform.iso20022.Iso20022Engine;
 import com.switchplatform.platform.model.Participant;
 import com.switchplatform.platform.model.clearing.ClearingRecord;
 import com.switchplatform.platform.repository.ParticipantRepository;
 import com.switchplatform.platform.repository.clearing.ClearingRecordRepository;
+import com.switchplatform.platform.service.clearing.smt.CompconfFileService;
+import com.switchplatform.platform.service.clearing.smt.Cp50FileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +29,9 @@ public class SettlementFileService {
     private final ClearingRecordRepository clearingRecordRepository;
     private final ParticipantRepository participantRepository;
     private final Iso20022Engine iso20022Engine;
+    private final CompconfFileService compconfFileService;
+    private final Cp50FileService cp50FileService;
+    private final EventPublisher eventPublisher;
 
     public String generateOutgoingClearingFile(LocalDate date, UUID participantId, String format) {
         Participant participant = participantRepository.findById(participantId)
@@ -32,14 +39,26 @@ public class SettlementFileService {
         List<ClearingRecord> records = clearingRecordRepository
                 .findByClearingDateAndAcquiringParticipantId(date, participantId);
         records.addAll(clearingRecordRepository
-                .findByClearingDateAndAcquiringParticipantId(date, participantId));
+                .findByClearingDateAndIssuingParticipantId(date, participantId));
 
+        String content;
         if ("CSV".equalsIgnoreCase(format)) {
-            return generateCsv(records, participant, date);
+            content = generateCsv(records, participant, date);
         } else if ("ISO20022".equalsIgnoreCase(format)) {
-            return generateIso20022(records, participant, date);
+            content = generateIso20022(records, participant, date);
+        } else if ("COMPCONF".equalsIgnoreCase(format)) {
+            content = compconfFileService.generate(date, records);
+        } else if ("CP50".equalsIgnoreCase(format)) {
+            String bankCode = participant.getBankCode() != null ? participant.getBankCode() : "00000";
+            content = cp50FileService.generate(date, bankCode, records);
+        } else {
+            throw new IllegalArgumentException("Unsupported format: " + format);
         }
-        throw new IllegalArgumentException("Unsupported format: " + format);
+
+        eventPublisher.publishClearingFileGenerated(new ClearingFileGeneratedEvent(
+                null, date.toString(), format, participant.getCode(), content.length(), OffsetDateTime.now()));
+
+        return content;
     }
 
     private String generateCsv(List<ClearingRecord> records, Participant participant, LocalDate date) {
@@ -105,6 +124,31 @@ public class SettlementFileService {
                         unmatched++;
                     }
                 }
+            }
+        } else if ("COMPCONF".equalsIgnoreCase(format)) {
+            List<ClearingRecord> parsed = compconfFileService.parse(content);
+            total = parsed.size();
+            for (ClearingRecord r : parsed) {
+                if (r.getTransactionId() != null) {
+                    var opt = clearingRecordRepository.findByTransactionId(r.getTransactionId());
+                    if (opt.isPresent()) {
+                        ClearingRecord record = opt.get();
+                        record.setStatus(ClearingRecord.Status.SETTLED);
+                        clearingRecordRepository.save(record);
+                        matched++;
+                    } else {
+                        unmatched++;
+                    }
+                } else {
+                    unmatched++;
+                }
+            }
+        } else if ("CP50".equalsIgnoreCase(format)) {
+            List<String> rawType40 = cp50FileService.parse(content);
+            total = rawType40.size();
+            log.info("CP50 ingestion: {} type40 lines (raw, waiting for SMT spec)", total);
+            for (String raw : rawType40) {
+                unmatched++;
             }
         } else {
             throw new IllegalArgumentException("Unsupported format for ingestion: " + format);

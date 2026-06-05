@@ -68,6 +68,30 @@ public class ClearingRecord {
     @Column(name = "interchange_breakdown", columnDefinition = "TEXT")
     private String interchangeBreakdown;
 
+    @Column(name = "merchant_number", length = 10)
+    private String merchantNumber;
+
+    @Column(name = "card_number", length = 19)
+    private String cardNumber;
+
+    @Column(length = 4)
+    private String mcc;
+
+    @Column(name = "authorization_number", length = 6)
+    private String authorizationNumber;
+
+    @Column(name = "origin_identifier", length = 1)
+    private String originIdentifier;
+
+    @Column(name = "operation_nature", length = 1)
+    private String operationNature;
+
+    @Column(name = "operation_code", length = 2)
+    private String operationCode;
+
+    @Column(name = "archive_reference", length = 23)
+    private String archiveReference;
+
     @Column(name = "dispute_reason", columnDefinition = "TEXT")
     private String disputeReason;
 

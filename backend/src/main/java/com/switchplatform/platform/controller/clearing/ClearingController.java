@@ -111,7 +111,12 @@ public class ClearingController {
             @RequestParam UUID participantId,
             @RequestParam(defaultValue = "CSV") String format) {
         String content = settlementFileService.generateOutgoingClearingFile(LocalDate.parse(date), participantId, format);
-        String filename = "clearing-" + date + "-" + participantId + "." + format.toLowerCase();
+        String ext = switch (format.toUpperCase()) {
+            case "COMPCONF" -> "cmp";
+            case "CP50" -> "cp5";
+            default -> format.toLowerCase();
+        };
+        String filename = "clearing-" + date + "-" + participantId + "." + ext;
         return ResponseEntity.ok()
                 .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
                 .body(content);

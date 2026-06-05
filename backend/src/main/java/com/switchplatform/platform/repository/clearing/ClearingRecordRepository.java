@@ -17,6 +17,7 @@ public interface ClearingRecordRepository extends JpaRepository<ClearingRecord, 
     Optional<ClearingRecord> findByTransactionId(String transactionId);
     List<ClearingRecord> findByClearingDateAndStatus(LocalDate date, ClearingRecord.Status status);
     List<ClearingRecord> findByClearingDateAndAcquiringParticipantId(LocalDate date, UUID acquiringParticipantId);
+    List<ClearingRecord> findByClearingDateAndIssuingParticipantId(LocalDate date, UUID issuingParticipantId);
     long countByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
     List<ClearingRecord> findByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
 }

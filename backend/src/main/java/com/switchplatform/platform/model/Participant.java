@@ -43,6 +43,9 @@ public class Participant {
     @Column(columnDefinition = "VARCHAR(50)[]")
     private String[] supportedProtocols;
 
+    @Column(name = "bank_code", length = 5)
+    private String bankCode;
+
     @Column(columnDefinition = "JSONB")
     private String metadata;
 

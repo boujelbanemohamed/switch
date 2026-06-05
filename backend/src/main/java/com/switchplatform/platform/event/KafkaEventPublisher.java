@@ -114,6 +114,11 @@ public class KafkaEventPublisher implements EventPublisher {
         publish(TopicConstants.TOPIC_STANDIN_USED, event.authorizationId().toString(), event);
     }
 
+    @Override
+    public void publishClearingFileGenerated(ClearingFileGeneratedEvent event) {
+        publish(TopicConstants.TOPIC_CLEARING_FILE_GENERATED, event.date(), event);
+    }
+
     private void publish(String topic, String key, Object event) {
         try {
             byte[] payload = objectMapper.writeValueAsBytes(event);

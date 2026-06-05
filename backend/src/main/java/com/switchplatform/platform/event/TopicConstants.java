@@ -36,8 +36,11 @@ public final class TopicConstants {
     // Virtual card topic
     public static final String TOPIC_VIRTUAL_CARD_ISSUED = "switch.virtual_card.issued";
 
-    // Stand-in topic
+    // Standing topic
     public static final String TOPIC_STANDIN_USED = "switch.standin.used";
+
+    // Clearing file topic
+    public static final String TOPIC_CLEARING_FILE_GENERATED = "switch.clearing.file.generated";
 
     private TopicConstants() {}
 }

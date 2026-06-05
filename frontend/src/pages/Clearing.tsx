@@ -146,8 +146,10 @@ export function Clearing() {
               <label style={{ display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('clearing.files.format')}</label>
               <select value={fileFormat} onChange={e => setFileFormat(e.target.value)}
                 style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }}>
-                <option value="CSV">CSV</option>
-                <option value="ISO20022">ISO 20022</option>
+                <option value="CSV">{t('clearing.files.formatCsv')}</option>
+                <option value="ISO20022">{t('clearing.files.formatIso20022')}</option>
+                <option value="COMPCONF">{t('clearing.files.formatCompconf')}</option>
+                <option value="CP50">{t('clearing.files.formatCp50')}</option>
               </select>
             </div>
             <button onClick={async () => {
@@ -157,8 +159,9 @@ export function Clearing() {
                 const blob = new Blob([content], { type: 'text/plain' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
+                const ext = fileFormat === 'COMPCONF' ? 'cmp' : fileFormat === 'CP50' ? 'cp5' : fileFormat.toLowerCase();
                 a.href = url;
-                a.download = `clearing-${fileDate}-${participantId}.${fileFormat.toLowerCase()}`;
+                a.download = `clearing-${fileDate}-${participantId}.${ext}`;
                 a.click();
                 URL.revokeObjectURL(url);
               } catch (e) { console.error(e); }

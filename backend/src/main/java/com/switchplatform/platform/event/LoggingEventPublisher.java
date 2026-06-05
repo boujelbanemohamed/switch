@@ -93,4 +93,9 @@ public class LoggingEventPublisher implements EventPublisher {
     public void publishStandInUsed(StandInUsedEvent event) {
         log.debug("Event: standInUsed - {}", event);
     }
+
+    @Override
+    public void publishClearingFileGenerated(ClearingFileGeneratedEvent event) {
+        log.debug("Event: clearingFileGenerated - {}", event);
+    }
 }

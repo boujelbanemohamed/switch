@@ -20,4 +20,5 @@ public interface ClearingRecordRepository extends JpaRepository<ClearingRecord, 
     List<ClearingRecord> findByClearingDateAndIssuingParticipantId(LocalDate date, UUID issuingParticipantId);
     long countByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
     List<ClearingRecord> findByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
+    List<ClearingRecord> findByDisputeId(UUID disputeId);
 }

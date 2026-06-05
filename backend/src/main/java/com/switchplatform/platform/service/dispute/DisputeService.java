@@ -3,9 +3,11 @@ package com.switchplatform.platform.service.dispute;
 import com.switchplatform.platform.event.DisputeOpenedEvent;
 import com.switchplatform.platform.event.DisputeResolvedEvent;
 import com.switchplatform.platform.event.EventPublisher;
+import com.switchplatform.platform.model.clearing.ClearingRecord;
 import com.switchplatform.platform.model.dispute.Dispute;
 import com.switchplatform.platform.model.dispute.DisputeEvidence;
 import com.switchplatform.platform.model.dispute.DisputeTimeline;
+import com.switchplatform.platform.repository.clearing.ClearingRecordRepository;
 import com.switchplatform.platform.repository.dispute.DisputeEvidenceRepository;
 import com.switchplatform.platform.repository.dispute.DisputeRepository;
 import com.switchplatform.platform.repository.dispute.DisputeTimelineRepository;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +33,7 @@ public class DisputeService {
     private final DisputeRepository disputeRepository;
     private final DisputeEvidenceRepository evidenceRepository;
     private final DisputeTimelineRepository timelineRepository;
+    private final ClearingRecordRepository clearingRecordRepository;
     private final EventPublisher eventPublisher;
 
     private static final Map<Dispute.DisputeStatus, Set<Dispute.DisputeStatus>> VALID_TRANSITIONS = Map.of(
@@ -106,6 +110,10 @@ public class DisputeService {
 
         addTimelineEntry(disputeId, "STATUS_CHANGED", oldStatus.name(), newStatus.name(), performedBy, notes);
 
+        if (newStatus == Dispute.DisputeStatus.REPRESENTMENT && dispute.getClearingRecordId() != null) {
+            createRepresentationRecord(dispute);
+        }
+
         return dispute;
     }
 
@@ -173,6 +181,56 @@ public class DisputeService {
 
     public List<Dispute> listAll() {
         return disputeRepository.findAll();
+    }
+
+    private void createRepresentationRecord(Dispute dispute) {
+        UUID disputeId = dispute.getId();
+        List<ClearingRecord> existing = clearingRecordRepository.findByDisputeId(disputeId);
+        if (!existing.isEmpty()) {
+            log.info("Representation clearing record already exists for dispute {}, skipping", disputeId);
+            return;
+        }
+
+        ClearingRecord original = clearingRecordRepository.findById(dispute.getClearingRecordId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Original clearing record not found: " + dispute.getClearingRecordId()));
+
+        ClearingRecord representation = ClearingRecord.builder()
+                .clearingDate(LocalDate.now())
+                .transactionId(original.getTransactionId())
+                .acquiringParticipantId(original.getAcquiringParticipantId())
+                .issuingParticipantId(original.getIssuingParticipantId())
+                .amount(original.getAmount())
+                .currencyCode(original.getCurrencyCode())
+                .interchangeAmount(original.getInterchangeAmount())
+                .interchangeFee(original.getInterchangeFee())
+                .interchangeBreakdown(original.getInterchangeBreakdown())
+                .feeAmount(original.getFeeAmount())
+                .netAmount(original.getNetAmount())
+                .messageType("0100")
+                .transactionDate(original.getTransactionDate())
+                .status(ClearingRecord.Status.PENDING)
+                .merchantNumber(original.getMerchantNumber())
+                .cardNumber(original.getCardNumber())
+                .mcc(original.getMcc())
+                .cardBrand(original.getCardBrand())
+                .tradingName(original.getTradingName())
+                .batchNumber(original.getBatchNumber())
+                .slipNumber(original.getSlipNumber())
+                .authorizationNumber(original.getAuthorizationNumber())
+                .archiveReference(original.getArchiveReference())
+                .originIdentifier(original.getOriginIdentifier())
+                .operationNature("D")
+                .operationCode("05")
+                .representationFlag(true)
+                .disputeId(disputeId)
+                .build();
+
+        if (representation.getId() == null) {
+            representation.setId(UUID.randomUUID());
+        }
+        clearingRecordRepository.save(representation);
+        log.info("Representation clearing record created for dispute {}", disputeId);
     }
 
     @Scheduled(cron = "0 0 8 * * *")

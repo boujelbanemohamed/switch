@@ -55,6 +55,14 @@ Implement SMT interbank clearing formats (COMPCONF 168c, CP50 500c) for the Tuni
     - **SettlementFileService** passe `Participant` directement à `Cp50FileService.generate()`.
     - 326 tests pass (1 nouveau : `headerCodeFaconnierCustom`).
 
+### Done
+- **V051** migration: `dispute_id` on `clearing_records`.
+- **Representation clone** : quand un dispute passe en `REPRESENTMENT`, un nouveau `ClearingRecord` est créé (clone du record original avec `representationFlag=true`, `operationCode=05`, `operationNature=D`, `disputeId=dispute.id`).
+  - Idempotent : `findByDisputeId` vérifie avant création.
+  - Données figées : tous les champs SMT (montant, participants, mcc, cardBrand, tradingName...) copiés depuis l'original.
+  - Utilise ZONE3 au prochain COMPCONF (code 'R' en position 164, cycle 2).
+- Backend: 326 tests pass. Frontend: `npm run build` OK.
+
 ### In Progress
 - SMT format customisation per bank's actual subscription parameters (file‑naming convention CPMPAY23 vs CP50bbbbb).
 

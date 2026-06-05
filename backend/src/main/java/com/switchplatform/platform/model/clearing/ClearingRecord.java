@@ -104,6 +104,9 @@ public class ClearingRecord {
     @Column(name = "representation_flag", nullable = false)
     private boolean representationFlag = false;
 
+    @Column(name = "dispute_id")
+    private UUID disputeId;
+
     @Column(name = "dispute_reason", columnDefinition = "TEXT")
     private String disputeReason;
 

@@ -7,6 +7,8 @@ import com.switchplatform.platform.model.clearing.ReconciliationRecord;
 import com.switchplatform.platform.repository.ParticipantRepository;
 import com.switchplatform.platform.repository.clearing.ClearingRecordRepository;
 import com.switchplatform.platform.repository.clearing.ReconciliationRecordRepository;
+import com.switchplatform.platform.repository.ParticipantRepository;
+import com.switchplatform.platform.repository.acquiring.MerchantRepository;
 import com.switchplatform.platform.service.clearing.network.Iso20022ClearingGenerator;
 import com.switchplatform.platform.service.clearing.network.MastercardIpmGenerator;
 import com.switchplatform.platform.service.clearing.network.VisaBaseIIGenerator;
@@ -51,7 +53,9 @@ class SettlementFileServiceTest {
                 cp50FileService,
                 mock(EventPublisher.class),
                 new Iso20022ClearingGenerator(new Iso20022Engine()),
-                new VisaBaseIIGenerator(),
+                new VisaBaseIIGenerator(
+                        mock(ParticipantRepository.class),
+                        mock(MerchantRepository.class)),
                 new MastercardIpmGenerator()
         );
     }

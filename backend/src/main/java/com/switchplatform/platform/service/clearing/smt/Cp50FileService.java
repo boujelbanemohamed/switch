@@ -22,10 +22,12 @@ public class Cp50FileService {
 
     private final ParticipantRepository participantRepository;
 
-    public String generate(LocalDate date, String codeBanqueDestinataire, List<ClearingRecord> records) {
+    public String generate(LocalDate date, Participant participant, List<ClearingRecord> records) {
+        String codeBanque = participant.getBankCode() != null ? participant.getBankCode() : "00000";
+        String codeFaconnier = participant.getCodeFaconnier() != null ? participant.getCodeFaconnier() : "222222";
         StringBuilder sb = new StringBuilder();
 
-        sb.append(generateHeader(date, codeBanqueDestinataire)).append("\n");
+        sb.append(generateHeader(date, codeBanque, codeFaconnier)).append("\n");
 
         int seq = 1;
         long totalDebit = 0;
@@ -34,7 +36,7 @@ public class Cp50FileService {
         for (ClearingRecord r : records) {
             boolean debit = isDebit(r);
             long amount = amountValue(r);
-            String partnerBank = resolvePartnerBank(r, codeBanqueDestinataire, debit);
+            String partnerBank = resolvePartnerBank(r, codeBanque, debit);
 
             sb.append(generateType80(seq++, date, partnerBank, debit ? "50" : "10", amount, debit)).append("\n");
 
@@ -46,18 +48,18 @@ public class Cp50FileService {
         }
 
         int totalRecs = 1 + records.size() + 1;
-        sb.append(generateTrailer(date, codeBanqueDestinataire, totalRecs, totalDebit, totalCredit)).append("\n");
+        sb.append(generateTrailer(date, codeBanque, totalRecs, totalDebit, totalCredit)).append("\n");
 
         return sb.toString();
     }
 
-    String generateHeader(LocalDate date, String codeBanque) {
+    String generateHeader(LocalDate date, String codeBanque, String codeFaconnier) {
         StringBuilder sb = new StringBuilder(LINE_LENGTH);
         sb.append("01");                                                                    // 1-2
         sb.append(SmtFieldFormatter.numericRight("000001", 6));                            // 3-8
         sb.append("  ");                                                                     // 9-10
         sb.append(SmtFieldFormatter.dateJJMMAA(date));                                     // 11-16
-        sb.append("222222");                                                                 // 17-22
+        sb.append(SmtFieldFormatter.numericRight(codeFaconnier, 6));                       // 17-22
         sb.append(SmtFieldFormatter.numericRight(codeBanque, 5));                          // 23-27
         sb.append(SmtFieldFormatter.spaces(472));                                            // 28-499
         sb.append("X");                                                                      // 500

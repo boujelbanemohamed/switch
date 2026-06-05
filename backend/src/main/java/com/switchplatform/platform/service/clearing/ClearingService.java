@@ -51,6 +51,11 @@ public class ClearingService {
         private String cardType;
         private String merchantCategoryCode;
         private String region;
+        private String merchantNumber;
+        private String cardNumber;
+        private String tradingName;
+        private String slipNumber;
+        private boolean representationFlag;
     }
 
     public ClearingRecord processClearing(ClearingData data) {
@@ -107,6 +112,13 @@ public class ClearingService {
                 .transactionDate(data.getTransactionDate())
                 .status(ClearingRecord.Status.PENDING)
                 .createdAt(OffsetDateTime.now())
+                .merchantNumber(data.getMerchantNumber())
+                .cardNumber(data.getCardNumber())
+                .mcc(data.getMerchantCategoryCode())
+                .cardBrand(data.getCardBrand())
+                .tradingName(data.getTradingName())
+                .slipNumber(data.getSlipNumber())
+                .representationFlag(data.isRepresentationFlag())
                 .build();
 
         if (record.getId() == null) {

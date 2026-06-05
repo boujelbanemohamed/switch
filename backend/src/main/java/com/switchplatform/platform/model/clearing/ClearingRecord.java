@@ -92,6 +92,18 @@ public class ClearingRecord {
     @Column(name = "archive_reference", length = 23)
     private String archiveReference;
 
+    @Column(name = "card_brand", length = 20)
+    private String cardBrand;
+
+    @Column(name = "trading_name", length = 255)
+    private String tradingName;
+
+    @Column(name = "slip_number", length = 6)
+    private String slipNumber;
+
+    @Column(name = "representation_flag", nullable = false)
+    private boolean representationFlag = false;
+
     @Column(name = "dispute_reason", columnDefinition = "TEXT")
     private String disputeReason;
 

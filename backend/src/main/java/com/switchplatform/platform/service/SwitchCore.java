@@ -5,9 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.solab.iso8583.IsoMessage;
 import com.switchplatform.platform.iso8583.Iso8583Engine;
 import com.switchplatform.platform.iso20022.Iso20022Engine;
+import com.switchplatform.platform.model.BinTable;
 import com.switchplatform.platform.model.Participant;
 import com.switchplatform.platform.model.RoutingRule;
 import com.switchplatform.platform.model.Transaction;
+import com.switchplatform.platform.model.acquiring.Merchant;
+import com.switchplatform.platform.repository.BinTableRepository;
 import com.switchplatform.platform.repository.RoutingRuleRepository;
 import com.switchplatform.platform.repository.TransactionRepository;
 import com.switchplatform.platform.router.RoutingContext;
@@ -42,6 +45,7 @@ public class SwitchCore {
     private final TransactionRouterService routerService;
     private final TransactionRepository transactionRepository;
     private final RoutingRuleRepository routingRuleRepository;
+    private final BinTableRepository binTableRepository;
     private final ParticipantService participantService;
     private final MessageHandlerService messageHandlerService;
     private final ObjectMapper objectMapper;
@@ -510,6 +514,52 @@ public class SwitchCore {
         try {
             if (transaction.getAmount() != null
                     && transaction.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+
+                String tradingName = null;
+                String merchantCategoryCode = null;
+                if (transaction.getMerchantId() != null) {
+                    try {
+                        Optional<Merchant> merchantOpt = merchantService.getMerchantByCode(transaction.getMerchantId());
+                        if (merchantOpt.isPresent()) {
+                            Merchant m = merchantOpt.get();
+                            tradingName = m.getTradingName();
+                            merchantCategoryCode = m.getMerchantCategoryCode();
+                        }
+                    } catch (Exception e) {
+                        log.warn("Merchant lookup failed for {}: {}", transaction.getMerchantId(), e.getMessage());
+                    }
+                }
+
+                String mcc = null;
+                if (transaction.getParsedMessage() != null) {
+                    try {
+                        var parsed = objectMapper.readTree(transaction.getParsedMessage());
+                        var field18 = parsed.get("field_18");
+                        if (field18 != null && !field18.isNull()) {
+                            mcc = field18.asText();
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to parse MCC from parsedMessage: {}", e.getMessage());
+                    }
+                }
+                if (mcc == null || mcc.isBlank()) {
+                    mcc = merchantCategoryCode;
+                }
+
+                String cardBrand = null;
+                if (pan != null && pan.length() >= 6) {
+                    try {
+                        String bin = pan.substring(0, 6);
+                        Optional<BinTable> binOpt = binTableRepository.findByBinAndIsActiveTrue(bin);
+                        if (binOpt.isPresent()) {
+                            BinTable.CardBrand brand = binOpt.get().getCardBrand();
+                            if (brand != null) cardBrand = brand.name();
+                        }
+                    } catch (Exception e) {
+                        log.warn("BIN lookup failed for PAN prefix: {}", e.getMessage());
+                    }
+                }
+
                 ClearingService.ClearingData clearingData = ClearingService.ClearingData.builder()
                         .transactionId(transaction.getTransactionId())
                         .acquiringParticipantId(transaction.getAcquiringParticipant() != null
@@ -521,6 +571,13 @@ public class SwitchCore {
                                 ? transaction.getCurrencyCode() : "TND")
                         .messageType(mti)
                         .transactionDate(OffsetDateTime.now())
+                        .merchantNumber(transaction.getMerchantId())
+                        .cardNumber(pan)
+                        .merchantCategoryCode(mcc)
+                        .cardBrand(cardBrand)
+                        .tradingName(tradingName)
+                        .slipNumber(null)
+                        .representationFlag(false)
                         .build();
                 clearingService.processClearing(clearingData);
                 log.info("Clearing submitted for transaction {}", transaction.getTransactionId());

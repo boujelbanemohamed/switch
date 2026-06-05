@@ -46,6 +46,9 @@ public class Participant {
     @Column(name = "bank_code", length = 5)
     private String bankCode;
 
+    @Column(name = "code_faconnier", length = 6)
+    private String codeFaconnier = "222222";
+
     @Column(columnDefinition = "JSONB")
     private String metadata;
 

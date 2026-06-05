@@ -28,11 +28,20 @@ public class CompconfFileService {
 
     public String generate(LocalDate date, List<ClearingRecord> records) {
         StringBuilder sb = new StringBuilder();
+        boolean warnedFallback = false;
         for (ClearingRecord r : records) {
+            if (!warnedFallback && hasNullFrozenFields(r)) {
+                log.warn("COMPCONF: old record {} has null frozen fields (pre-V050). Using fallback defaults.", r.getId());
+                warnedFallback = true;
+            }
             String line = generateLine(r, date);
             sb.append(line).append("\n");
         }
         return sb.toString();
+    }
+
+    private boolean hasNullFrozenFields(ClearingRecord r) {
+        return r.getMcc() == null || r.getCardBrand() == null || r.getTradingName() == null;
     }
 
     String generateLine(ClearingRecord record, LocalDate date) {
@@ -49,8 +58,8 @@ public class CompconfFileService {
         StringBuilder line = new StringBuilder(LINE_LENGTH);
 
         line.append(SmtFieldFormatter.alphaLeft(coalesce(record.getMerchantNumber(), ""), 10));      // 1-10
-        line.append(SmtFieldFormatter.numericRight("000001", 6));                                     // 11-16
-        line.append(SmtFieldFormatter.numericRight("000001", 6));                                     // 17-22
+        line.append(SmtFieldFormatter.numericRight(coalesce(record.getBatchNumber(), "000001"), 6));   // 11-16
+        line.append(SmtFieldFormatter.numericRight(coalesce(record.getSlipNumber(), "000001"), 6));   // 17-22
         line.append(SmtFieldFormatter.alphaLeft(coalesce(record.getCardNumber(), ""), 19));           // 23-41
         line.append("N");                                                                              // 42
         line.append(SmtFieldFormatter.alphaLeft(coalesce(record.getOriginIdentifier(), "T"), 1));    // 43
@@ -65,7 +74,7 @@ public class CompconfFileService {
         line.append(SmtFieldFormatter.numericRight(coalesce(record.getMcc(), "0000"), 4));           // 84-87
         line.append("  ");                                                                             // 88-89
         line.append(SmtFieldFormatter.numericRight(banqueCommercant, 5));                              // 90-94
-        line.append("2");                                                                              // 95
+        line.append(resolveSystemCode(record));                                                          // 95
         line.append(SmtFieldFormatter.numericRight(banquePorteur, 5));                                 // 96-100
         line.append(SmtFieldFormatter.alphaLeft(coalesce(record.getArchiveReference(), ""), 23));    // 101-123
         line.append("00");                                                                             // 124-125
@@ -93,18 +102,18 @@ public class CompconfFileService {
             z.append("0000");                                                                            // 160-163 HEURE
             z.append(SmtFieldFormatter.spaces(4));                                                      // 164-167 FILLER
             z.append("X");                                                                              // 168
-        } else if ("D".equals(nature) && PRESENTATION_CODES.contains(opCode) && false) {
-            // ZONE3 — reserved for representation (not implemented, flag needed)
-            z.append("00");
-            z.append("2");
-            z.append(SmtFieldFormatter.spaces(22));
-            z.append(SmtFieldFormatter.amount(compensation, 9));
-            z.append("0000");
-            z.append("R");
-            z.append(SmtFieldFormatter.spaces(3));
-            z.append("X");
+        } else if ("D".equals(nature) && PRESENTATION_CODES.contains(opCode) && record.isRepresentationFlag()) {
+            // ZONE3 — representation
+            z.append("00");                                                                               // 126-127 CODE MOTIF
+            z.append("2");                                                                                // 128 CYCLE
+            z.append(SmtFieldFormatter.spaces(22));                                                       // 129-150 MESSAGE
+            z.append(SmtFieldFormatter.amount(compensation, 9));                                         // 151-159 MONTANT COMPENSE
+            z.append("0000");                                                                              // 160-163 HEURE
+            z.append("R");                                                                                // 164 CODE REPRESENTATION
+            z.append(SmtFieldFormatter.spaces(3));                                                        // 165-167 FILLER
+            z.append("X");                                                                                // 168
         } else {
-            z.append(SmtFieldFormatter.spaces(25));                                                     // 126-150 ENSEIGNE
+            z.append(SmtFieldFormatter.alphaLeft(coalesce(record.getTradingName(), ""), 25));            // 126-150 ENSEIGNE
             z.append(SmtFieldFormatter.amount(compensation, 9));                                       // 151-159 MONTANT COMPENSE
             z.append("0000");                                                                            // 160-163 HEURE
             z.append(SmtFieldFormatter.spaces(4));                                                      // 164-167 FILLER
@@ -194,6 +203,17 @@ public class CompconfFileService {
                 .map(Participant::getBankCode)
                 .filter(bc -> bc != null && !bc.isBlank())
                 .orElse(fallback);
+    }
+
+    private String resolveSystemCode(ClearingRecord record) {
+        String brand = record.getCardBrand();
+        if (brand == null) return "2";
+        return switch (brand.toUpperCase()) {
+            case "CB", "CIB" -> "1";
+            case "VISA" -> "2";
+            case "MASTERCARD" -> "3";
+            default -> "2";
+        };
     }
 
     private LocalDate txDate(ClearingRecord record, LocalDate fallback) {

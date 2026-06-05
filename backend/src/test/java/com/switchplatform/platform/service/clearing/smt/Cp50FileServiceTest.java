@@ -19,6 +19,8 @@ import static org.mockito.Mockito.when;
 
 class Cp50FileServiceTest {
 
+    private static final String DEFAULT_FACONNIER = "222222";
+
     private Cp50FileService service;
 
     @BeforeEach
@@ -30,49 +32,55 @@ class Cp50FileServiceTest {
 
     @Test
     void headerIsExactly500Chars() {
-        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123");
+        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123", DEFAULT_FACONNIER);
         assertEquals(500, header.length(), "CP50 header must be exactly 500 chars");
     }
 
     @Test
     void headerFinEnregistrementX() {
-        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123");
+        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123", DEFAULT_FACONNIER);
         assertEquals('X', header.charAt(499), "Position 500 must be X");
     }
 
     @Test
     void headerCodeEnregistrement01() {
-        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123");
+        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123", DEFAULT_FACONNIER);
         assertEquals("01", header.substring(0, 2), "Pos 1-2 = CODE ENREGISTREMENT 01");
     }
 
     @Test
     void headerNumeroEnregistrement() {
-        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123");
+        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123", DEFAULT_FACONNIER);
         assertEquals("000001", header.substring(2, 8), "Pos 3-8 = NUMERO D'ENREGISTREMENT 000001");
     }
 
     @Test
     void headerCodeOperationSpaces() {
-        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123");
+        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123", DEFAULT_FACONNIER);
         assertEquals("  ", header.substring(8, 10), "Pos 9-10 = CODE OPERATION 2 espaces");
     }
 
     @Test
     void headerDateTraitement() {
-        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123");
+        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123", DEFAULT_FACONNIER);
         assertEquals("040625", header.substring(10, 16), "Pos 11-16 = DATE TRAITEMENT JJMMAA");
     }
 
     @Test
     void headerCodeFaconnier222222() {
-        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123");
+        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123", DEFAULT_FACONNIER);
         assertEquals("222222", header.substring(16, 22), "Pos 17-22 = CODE FACONNIER 222222");
     }
 
     @Test
+    void headerCodeFaconnierCustom() {
+        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123", "999999");
+        assertEquals("999999", header.substring(16, 22), "Pos 17-22 = custom CODE FACONNIER");
+    }
+
+    @Test
     void headerCodeBanqueDestinataire() {
-        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123");
+        String header = service.generateHeader(LocalDate.of(2025, 6, 4), "00123", DEFAULT_FACONNIER);
         assertEquals("00123", header.substring(22, 27), "Pos 23-27 = CODE BANQUE DESTINATAIRE");
     }
 
@@ -150,11 +158,13 @@ class Cp50FileServiceTest {
 
     @Test
     void generateFullFileStructure() {
+        Participant participant = Participant.builder()
+                .bankCode("00123").codeFaconnier("222222").build();
         ClearingRecord r1 = ClearingRecord.builder()
                 .amount(new BigDecimal("100.000")).messageType("0200").build();
         ClearingRecord r2 = ClearingRecord.builder()
                 .amount(new BigDecimal("50.000")).messageType("0100").build();
-        String content = service.generate(LocalDate.of(2025, 6, 4), "00123", List.of(r1, r2));
+        String content = service.generate(LocalDate.of(2025, 6, 4), participant, List.of(r1, r2));
         String[] lines = content.split("\n");
         assertEquals(4, lines.length, "01 + 2×type80 + 99 = 4 lines (no type40)");
         assertEquals("01", lines[0].substring(0, 2));

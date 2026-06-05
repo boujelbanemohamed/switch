@@ -49,8 +49,7 @@ public class SettlementFileService {
         } else if ("COMPCONF".equalsIgnoreCase(format)) {
             content = compconfFileService.generate(date, records);
         } else if ("CP50".equalsIgnoreCase(format)) {
-            String bankCode = participant.getBankCode() != null ? participant.getBankCode() : "00000";
-            content = cp50FileService.generate(date, bankCode, records);
+            content = cp50FileService.generate(date, participant, records);
         } else {
             throw new IllegalArgumentException("Unsupported format: " + format);
         }

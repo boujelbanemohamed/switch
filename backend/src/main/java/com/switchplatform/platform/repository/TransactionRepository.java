@@ -49,4 +49,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
 
     List<Transaction> findByMerchantIdAndCreatedAtBetween(
             String merchantId, OffsetDateTime from, OffsetDateTime to);
+
+    Page<Transaction> findByChannel(String channel, Pageable pageable);
+
+    Page<Transaction> findByTransactionType(String transactionType, Pageable pageable);
+
+    Page<Transaction> findByChannelAndTransactionType(String channel, String transactionType, Pageable pageable);
+
+    Page<Transaction> findByPosEntryMode(String posEntryMode, Pageable pageable);
 }

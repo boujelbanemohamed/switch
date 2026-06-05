@@ -110,8 +110,15 @@ export const api = {
     delete: (id: string) => request<void>(`/admin/routing-rules/${id}`, { method: 'DELETE' }),
   },
   transactions: {
-    list: (page = 0, size = 20) =>
-      request<{ content: import('../types').Transaction[] }>(`/switch/transactions?page=${page}&size=${size}`),
+    list: (page = 0, size = 20, channel?: string, transactionType?: string, posEntryMode?: string) => {
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('size', String(size));
+      if (channel) params.set('channel', channel);
+      if (transactionType) params.set('transactionType', transactionType);
+      if (posEntryMode) params.set('posEntryMode', posEntryMode);
+      return request<{ content: import('../types').Transaction[] }>(`/switch/transactions?${params}`);
+    },
     get: (id: string) => request<import('../types').Transaction>(`/switch/transactions/${id}`),
   },
   binTables: {
@@ -325,8 +332,18 @@ export const api = {
     files: {
       generateOutgoing: (date: string, participantId: string, format = 'CSV') =>
         request<string>(`/clearing/files/outgoing?date=${date}&participantId=${participantId}&format=${format}`),
-      uploadIncoming: (content: string, format = 'CSV') =>
-        request<import('../types').ReconciliationResult>('/clearing/files/incoming', { method: 'POST', body: JSON.stringify({ content, format }) }),
+      uploadIncoming: (content: string, format = 'CSV', participantId?: string) =>
+        request<import('../types').ReconciliationResult>('/clearing/files/incoming', { method: 'POST', body: JSON.stringify({ content, format, participantId }) }),
+      downloadBct: (date: string) =>
+        request<string>(`/clearing/files/bct?date=${date}`),
+    },
+    reconciliation: {
+      list: (date?: string) =>
+        request<import('../types').ReconciliationRecord[]>(`/clearing/reconciliation${date ? `?date=${date}` : ''}`),
+    },
+    reports: {
+      quarterly: (year: number, quarter: number, scheme = 'ALL') =>
+        request<string>(`/clearing/reports/quarterly?year=${year}&quarter=${quarter}&scheme=${scheme}`),
     },
   },
   backoffice: {

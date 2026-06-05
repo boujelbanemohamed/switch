@@ -99,6 +99,12 @@ public class SwitchCore {
             }
         }
 
+        String posEntryMode = isoMsg.getField(22) != null ? isoMsg.getField(22).toString() : null;
+        String posConditionCode = isoMsg.getField(25) != null ? isoMsg.getField(25).toString() : null;
+        String processingCode = isoMsg.getField(3) != null ? isoMsg.getField(3).toString() : null;
+        String channel = deriveChannel(posEntryMode);
+        String transactionType = deriveTransactionType(processingCode, mti);
+
         Transaction transaction = Transaction.builder()
                 .transactionId(UUID.randomUUID().toString().replace("-", "").substring(0, 20) + System.currentTimeMillis())
                 .messageType(mti)
@@ -111,6 +117,10 @@ public class SwitchCore {
                 .merchantId(merchantId)
                 .terminalId(terminalId)
                 .sourceParticipant(source)
+                .posEntryMode(posEntryMode)
+                .posConditionCode(posConditionCode)
+                .channel(channel)
+                .transactionType(transactionType)
                 .status(Transaction.TransactionStatus.PENDING)
                 .originalMessage(bytesToHex(rawMessage))
                 .build();
@@ -123,17 +133,7 @@ public class SwitchCore {
         transaction = transactionRepository.save(transaction);
 
         if ("0220".equals(mti)) {
-            transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
-            transaction.setResponseCode("00");
-            transaction.setResponseAt(OffsetDateTime.now());
-            transaction = transactionRepository.save(transaction);
-            try {
-                ledgerPostingEngine.postReversal(transaction.getTransactionId(),
-                        transaction.getAmount(), transaction.getCurrencyCode(), "Advice recorded");
-            } catch (Exception le) {
-                log.warn("Ledger posting failed for advice {}: {}", transaction.getTransactionId(), le.getMessage());
-            }
-            return transaction;
+            return processAdvice(transaction);
         }
 
         RoutingContext context = RoutingContext.builder()
@@ -167,6 +167,10 @@ public class SwitchCore {
 
         if ("0420".equals(mti)) {
             return processReversal(transaction, routing, rawMessage, pan, mti, sourceCode);
+        }
+
+        if ("0100".equals(mti)) {
+            return processPreAuth(transaction, routing, rawMessage, pan, mti, sourceCode);
         }
 
         transaction.setDestinationParticipant(routing.getDestinationParticipant());
@@ -465,7 +469,20 @@ public class SwitchCore {
     }
 
     private void postProcessTransaction(Transaction transaction, String pan, String mti) {
-        // Module B: Calculate MDR fee for merchant
+        String panValue = pan;
+        if (panValue == null && transaction.getParsedMessage() != null) {
+            try {
+                var parsed = objectMapper.readTree(transaction.getParsedMessage());
+                var field2 = parsed.get("field_2");
+                if (field2 != null && !field2.isNull()) panValue = field2.asText();
+            } catch (Exception e) {
+                log.warn("Failed to parse PAN from parsedMessage: {}", e.getMessage());
+            }
+        }
+
+        String txType = transaction.getTransactionType();
+        boolean shouldClear = txType == null || "PURC".equals(txType) || "REFD".equals(txType) || "COMP".equals(txType);
+
         if (transaction.getMerchantId() != null && transaction.getAmount() != null) {
             try {
                 merchantService.getMerchantByCode(transaction.getMerchantId())
@@ -481,12 +498,14 @@ public class SwitchCore {
             }
         }
 
-        // Module B1: Record transaction for settlement
         if (transaction.getMerchantId() != null && transaction.getAmount() != null) {
             try {
+                BigDecimal settleAmount = "REFD".equals(txType)
+                        ? transaction.getAmount().negate()
+                        : transaction.getAmount();
                 settlementService.recordTransactionForSettlement(
                         transaction.getMerchantId(),
-                        transaction.getAmount(),
+                        settleAmount,
                         "VISA",
                         "DEBIT");
             } catch (Exception e) {
@@ -495,7 +514,6 @@ public class SwitchCore {
             }
         }
 
-        // Module E1: Auto-calculate interchange fee
         if (transaction.getAmount() != null && transaction.getAmount().compareTo(BigDecimal.ZERO) > 0) {
             try {
                 var interchangeResult = interchangeService.calculateInterchange(
@@ -510,82 +528,169 @@ public class SwitchCore {
             }
         }
 
-        // Module E: Auto-submit to clearing
-        try {
-            if (transaction.getAmount() != null
-                    && transaction.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+        if (shouldClear) {
+            try {
+                if (transaction.getAmount() != null
+                        && transaction.getAmount().compareTo(BigDecimal.ZERO) > 0) {
 
-                String tradingName = null;
-                String merchantCategoryCode = null;
-                if (transaction.getMerchantId() != null) {
-                    try {
-                        Optional<Merchant> merchantOpt = merchantService.getMerchantByCode(transaction.getMerchantId());
-                        if (merchantOpt.isPresent()) {
-                            Merchant m = merchantOpt.get();
-                            tradingName = m.getTradingName();
-                            merchantCategoryCode = m.getMerchantCategoryCode();
+                    String tradingName = null;
+                    String merchantCategoryCode = null;
+                    if (transaction.getMerchantId() != null) {
+                        try {
+                            Optional<Merchant> merchantOpt = merchantService.getMerchantByCode(transaction.getMerchantId());
+                            if (merchantOpt.isPresent()) {
+                                Merchant m = merchantOpt.get();
+                                tradingName = m.getTradingName();
+                                merchantCategoryCode = m.getMerchantCategoryCode();
+                            }
+                        } catch (Exception e) {
+                            log.warn("Merchant lookup failed for {}: {}", transaction.getMerchantId(), e.getMessage());
                         }
-                    } catch (Exception e) {
-                        log.warn("Merchant lookup failed for {}: {}", transaction.getMerchantId(), e.getMessage());
                     }
-                }
 
-                String mcc = null;
-                if (transaction.getParsedMessage() != null) {
-                    try {
-                        var parsed = objectMapper.readTree(transaction.getParsedMessage());
-                        var field18 = parsed.get("field_18");
-                        if (field18 != null && !field18.isNull()) {
-                            mcc = field18.asText();
+                    String mcc = null;
+                    if (transaction.getParsedMessage() != null) {
+                        try {
+                            var parsed = objectMapper.readTree(transaction.getParsedMessage());
+                            var field18 = parsed.get("field_18");
+                            if (field18 != null && !field18.isNull()) {
+                                mcc = field18.asText();
+                            }
+                        } catch (Exception e) {
+                            log.warn("Failed to parse MCC from parsedMessage: {}", e.getMessage());
                         }
-                    } catch (Exception e) {
-                        log.warn("Failed to parse MCC from parsedMessage: {}", e.getMessage());
                     }
-                }
-                if (mcc == null || mcc.isBlank()) {
-                    mcc = merchantCategoryCode;
-                }
+                    if (mcc == null || mcc.isBlank()) {
+                        mcc = merchantCategoryCode;
+                    }
 
-                String cardBrand = null;
-                if (pan != null && pan.length() >= 6) {
-                    try {
-                        String bin = pan.substring(0, 6);
-                        Optional<BinTable> binOpt = binTableRepository.findByBinAndIsActiveTrue(bin);
-                        if (binOpt.isPresent()) {
-                            BinTable.CardBrand brand = binOpt.get().getCardBrand();
-                            if (brand != null) cardBrand = brand.name();
+                    String cardBrand = null;
+                    if (panValue != null && panValue.length() >= 6) {
+                        try {
+                            String bin = panValue.substring(0, 6);
+                            Optional<BinTable> binOpt = binTableRepository.findByBinAndIsActiveTrue(bin);
+                            if (binOpt.isPresent()) {
+                                BinTable.CardBrand brand = binOpt.get().getCardBrand();
+                                if (brand != null) cardBrand = brand.name();
+                            }
+                        } catch (Exception e) {
+                            log.warn("BIN lookup failed for PAN prefix: {}", e.getMessage());
                         }
-                    } catch (Exception e) {
-                        log.warn("BIN lookup failed for PAN prefix: {}", e.getMessage());
                     }
-                }
 
-                ClearingService.ClearingData clearingData = ClearingService.ClearingData.builder()
-                        .transactionId(transaction.getTransactionId())
-                        .acquiringParticipantId(transaction.getAcquiringParticipant() != null
-                                ? transaction.getAcquiringParticipant().getId() : null)
-                        .issuingParticipantId(transaction.getIssuingParticipant() != null
-                                ? transaction.getIssuingParticipant().getId() : null)
-                        .amount(transaction.getAmount())
-                        .currencyCode(transaction.getCurrencyCode() != null
-                                ? transaction.getCurrencyCode() : "TND")
-                        .messageType(mti)
-                        .transactionDate(OffsetDateTime.now())
-                        .merchantNumber(transaction.getMerchantId())
-                        .cardNumber(pan)
-                        .merchantCategoryCode(mcc)
-                        .cardBrand(cardBrand)
-                        .tradingName(tradingName)
-                        .slipNumber(null)
-                        .representationFlag(false)
-                        .build();
-                clearingService.processClearing(clearingData);
-                log.info("Clearing submitted for transaction {}", transaction.getTransactionId());
+                    ClearingService.ClearingData clearingData = ClearingService.ClearingData.builder()
+                            .transactionId(transaction.getTransactionId())
+                            .acquiringParticipantId(transaction.getAcquiringParticipant() != null
+                                    ? transaction.getAcquiringParticipant().getId() : null)
+                            .issuingParticipantId(transaction.getIssuingParticipant() != null
+                                    ? transaction.getIssuingParticipant().getId() : null)
+                            .amount(transaction.getAmount())
+                            .currencyCode(transaction.getCurrencyCode() != null
+                                    ? transaction.getCurrencyCode() : "TND")
+                            .messageType(mti)
+                            .transactionDate(OffsetDateTime.now())
+                            .merchantNumber(transaction.getMerchantId())
+                            .cardNumber(panValue)
+                            .merchantCategoryCode(mcc)
+                            .cardBrand(cardBrand)
+                            .tradingName(tradingName)
+                            .slipNumber(null)
+                            .representationFlag(false)
+                            .build();
+                    clearingService.processClearing(clearingData);
+                    log.info("Clearing submitted for transaction {}", transaction.getTransactionId());
+                }
+            } catch (Exception e) {
+                log.warn("Clearing submission failed for transaction {}: {}",
+                        transaction.getTransactionId(), e.getMessage());
             }
-        } catch (Exception e) {
-            log.warn("Clearing submission failed for transaction {}: {}",
-                    transaction.getTransactionId(), e.getMessage());
         }
+    }
+
+    private Transaction processAdvice(Transaction transaction) {
+        transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
+        transaction.setResponseCode("00");
+        transaction.setResponseAt(OffsetDateTime.now());
+        transaction = transactionRepository.save(transaction);
+        try {
+            if ("COMP".equals(transaction.getTransactionType())) {
+                if (transaction.getAmount() != null && transaction.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+                    postProcessTransaction(transaction, null, "0220");
+                }
+            } else {
+                ledgerPostingEngine.postReversal(transaction.getTransactionId(),
+                        transaction.getAmount(), transaction.getCurrencyCode(), "Advice recorded");
+            }
+        } catch (Exception le) {
+            log.warn("Advice processing failed for {}: {}", transaction.getTransactionId(), le.getMessage());
+        }
+        return transaction;
+    }
+
+    private Transaction processPreAuth(Transaction transaction, RoutingResult routing,
+                                        byte[] rawMessage, String pan, String mti, String sourceCode) {
+        transaction.setDestinationParticipant(routing.getDestinationParticipant());
+        transaction.setRoutingRule(routingRuleFromResult(routing));
+        transaction.setStatus(Transaction.TransactionStatus.PROCESSING);
+        transactionRepository.save(transaction);
+
+        try {
+            Participant destination = routing.getDestinationParticipant();
+            byte[] responseData = messageHandlerService.sendAndReceive(destination, rawMessage);
+            IsoMessage response = iso8583Engine.parse(responseData);
+            String respCode = response.getField(39) != null ?
+                    response.getField(39).toString() : "99";
+
+            transaction.setResponseCode(respCode);
+            transaction.setResponseMessage(bytesToHex(responseData));
+            transaction.setStatus("00".equals(respCode) ?
+                    Transaction.TransactionStatus.COMPLETED :
+                    Transaction.TransactionStatus.FAILED);
+            transaction.setResponseAt(OffsetDateTime.now());
+            transaction.setProcessingTimeMs(calculateProcessingTime(transaction.getRequestAt()));
+        } catch (Exception e) {
+            log.error("Pre-auth {} failed: {}", transaction.getTransactionId(), e.getMessage());
+            transaction.setResponseCode("99");
+            transaction.setStatus(Transaction.TransactionStatus.FAILED);
+            transaction.setResponseAt(OffsetDateTime.now());
+        }
+        return transactionRepository.save(transaction);
+    }
+
+    private static String deriveChannel(String posEntryMode) {
+        if (posEntryMode == null) return "POS";
+        String m = posEntryMode.trim();
+        if (m.length() >= 2) {
+            String prefix = m.substring(0, 2);
+            if ("06".equals(prefix)) return "ATM";
+            int p = Integer.parseInt(prefix);
+            if (p >= 10 && p <= 19) return "ATM";
+            if (p >= 80 && p <= 99) return "ECOM";
+        }
+        return "POS";
+    }
+
+    private static String deriveTransactionType(String processingCode, String mti) {
+        if ("0420".equals(mti)) return "REVS";
+        if ("0220".equals(mti)) {
+            if (processingCode != null && processingCode.length() >= 2
+                    && "02".equals(processingCode.substring(0, 2))) {
+                return "COMP";
+            }
+            return "REVS";
+        }
+        if ("0100".equals(mti)) return "PRAU";
+        if (processingCode != null && processingCode.length() >= 2) {
+            return switch (processingCode.substring(0, 2)) {
+                case "00" -> "PURC";
+                case "01" -> "PRAU";
+                case "02" -> "COMP";
+                case "20" -> "REFD";
+                case "21" -> "VOID";
+                default -> "OTHR";
+            };
+        }
+        return "OTHR";
     }
 
     private RoutingRule routingRuleFromResult(RoutingResult result) {

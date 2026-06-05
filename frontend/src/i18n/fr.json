@@ -535,6 +535,10 @@
     "time": "Temps",
     "na": "N/D",
     "ms": "ms",
+    "allChannels": "Tous les canaux",
+    "allTypes": "Toutes les opérations",
+    "channel": "Canal",
+    "operation": "Opération",
     "sectionDescription": "Journal central des transactions et interface de supervision. Affiche en temps réel toutes les transactions de paiement traitées via le switch, avec un suivi détaillé des statuts et des métriques de performance.",
     "sectionRole": "Fournit une piste d'audit complète de chaque transaction transitant par la plateforme. Permet aux opérateurs de suivre le cycle de vie des transactions depuis l'initiation jusqu'au routage, à l'autorisation, à la compensation et au règlement.",
     "sectionUsage": "La page charge et affiche un tableau des transactions récentes. Chaque ligne montre l'ID de transaction (tronqué), le type de message (ex. 0100 pour demande d'autorisation), le protocole (ISO8583 / ISO20022), le montant, la devise, le statut actuel (codé par couleur), le code réponse et le temps de traitement. Utilisez cette page pour superviser les flux de transactions en direct."

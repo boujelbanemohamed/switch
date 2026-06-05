@@ -80,8 +80,12 @@ public class SwitchController {
     @GetMapping("/transactions")
     public ResponseEntity<?> listTransactions(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(monitoringService.getRecentTransactions(page, size));
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String channel,
+            @RequestParam(required = false) String transactionType,
+            @RequestParam(required = false) String posEntryMode) {
+        return ResponseEntity.ok(monitoringService.getRecentTransactions(
+                page, size, channel, transactionType, posEntryMode));
     }
 
     @GetMapping("/health")

@@ -94,6 +94,18 @@ public class Transaction {
     @Column(name = "stand_in_used", nullable = false)
     private Boolean standInUsed = false;
 
+    @Column(name = "pos_entry_mode", length = 3)
+    private String posEntryMode;
+
+    @Column(name = "pos_condition_code", length = 2)
+    private String posConditionCode;
+
+    @Column(length = 4)
+    private String channel;
+
+    @Column(name = "transaction_type", length = 4)
+    private String transactionType;
+
     @Column(name = "request_at", nullable = false)
     private OffsetDateTime requestAt;
 

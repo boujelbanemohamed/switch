@@ -31,13 +31,26 @@ public class MonitoringService {
         return transactionRepository.findByRrn(rrn);
     }
 
-    public Page<Transaction> getRecentTransactions(int page, int size) {
-        return transactionRepository.findAll(
-                org.springframework.data.domain.PageRequest.of(
-                        page, size,
-                        org.springframework.data.domain.Sort.by(
-                                org.springframework.data.domain.Sort.Direction.DESC,
-                                "requestAt")));
+    public Page<Transaction> getRecentTransactions(int page, int size,
+                                                    String channel, String transactionType, String posEntryMode) {
+        var pageable = org.springframework.data.domain.PageRequest.of(
+                page, size,
+                org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Direction.DESC,
+                        "requestAt"));
+        if (channel != null && transactionType != null) {
+            return transactionRepository.findByChannelAndTransactionType(channel, transactionType, pageable);
+        }
+        if (channel != null) {
+            return transactionRepository.findByChannel(channel, pageable);
+        }
+        if (transactionType != null) {
+            return transactionRepository.findByTransactionType(transactionType, pageable);
+        }
+        if (posEntryMode != null) {
+            return transactionRepository.findByPosEntryMode(posEntryMode, pageable);
+        }
+        return transactionRepository.findAll(pageable);
     }
 
     public Map<String, Object> getDashboardStats() {

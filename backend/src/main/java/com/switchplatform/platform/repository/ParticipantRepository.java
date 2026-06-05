@@ -15,4 +15,5 @@ public interface ParticipantRepository extends JpaRepository<Participant, UUID> 
     List<Participant> findByType(Participant.ParticipantType type);
     List<Participant> findByTypeAndStatus(Participant.ParticipantType type, Participant.ParticipantStatus status);
     boolean existsByCode(String code);
+    List<Participant> findByIsDomesticFalse();
 }

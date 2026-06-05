@@ -36,6 +36,10 @@ export interface Transaction {
   currencyCode?: string;
   merchantId?: string;
   terminalId?: string;
+  posEntryMode?: string;
+  posConditionCode?: string;
+  channel?: string;
+  transactionType?: string;
   status: 'PENDING' | 'ROUTING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'TIMEOUT' | 'REJECTED';
   responseCode?: string;
   processingTimeMs?: number;
@@ -291,6 +295,22 @@ export interface ReconciliationResult {
   totalRecords: number;
   matched: number;
   unmatched: number;
+  amountDifference?: number;
+}
+
+export interface ReconciliationRecord {
+  id: string;
+  reconciliationDate: string;
+  participantId?: string;
+  source: 'SWITCH' | 'PARTICIPANT' | 'MERCHANT' | 'SCHEME';
+  totalTransactions: number;
+  totalAmount: number;
+  matchedCount: number;
+  unmatchedCount: number;
+  discrepancyCount: number;
+  status: string;
+  notes?: string;
+  createdAt: string;
 }
 
 export interface NettingRecord {

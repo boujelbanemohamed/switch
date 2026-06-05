@@ -121,9 +121,6 @@ public class ClearingService {
                 .representationFlag(data.isRepresentationFlag())
                 .build();
 
-        if (record.getId() == null) {
-            record.setId(UUID.randomUUID());
-        }
         record = clearingRecordRepository.save(record);
         log.info("Processed clearing record {} for transaction {}",
                 record.getId(), data.getTransactionId());
@@ -280,9 +277,6 @@ public class ClearingService {
                     .createdAt(OffsetDateTime.now())
                     .build();
 
-            if (netting.getId() == null) {
-                netting.setId(UUID.randomUUID());
-            }
             netting = nettingRecordRepository.save(netting);
             results.add(netting);
         }

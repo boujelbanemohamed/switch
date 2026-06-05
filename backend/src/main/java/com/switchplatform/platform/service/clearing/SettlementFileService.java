@@ -5,8 +5,14 @@ import com.switchplatform.platform.event.EventPublisher;
 import com.switchplatform.platform.iso20022.Iso20022Engine;
 import com.switchplatform.platform.model.Participant;
 import com.switchplatform.platform.model.clearing.ClearingRecord;
+import com.switchplatform.platform.model.clearing.ReconciliationRecord;
 import com.switchplatform.platform.repository.ParticipantRepository;
 import com.switchplatform.platform.repository.clearing.ClearingRecordRepository;
+import com.switchplatform.platform.repository.clearing.ReconciliationRecordRepository;
+import com.switchplatform.platform.service.clearing.network.Iso20022ClearingGenerator;
+import com.switchplatform.platform.service.clearing.network.MastercardIpmGenerator;
+import com.switchplatform.platform.service.clearing.network.NetworkClearingGenerator;
+import com.switchplatform.platform.service.clearing.network.VisaBaseIIGenerator;
 import com.switchplatform.platform.service.clearing.smt.CompconfFileService;
 import com.switchplatform.platform.service.clearing.smt.Cp50FileService;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +24,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,10 +34,14 @@ public class SettlementFileService {
 
     private final ClearingRecordRepository clearingRecordRepository;
     private final ParticipantRepository participantRepository;
+    private final ReconciliationRecordRepository reconciliationRecordRepository;
     private final Iso20022Engine iso20022Engine;
     private final CompconfFileService compconfFileService;
     private final Cp50FileService cp50FileService;
     private final EventPublisher eventPublisher;
+    private final Iso20022ClearingGenerator iso20022ClearingGenerator;
+    private final VisaBaseIIGenerator visaBaseIIGenerator;
+    private final MastercardIpmGenerator mastercardIpmGenerator;
 
     public String generateOutgoingClearingFile(LocalDate date, UUID participantId, String format) {
         Participant participant = participantRepository.findById(participantId)
@@ -50,6 +60,10 @@ public class SettlementFileService {
             content = compconfFileService.generate(date, records);
         } else if ("CP50".equalsIgnoreCase(format)) {
             content = cp50FileService.generate(date, participant, records);
+        } else if ("VISA".equalsIgnoreCase(format)) {
+            content = visaBaseIIGenerator.generate(date, records);
+        } else if ("MASTERCARD".equalsIgnoreCase(format)) {
+            content = mastercardIpmGenerator.generate(date, records);
         } else {
             throw new IllegalArgumentException("Unsupported format: " + format);
         }
@@ -81,25 +95,10 @@ public class SettlementFileService {
     }
 
     private String generateIso20022(List<ClearingRecord> records, Participant participant, LocalDate date) {
-        BigDecimal totalAmount = records.stream()
-                .map(ClearingRecord::getAmount)
-                .filter(java.util.Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        String msgId = "CLR-" + date.format(DateTimeFormatter.BASIC_ISO_DATE) + "-" + UUID.randomUUID().toString().substring(0, 8);
-        String creditorBic = participant.getCode();
-        String debtorBic = "SWITCH";
-        String currency = records.isEmpty() ? "TND" : records.get(0).getCurrencyCode();
-        String creditorAccount = participant.getCode() + "-CLR";
-        String debtorAccount = "SWITCH-CLR";
-
-        Document doc = iso20022Engine.createPaymentRequest(
-                msgId, creditorBic, debtorBic, totalAmount, currency,
-                creditorAccount, debtorAccount, "CLEARING-" + date);
-        return iso20022Engine.toXml(doc);
+        return iso20022ClearingGenerator.generate(date, records);
     }
 
-    public ReconciliationResult ingestIncomingClearingFile(String content, String format) {
+    public ReconciliationResult ingestIncomingClearingFile(String content, String format, UUID participantId) {
         int matched = 0;
         int unmatched = 0;
         int total = 0;
@@ -124,6 +123,29 @@ public class SettlementFileService {
                     }
                 }
             }
+        } else if ("ISO20022".equalsIgnoreCase(format)) {
+            try {
+                Document doc = iso20022Engine.parse(content);
+                var details = iso20022Engine.extractPaymentDetails(doc);
+                String ref = details.get("EndToEndId");
+                total = 1;
+                if (ref != null) {
+                    var opt = clearingRecordRepository.findByTransactionId(ref);
+                    if (opt.isPresent()) {
+                        ClearingRecord record = opt.get();
+                        record.setStatus(ClearingRecord.Status.SETTLED);
+                        clearingRecordRepository.save(record);
+                        matched = 1;
+                    } else {
+                        unmatched = 1;
+                    }
+                } else {
+                    unmatched = 1;
+                }
+            } catch (Exception e) {
+                log.warn("ISO 20022 ingestion parse failed: {}", e.getMessage());
+                unmatched = 1;
+            }
         } else if ("COMPCONF".equalsIgnoreCase(format)) {
             List<ClearingRecord> parsed = compconfFileService.parse(content);
             total = parsed.size();
@@ -146,15 +168,38 @@ public class SettlementFileService {
             List<String> rawType40 = cp50FileService.parse(content);
             total = rawType40.size();
             log.info("CP50 ingestion: {} type40 lines (raw, waiting for SMT spec)", total);
-            for (String raw : rawType40) {
-                unmatched++;
-            }
+            unmatched = total;
         } else {
             throw new IllegalArgumentException("Unsupported format for ingestion: " + format);
         }
 
+        BigDecimal amountDifference = BigDecimal.ZERO;
+        persistReconciliationRecord(LocalDate.now(), participantId, format, total, matched, unmatched, amountDifference);
+
         log.info("Clearing file ingested: total={}, matched={}, unmatched={}", total, matched, unmatched);
-        return new ReconciliationResult(total, matched, unmatched);
+        return new ReconciliationResult(total, matched, unmatched, amountDifference);
+    }
+
+    private void persistReconciliationRecord(LocalDate date, UUID participantId, String format,
+                                              int total, int matched, int unmatched,
+                                              BigDecimal amountDifference) {
+        try {
+            ReconciliationRecord record = ReconciliationRecord.builder()
+                    .reconciliationDate(date)
+                    .participantId(participantId)
+                    .source(ReconciliationRecord.Source.SCHEME)
+                    .totalTransactions(total)
+                    .totalAmount(amountDifference != null ? amountDifference : BigDecimal.ZERO)
+                    .matchedCount(matched)
+                    .unmatchedCount(unmatched)
+                    .discrepancyCount(unmatched)
+                    .status(unmatched == 0 ? ReconciliationRecord.Status.MATCHED : ReconciliationRecord.Status.PARTIALLY_MATCHED)
+                    .notes("Ingested " + format + " file: " + matched + "/" + total + " matched")
+                    .build();
+            reconciliationRecordRepository.save(record);
+        } catch (Exception e) {
+            log.warn("Failed to persist reconciliation record: {}", e.getMessage());
+        }
     }
 
     private String escapeCsv(String value) {
@@ -165,5 +210,5 @@ public class SettlementFileService {
         return value;
     }
 
-    public record ReconciliationResult(int totalRecords, int matched, int unmatched) {}
+    public record ReconciliationResult(int totalRecords, int matched, int unmatched, BigDecimal amountDifference) {}
 }

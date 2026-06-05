@@ -380,7 +380,17 @@
       "reconciliationTitle": "Reconciliation Result",
       "total": "Total Records",
       "matched": "Matched",
-      "unmatched": "Unmatched"
+      "unmatched": "Unmatched",
+      "formatVisa": "VISA BASE II",
+      "formatMastercard": "Mastercard IPM",
+      "bctTitle": "BCT Settlement",
+      "bctDownload": "Generate BCT File",
+      "reconciliationHistory": "Reconciliation History",
+      "reportsTitle": "Quarterly Report",
+      "reportYear": "Year",
+      "reportQuarter": "Quarter",
+      "reportScheme": "Scheme",
+      "reportGenerate": "Generate Report"
     }
   },
   "ecommerce": {
@@ -502,6 +512,10 @@
     "time": "Time",
     "na": "N/A",
     "ms": "ms",
+    "allChannels": "All channels",
+    "allTypes": "All operations",
+    "channel": "Channel",
+    "operation": "Operation",
     "sectionDescription": "Central transaction log and monitoring interface. Displays all payment transactions processed through the switch in real-time, with detailed status tracking and performance metrics.",
     "sectionRole": "Provides a comprehensive audit trail of every transaction flowing through the platform. Enables operators to track transaction lifecycle from initiation through routing, authorisation, clearing, and settlement.",
     "sectionUsage": "The page loads and displays a table of recent transactions. Each row shows the transaction ID (truncated), message type (e.g. 0100 for authorisation request), protocol (ISO8583 / ISO20022), amount, currency, current status (colour-coded), response code, and processing time. Use this page to monitor live transaction flows and investigate individual transaction outcomes."

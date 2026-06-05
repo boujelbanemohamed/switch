@@ -1,0 +1,1 @@
+ALTER TABLE participants ADD COLUMN is_domestic BOOLEAN NOT NULL DEFAULT TRUE;

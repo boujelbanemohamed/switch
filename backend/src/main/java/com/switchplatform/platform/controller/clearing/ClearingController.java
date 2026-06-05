@@ -1,12 +1,18 @@
 package com.switchplatform.platform.controller.clearing;
 
+import com.switchplatform.platform.model.Participant;
 import com.switchplatform.platform.model.clearing.ClearingRecord;
 import com.switchplatform.platform.model.clearing.InterchangeFee;
 import com.switchplatform.platform.model.clearing.InterchangeResult;
 import com.switchplatform.platform.model.clearing.NettingRecord;
+import com.switchplatform.platform.model.clearing.ReconciliationRecord;
+import com.switchplatform.platform.repository.ParticipantRepository;
 import com.switchplatform.platform.service.clearing.ClearingService;
 import com.switchplatform.platform.service.clearing.InterchangeService;
 import com.switchplatform.platform.service.clearing.SettlementFileService;
+import com.switchplatform.platform.service.clearing.bct.BctSettlementService;
+import com.switchplatform.platform.service.clearing.reporting.SchemeReportService;
+import com.switchplatform.platform.repository.clearing.ReconciliationRecordRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +34,10 @@ public class ClearingController {
     private final ClearingService clearingService;
     private final InterchangeService interchangeService;
     private final SettlementFileService settlementFileService;
+    private final BctSettlementService bctSettlementService;
+    private final SchemeReportService schemeReportService;
+    private final ParticipantRepository participantRepository;
+    private final ReconciliationRecordRepository reconciliationRecordRepository;
 
     @PostMapping("/process")
     public ResponseEntity<ClearingRecord> process(@Valid @RequestBody ClearingService.ClearingData data) {
@@ -127,7 +137,38 @@ public class ClearingController {
             @RequestBody Map<String, String> body) {
         String content = body.get("content");
         String format = body.getOrDefault("format", "CSV");
-        return ResponseEntity.ok(settlementFileService.ingestIncomingClearingFile(content, format));
+        UUID participantId = body.containsKey("participantId") ? UUID.fromString(body.get("participantId")) : null;
+        if (participantId == null) {
+            var def = participantRepository.findByCode("SWITCH");
+            participantId = def.map(Participant::getId).orElse(null);
+        }
+        return ResponseEntity.ok(settlementFileService.ingestIncomingClearingFile(content, format, participantId));
+    }
+
+    @GetMapping("/files/bct")
+    public ResponseEntity<String> downloadBctSettlementFile(@RequestParam String date) {
+        String content = bctSettlementService.generateBctSettlementFile(LocalDate.parse(date));
+        String filename = "bct-settlement-" + date + ".csv";
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"" + filename + "\"")
+                .body(content);
+    }
+
+    @GetMapping("/reconciliation")
+    public ResponseEntity<List<ReconciliationRecord>> listReconciliationRecords(
+            @RequestParam(required = false) String date) {
+        if (date != null) {
+            return ResponseEntity.ok(reconciliationRecordRepository.findByReconciliationDate(LocalDate.parse(date)));
+        }
+        return ResponseEntity.ok(reconciliationRecordRepository.findAll());
+    }
+
+    @GetMapping("/reports/quarterly")
+    public ResponseEntity<String> quarterlyReport(
+            @RequestParam int year,
+            @RequestParam int quarter,
+            @RequestParam(defaultValue = "ALL") String scheme) {
+        return ResponseEntity.ok(schemeReportService.generateQuarterlyReport(year, quarter, scheme));
     }
 
     @GetMapping("/interchange/calculate")

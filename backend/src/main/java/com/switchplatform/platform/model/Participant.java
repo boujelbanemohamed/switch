@@ -49,6 +49,9 @@ public class Participant {
     @Column(name = "code_faconnier", length = 6)
     private String codeFaconnier = "222222";
 
+    @Column(name = "is_domestic", nullable = false)
+    private Boolean isDomestic = true;
+
     @Column(columnDefinition = "JSONB")
     private String metadata;
 

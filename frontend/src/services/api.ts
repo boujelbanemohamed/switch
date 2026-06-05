@@ -547,4 +547,43 @@ export const api = {
         request<string>('/regulatory/reports/generate', { method: 'POST', body: JSON.stringify({ templateId, startDate, endDate, format }) }),
     },
   },
+  credit: {
+    lines: {
+      open: (data: Record<string, unknown>) =>
+        request<import('../types').CreditLine>('/credit/lines', { method: 'POST', body: JSON.stringify(data) }),
+      get: (id: string) => request<import('../types').CreditLine>(`/credit/lines/${id}`),
+      getByCardAccount: (cardAccountId: string) =>
+        request<import('../types').CreditLine>(`/credit/lines/by-card-account/${cardAccountId}`),
+      authorize: (id: string, amount: number) =>
+        request<import('../types').CreditLine>(`/credit/lines/${id}/authorize`, { method: 'POST', body: JSON.stringify({ amount }) }),
+      purchase: (id: string, amount: number, transactionRef: string) =>
+        request<import('../types').CreditLine>(`/credit/lines/${id}/purchase`, { method: 'POST', body: JSON.stringify({ amount, transactionRef }) }),
+      payment: (id: string, amount: number) =>
+        request<import('../types').CreditLine>(`/credit/lines/${id}/payment`, { method: 'POST', body: JSON.stringify({ amount }) }),
+      releaseHold: (id: string, amount: number) =>
+        request<import('../types').CreditLine>(`/credit/lines/${id}/release-hold`, { method: 'POST', body: JSON.stringify({ amount }) }),
+      simulate: (id: string, balance: number, apr: number, minPaymentPct: number, minPaymentFloor: number) =>
+        request<{ monthlyRate: number; interestCharged: number; minimumPayment: number; newBalance: number }>(
+          `/credit/lines/${id}/simulate`, { method: 'POST', body: JSON.stringify({ balance, apr, minPaymentPct, minPaymentFloor }) }),
+      statements: (id: string) =>
+        request<import('../types').CreditStatement[]>(`/credit/lines/${id}/statements`),
+      generateStatement: (id: string) =>
+        request<import('../types').CreditStatement>(`/credit/lines/${id}/generate-statement`, { method: 'POST' }),
+      installments: (id: string) =>
+        request<import('../types').InstallmentPlan[]>(`/credit/lines/${id}/installments`),
+      convertToInstallments: (id: string, data: Record<string, unknown>) =>
+        request<import('../types').InstallmentPlan>(`/credit/lines/${id}/installments`, { method: 'POST', body: JSON.stringify(data) }),
+    },
+    statements: {
+      get: (id: string) => request<import('../types').CreditStatement>(`/credit/statements/${id}`),
+    },
+    installmentPlans: {
+      get: (id: string) => request<import('../types').InstallmentPlan>(`/credit/installment-plans/${id}`),
+      entries: (id: string) => request<import('../types').InstallmentEntry[]>(`/credit/installment-plans/${id}/entries`),
+    },
+    installmentEntries: {
+      markPaid: (id: string, statementId: string) =>
+        request<import('../types').InstallmentEntry>(`/credit/installment-entries/${id}/pay`, { method: 'POST', body: JSON.stringify({ statementId }) }),
+    },
+  },
 };

@@ -29,6 +29,7 @@ import { Reports } from './pages/Reports';
 import { ConfigLive } from './pages/ConfigLive';
 import { StandIn } from './pages/StandIn';
 import { CofPage } from './pages/CofPage';
+import { CreditLines } from './pages/CreditLines';
 import { FxRates } from './pages/FxRates';
 import { RegulatoryReports } from './pages/RegulatoryReports';
 import type { ReactNode } from 'react';
@@ -72,6 +73,7 @@ function AppRoutes() {
       <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
       <Route path="/config-live" element={<ProtectedRoute><Layout><ConfigLive /></Layout></ProtectedRoute>} />
       <Route path="/stand-in" element={<ProtectedRoute><Layout><StandIn /></Layout></ProtectedRoute>} />
+      <Route path="/credit" element={<ProtectedRoute><Layout><CreditLines /></Layout></ProtectedRoute>} />
       <Route path="/cof" element={<ProtectedRoute><Layout><CofPage /></Layout></ProtectedRoute>} />
       <Route path="/fx-rates" element={<ProtectedRoute><Layout><FxRates /></Layout></ProtectedRoute>} />
       <Route path="/regulatory-reports" element={<ProtectedRoute><Layout><RegulatoryReports /></Layout></ProtectedRoute>} />

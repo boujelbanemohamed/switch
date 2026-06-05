@@ -228,7 +228,8 @@ public class LedgerPostingEngine {
                               BigDecimal credit, String currency, String ref, String desc) {
         return LedgerEntry.builder()
                 .journalId(journalId).accountId(accountId)
-                .debitAmount(debit).creditAmount(credit)
+                .debitAmount(debit != null ? debit : BigDecimal.ZERO)
+                .creditAmount(credit != null ? credit : BigDecimal.ZERO)
                 .currency(currency).transactionReference(ref)
                 .description(desc).build();
     }

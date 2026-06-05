@@ -637,3 +637,66 @@ export interface RegulatoryReportTemplate {
   periodicity: string;
   description: string;
 }
+
+export interface CreditLine {
+  id: string;
+  cardAccountId: string;
+  creditLimit: number;
+  currentBalance: number;
+  holdAmount: number;
+  availableCredit: number;
+  apr: number;
+  statementDay: number;
+  paymentDueDays: number;
+  minPaymentPct: number;
+  minPaymentFloor: number;
+  currencyCode: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreditStatement {
+  id: string;
+  creditLineId: string;
+  statementDate: string;
+  periodStart: string;
+  periodEnd: string;
+  openingBalance: number;
+  purchasesTotal: number;
+  paymentsTotal: number;
+  interestCharged: number;
+  feesCharged: number;
+  closingBalance: number;
+  minimumPayment: number;
+  dueDate: string;
+  paidInFull: boolean;
+  status: string;
+  createdAt: string;
+}
+
+export interface InstallmentPlan {
+  id: string;
+  creditLineId: string;
+  originalTransactionRef?: string;
+  totalAmount: number;
+  installmentCount: number;
+  installmentAmount: number;
+  feeAmount: number;
+  apr?: number;
+  startDate: string;
+  remainingCount: number;
+  status: string;
+  createdAt: string;
+}
+
+export interface InstallmentEntry {
+  id: string;
+  installmentPlanId: string;
+  sequenceNumber: number;
+  dueDate: string;
+  amount: number;
+  paid: boolean;
+  statementId?: string;
+  createdAt: string;
+}

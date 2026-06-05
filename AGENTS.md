@@ -73,7 +73,7 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - **Réseau : stubs > format inventé** : UnsupportedOperationException pour Visa/MC.
 - **BCT CSV** : format provisoire, en attendant FCOMPSMT.
 - **`Participant.isDomestic`** (V053) : distingue banques domestiques/étrangères pour le fichier BCT.
-- **Crédit calcul intérêts** : `openingBalance × (APR/12/100)` — standard international, en attente validation client (contexte SMT tunisien peut différer).
+- **Crédit calcul intérêts** : implémenté sur `openingBalance × (APR/12/100)`. Le modèle initial proposait le **solde moyen journalier** (qui donne un montant différent selon la date des achats). Ce choix (**openingBalance** vs **average daily balance**) est une décision métier non tranchée — à confirmer par le client avec l'APR, le floor, et la période de grâce avant toute mise en production.
 - **Crédit min payment** : `max(closingBalance × minPaymentPct%, minPaymentFloor)`.
 - **Crédit grace period** : intérêts facturés seulement si précédent relevé NON payé intégralement.
 - **Crédit ledger** : nouveaux comptes `CREDIT_RECEIVABLE` (ASSET) + `CREDIT_FUNDING` (LIABILITY) via partie double existante.

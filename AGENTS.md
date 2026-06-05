@@ -14,106 +14,124 @@ Implement SMT interbank clearing formats (COMPCONF 168c, CP50 500c) for the Tuni
 - Add one minimal Playwright E2E test per module.
 - Fixed‑width SMT formats: every character counts, one misaligned field rejects the entire file.
 - **Do not `trim()`** fixed‑width SMT lines — trailing spaces are part of the format length. Use `line.isEmpty()` check only.
-- **Migration**: V049 / V050 / never modify an existing migration.
+- **Migration**: V049–V051 / never modify an existing migration.
 - **Security**: `AntPathRequestMatcher` for any new route (known bug with `MvcRequestMatcher`). Read = ANALYST+, write = ADMIN/OPERATOR.
 - **Frontend**: `const data = await api.xxx()` without `{ data }` destructuring; handle paginated `{content:[…]}` envelope.
-- **Validation after each step**: `mvn clean compile && mvn test`, then `npm run build`, then curl smoke‑test new endpoints (port 8085, expect 2xx).
-- **Tests**: unit tests for SMT file services, E2E test confirming selector includes COMPCONF and CP50.
-- **Kafka event**: publish an event for each generated file.
-- **I18n**: EN + FR keys for new format labels in the frontend.
-- **SMT figeage**: les champs doivent être FIGÉS au moment du `processClearing()` (photo à l'instant T), pas lus à la génération — sinon une régénération ultérieure produirait des données incohérentes (marchand qui change d'enseigne, BIN qui change, etc.).
+- **SMT figeage** : les champs SMT doivent être FIGÉS au moment du `processClearing()` (photo à l'instant T), pas lus à la génération — sinon une régénération ultérieure produirait des données incohérentes (marchand qui change d'enseigne, BIN qui change, etc.).
 
 ## Progress
-### Done
-- **P1 – P6 all complete** – backend + frontend + E2E committed and pushed (`9715408`).
-- Wiki updated with P1–P6 API reference, database schema, and home page (pushed to `switch.wiki`).
-- **E2E suite**: 92 tests pass, 0 failures.
-- `common.add` i18n key added (EN + FR).
-- **P7 — SMT formats (COMPCONF + CP50)**:
-  - **Round 1 (initial, now superseded)**:
-    - V049 migration: `bank_code` on `participants`, SMT fields on `clearing_records`.
-    - SmtFieldFormatter, CompconfFileService (168c), Cp50FileService (440c — **corrigé à 500c** dans Round 2).
-    - Tests: 30 SMT round‑trip tests. 297 total.
-  - **Round 2 (positions corrigées)**:
-    - CP50 corrigé à 500c (pas 440c). COMPCONF hardcodé aux positions exactes du tableau 1-indexé.
-    - `SmtFieldFormatter` simplifié : `alphaLeft`, `numericRight`, `amount(int len)`, `dateJJMMAA`, `spaces`.
-    - Tests repassés en assertions de position absolues (plus round‑trip).
-    - COMPCONF : 3 REDEFINES (ZONE1 présentation, ZONE2 chargeback/fees, ZONE3 représentation), inversion banques sur chargeback (15/17/18) et fee (10).
-    - Type 40 : `UnsupportedOperationException`.
-    - 325 tests pass.
-  - **Round 3 (figeage V050, en cours)**:
-    - **V050** migration : `card_brand`, `trading_name`, `slip_number`, `representation_flag` sur `clearing_records` ; `code_faconnier` (défaut `222222`) sur `participants`.
-    - **Figeage à processClearing** : les champs SMT sont figés une seule fois au moment du `processClearing()` via `ClearingData` enrichi, plus jamais recalculés.
-    - **SwitchCore.postProcessTransaction** enrichit `ClearingData` avec :
-      - `mcc` : DE 18 du ISO8583 (`parsedMessage.field_18`) → fallback `Merchant.merchantCategoryCode`.
-      - `cardBrand` : BIN lookup (6 premiers chiffres du PAN) → `BinTable.cardBrand`.
-      - `tradingName` : lookup `MerchantRepository.findByMerchantId(merchantId)`.
-      - `merchantNumber` = `Transaction.merchantId`, `cardNumber` = PAN.
-    - **Champs dérivés à la génération** (non stockés) : `sectorCode` (N/E/C depuis MCC), `systemCode` (1/2/3 depuis cardBrand), `surrenderDate` (= clearingDate).
-    - **CompconfFileService** utilise les champs figés : `tradingName` pour ENSEIGNE (ZONE1), `cardBrand` pour SYSTEME (pos 95), `slipNumber` pour NUMERO FACTURETTE. Fallback avec `warn` unique pour les anciens records (pre-V050).
-    - **Cp50FileService** utilise `Participant.codeFaconnier` au lieu du hardcodé `222222`.
-    - **SettlementFileService** passe `Participant` directement à `Cp50FileService.generate()`.
-    - 326 tests pass (1 nouveau : `headerCodeFaconnierCustom`).
 
-### Done
-- **V051** migration: `dispute_id` on `clearing_records`.
-- **Representation clone** : quand un dispute passe en `REPRESENTMENT`, un nouveau `ClearingRecord` est créé (clone du record original avec `representationFlag=true`, `operationCode=05`, `operationNature=D`, `disputeId=dispute.id`).
-  - Idempotent : `findByDisputeId` vérifie avant création.
-  - Données figées : tous les champs SMT (montant, participants, mcc, cardBrand, tradingName...) copiés depuis l'original.
-  - Utilise ZONE3 au prochain COMPCONF (code 'R' en position 164, cycle 2).
-- Backend: 326 tests pass. Frontend: `npm run build` OK.
+### ✅ Done — P1–P6
+Tout livré, commit `9715408`. Wiki pushé.
 
-### In Progress
-- SMT format customisation per bank's actual subscription parameters (file‑naming convention CPMPAY23 vs CP50bbbbb).
+### ✅ Done — P7 (SMT interbank clearing)
+**Objectif** : génération et ingestion des fichiers COMPCONF et CP50 pour la compensation interbancaire Tunisie (SMT/BPC).
+**Commits** : `ff191ec` (positions + format), `a5ec109` (V050 figeage), `b05240c` (V051 représentation).
 
-### Blocked
-- Type 40 transaction lines for CP50 — layout unknown, pending official SMT/BPC specification.
-- Third SMT file format not yet specified by customer.
-- P6 exact BCT/SIBTEL reporting formats not public; current implementation generates CSV templates.
+#### Format COMPCONF (168c)
+- `SmtFieldFormatter` : `alphaLeft`, `numericRight`, `amount(int len)`, `dateJJMMAA`, `spaces`, `parseAmount`, `parseDateJJMMAA`.
+- `CompconfFileService.generate()` : ligne construite champ par champ aux **positions exactes 1-indexées**.
+- Trois zones REDEFINES : ZONE1 (présentation — enseigne commerçant), ZONE2 (chargeback/fees — motif, cycle, message), ZONE3 (représentation — code 'R' en 164).
+- Inversion banques sur chargeback (15/17/18) et fee (10) : acquéreur ↔ émetteur.
+- `parse()` : extraction par positions, pas de `trim()` sur les lignes.
+
+#### Format CP50 (500c, pas 440c)
+- Header 01 (code banque + code faconnier), type 80 (débit/crédit, montants 12c), trailer 99 (totaux).
+- Type 40 : `UnsupportedOperationException("Type 40 layout pending SMT spec")`.
+- `parse()` retourne les lignes type 40 brutes sans décodage.
+
+#### Figeage V050
+Les champs SMT sont figés UNE SEULE FOIS à `processClearing()`, pas lus à la génération :
+- `mcc` : DE 18 du ISO8583 → fallback `Merchant.merchantCategoryCode`.
+- `cardBrand` : BIN lookup (6 premiers chiffres du PAN) → `BinTable.cardBrand`.
+- `tradingName` : lookup `MerchantRepository.findByMerchantId(merchantId)`.
+- `merchantNumber` = `Transaction.merchantId`, `cardNumber` = PAN.
+- `slipNumber` / `batchNumber` : capturés si disponibles, sinon `000001` (fallback).
+- Anciens records (pre-V050) : fallback avec `warn` unique.
+
+**Champs dérivés à la génération** (non stockés) : `sectorCode` depuis MCC, `systemCode` depuis cardBrand (1=CIB, 2=Visa, 3=MC), `surrenderDate` = clearingDate.
+
+**Participant.codeFaconnier** (V050, défaut `222222`) : configurable par participant, utilisé dans le CP50 header pos 17-22.
+
+#### Représentation V051
+Quand un dispute passe en statut `REPRESENTMENT` :
+- Un **nouveau `ClearingRecord`** est créé (clone du record original).
+- `representationFlag=true`, `operationCode=05` (présentation), `operationNature=D`.
+- `disputeId` lié au dispute (traçabilité complète).
+- Idempotent : `findByDisputeId` vérifie avant création.
+- Le nouveau record est inclus dans le **prochain** fichier COMPCONF (ZONE3).
+
+#### Tests & Build
+- 326 tests backend (`mvn clean compile && mvn test`) : SmtFieldFormatterTest (17), CompconfFileServiceTest (19), Cp50FileServiceTest (23), reste des P1–P6.
+- Frontend : `npm run build` OK (2278 modules, dist 1.16 MB).
+
+### ⏸️ Paused — waiting for external inputs
+Ces 4 points sont fonctionnellement prêts côté code mais bloqués par des dépendances externes. Ne pas coder tant que les specs ne sont pas arrivées.
+
+| Point | Dépendance | Statut |
+|---|---|---|
+| **Type 40 CP50** — layout des lignes transaction CP50 | Spec SMT/BPC (demandée) | `UnsupportedOperationException` en place |
+| **3e format SMT** — non spécifié | Spec client | Aucun code |
+| **Nommage fichier** — `CPMPAY23.NNNNN` vs `CP50bbbbb` | Contrat SMT de chaque banque (déjà configurable) | Préfixe par participant si besoin |
+| **Source `slipNumber`** — facturette, actuellement NULL (fallback `000001`) | Source métier upstream | Aucun code ; colonne V050 déjà en base |
+
+### ❌ Abandonné / hors scope
+- **P6 BCT/SIBTEL** — formats non publics, template CSV actuel conservé tel quel.
 
 ## Key Decisions
-- Used `AntPathRequestMatcher` everywhere instead of `requestMatchers(HttpMethod, String)` because `MvcRequestMatcher` does not match paths correctly on this project (returned 401 with valid token).
-- SMT field formatter uses `alphaLeft` for text fields, `numericRight` for numeric codes, `amount(int len)` for monetary amounts with 3 implicit decimals.
-- COMPCONF: 168 characters, exact 1-indexed positions, 3 REDEFINES zones, bank inversion for chargeback (15/17/18) and fee requests (10).
-- CP50: 500 characters (not 440), multi‑type (01 header, 80 movement, 99 trailer). No type 40 until SMT spec arrives.
-- **Figeage (V050)** : SMT fields are frozen at `processClearing()` time, not read at generation time. Protects against merchant/Tx data changes when old files are regenerated.
-- `parse` methods must **not** `trim()` lines — fixed‑width format relies on trailing spaces for correct length. Only check `line.isEmpty()` to skip empty lines from trailing newlines.
-- Kafka connection warning (`UnknownHostException: kafka`) is cosmetic — HTTP traffic works.
+- `AntPathRequestMatcher` pour tous les nouveaux endpoints (`MvcRequestMatcher` bug 401).
+- COMPCONF : 168c, positions exactes 1-indexées, 3 REDEFINES, inversion banques sur chargeback/fee.
+- CP50 : 500c (prouvé par fichiers de production), pas de type 40 sans spec.
+- **Figeage V050** : champs SMT figés à `processClearing()` pas à la génération. Principe monétique validé : une régénération de fichier ne doit pas refléter des données modifiées après la transaction.
+- **Représentation** = nouveau `ClearingRecord` (clone), pas un flag + régénération. Cohérent avec le modèle chargeback ISO8583 existant.
+- `parse()` sans `trim()` — les espaces de fin font partie de la longueur fixe.
+- Warning Kafka `UnknownHostException` = cosmétique (HTTP fonctionne).
 
-## Next Steps
-1. Commit and push V050 + figeage changes.
-2. Obtain official type 40 layout for CP50 transaction lines.
-3. Capture upstream source for `slipNumber` (facturette) — currently null, uses fallback `000001`.
-4. Implement `representationFlag` population in the dispute/chargeback lifecycle.
-5. Resolve file‑naming convention (CPMPAY23 vs CP50bbbbb) per bank contract.
+## Next Steps (when external inputs arrive)
+1. Implémenter type 40 CP50 dès que la spec SMT/BPC arrive.
+2. Implémenter le 3e format SMT (spec client).
+3. Configurer le préfixe de nommage par participant si le contrat l'exige.
+4. Brancher la source du `slipNumber` (facturette) si une upstream devient disponible.
+5. Push sur origin si demandé.
 
 ## Critical Context
-- Last migration is `V050__freeze_smt_fields.sql`.
-- `JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.11` must be set before running Maven (project requires Java 21, only Java 17 is the default on this machine).
-- Backend currently has **326 tests passing**; frontend `npm run build` passes.
-- `SecurityConfig.java` uses `AntPathRequestMatcher` for `/api/v1/clearing/**` — no new route entries needed.
-- Format parameter currently accepts `CSV`, `ISO20022`, `COMPCONF`, `CP50`.
-- SMT bank codes are 5 digits (e.g. `12345`). The `bankCode` field on `Participant` is `String(5)`.
-- `Participant.codeFaconnier` defaults to `"222222"` but is individually configurable per participant.
-- Clearing file upload works with JSON body `{ "content": "...", "format": "..." }`.
-- Old records (pre-V050) have NULL frozen fields — fallback values used at generation (logged once per `warn`).
+- Dernière migration : `V051__add_dispute_id_to_clearing_records.sql`.
+- `JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.11` avant tout `mvn`.
+- Backend : 326 tests. Frontend : `npm run build` OK.
+- `SecurityConfig` utilise `AntPathRequestMatcher` pour `/api/v1/clearing/**` et `/api/v1/disputes/**`.
+- Format parameter accepte : `CSV`, `ISO20022`, `COMPCONF`, `CP50`.
+- `Participant.codeFaconnier` : défaut `"222222"`, modifiable par participant.
+- Old records (pre-V050) : champs figés NULL → fallback + `warn` unique à la génération.
 
 ## Relevant Files
-- `backend/.../service/clearing/smt/SmtFieldFormatter.java`
-- `backend/.../service/clearing/smt/CompconfFileService.java`
-- `backend/.../service/clearing/smt/Cp50FileService.java`
-- `backend/.../service/clearing/SettlementFileService.java`
-- `backend/.../service/clearing/ClearingService.java` (ClearingData inner class + figeage)
-- `backend/.../controller/clearing/ClearingController.java`
-- `backend/.../model/Participant.java` (+ `codeFaconnier`)
-- `backend/.../model/clearing/ClearingRecord.java` (+ `cardBrand`, `tradingName`, `slipNumber`, `representationFlag`)
-- `backend/.../repository/clearing/ClearingRecordRepository.java`
-- `backend/.../service/SwitchCore.java` (enrichissement ClearingData)
-- `backend/.../repository/BinTableRepository.java` (BIN lookup pour cardBrand)
-- `backend/.../event/*`
-- `backend/src/main/resources/db/migration/V049__smt_clearing_fields.sql`
-- `backend/src/main/resources/db/migration/V050__freeze_smt_fields.sql`
-- `frontend/src/pages/Clearing.tsx`
-- `frontend/src/i18n/en.json`
-- `frontend/src/i18n/fr.json`
-- `frontend/e2e/19-clearing-files.spec.ts`
+### SMT core
+- `service/clearing/smt/SmtFieldFormatter.java`
+- `service/clearing/smt/CompconfFileService.java`
+- `service/clearing/smt/Cp50FileService.java`
+- `service/clearing/SettlementFileService.java`
+- `service/clearing/ClearingService.java` (ClearingData + figeage)
+- `service/SwitchCore.java` (enrichissement ClearingData)
+
+### Models
+- `model/clearing/ClearingRecord.java` (V049–V051 fields)
+- `model/Participant.java` (+ `bankCode`, `codeFaconnier`)
+- `model/BinTable.java` (BIN → cardBrand lookup)
+- `model/dispute/Dispute.java` (cycle + REPRESENTMENT status)
+
+### Repositories
+- `repository/clearing/ClearingRecordRepository.java`
+- `repository/BinTableRepository.java`
+
+### Dispute / représentation
+- `service/dispute/DisputeService.java` (clone sur REPRESENTMENT)
+- `controller/dispute/DisputeController.java`
+
+### Migrations
+- `resources/db/migration/V049__smt_clearing_fields.sql`
+- `resources/db/migration/V050__freeze_smt_fields.sql`
+- `resources/db/migration/V051__add_dispute_id_to_clearing_records.sql`
+
+### Frontend
+- `pages/Clearing.tsx` (format selector)
+- `i18n/en.json`, `i18n/fr.json`
+- `e2e/19-clearing-files.spec.ts`

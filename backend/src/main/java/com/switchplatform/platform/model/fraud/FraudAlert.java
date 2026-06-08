@@ -14,7 +14,6 @@ import java.util.UUID;
 public class FraudAlert {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "card_id", nullable = false)

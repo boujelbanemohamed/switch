@@ -124,7 +124,6 @@ public class AuthUserService implements UserDetailsService {
         }
 
         AuthUser user = AuthUser.builder()
-                .id(UUID.randomUUID())
                 .username(username)
                 .password(passwordEncoder.encode(password))
                 .email(email)

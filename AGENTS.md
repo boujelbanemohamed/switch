@@ -72,6 +72,22 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - **i18n** : EN/FR for loyalty section.
 - **Tests** : 379 backend pass, `npm run build` frontend OK.
 
+### ✅ Done — Module 3/3 : Transfers A2A / P2P (V059)
+- **V059 Migration** : `transfers` + `transfer_limits` + `transfer_beneficiaries` + seed `TRANSFER_FEE_INCOME` ledger (INCOME) et `SETTLEMENT_MAIN` lien ledger.
+- **JPA models** : Transfer, TransferLimit, TransferBeneficiary + 3 repos.
+- **TransferConfig** : `FeeConfig` fixed+percent pour A2A (`a2a.fixed=5`, `a2a.percent=0`) et P2P (`p2p.fixed=2`, `p2p.percent=0`).
+- **TransferService** : `executeA2A()` / `executeP2P()` / `reverseTransfer()` + `resolvePanToAccount()` (suffix → card → cardholder → accounts.get(0)) + `resolveDestinationRef()` (UUID ou account_number) + `validateAccounts()` + `computeFee()` + `checkLimits()` + `postFeeLedger()`.
+- **Atomicité transactionnelle** : `@Transactional` sur executeA2A + executeP2P — tout `RuntimeException` déclenche rollback complet (vérifié runtime PostgreSQL).
+- **Contrôle balance** : `source.getAvailableBalance().compareTo(totalDebit) < 0` avant débit.
+- **Ledger fees** : partie double `TRANSFER_FEE_INCOME` (INCOME) ↔ `SETTLEMENT_MAIN` (LIABILITY).
+- **Controller** : 5 endpoints `POST /api/v1/transfers/{a2a,p2p,{id}/reverse,...}`.
+- **Security** : `AntPathRequestMatcher` POST = ADMIN/OPERATOR, GET = +ANALYST.
+- **Frontend** : page `Transfers.tsx` avec forms A2A (comptes) + P2P (suffixes cartes), transfer history, limits. Route `/transfers`, nav ícone.
+- **Tests** : 12 tests TransferServiceTest (A2A nominal, solde insuffisant, currency mismatch, limits, destination inactive, reverse, P2P nominal, source=destination, fees).
+- **Runtime A2A validé** : nominal (A=50000→49695, B=15000→15300, fee 5 posté TRANSFER_FEE_INCOME), atomicité dest absente (A=49695 inchangé), atomicité dest INACTIVE (A=49695 inchangé — preuve rollback runtime).
+- **Runtime P2P validé** : cross‑account (source suffix 1234 → dst UUID → 50 TND + fee 2 TND → COMPLETED), source=destination rejet (400), atomicité dest INACTIVE (rollback prouvé).
+- **Total** : 393 tests backend pass, `npm run build` frontend OK.
+
 ## Key Decisions
 - **Figage (V050)** : champs SMT figés à processClearing(), pas à la génération.
 - **Représentation = clone ClearingRecord** (pas flag), idempotent via findByDisputeId.
@@ -89,21 +105,27 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - **Crédit holds** : `CreditLine.holdAmount` (pas CardAccount.holdAmount) pour éviter interférence avec le flux débit.
 - **Migration crédit** : V055_\_credit_accounts.sql (après V054__set_foreign_participants_domestic_false.sql).
 - **AccountType.CREDIT** : existe déjà dans CardAccount — pas de migration d'enum nécessaire.
+- **Fees A2A/P2P** : configurées dans `application.yml` via `feeConfig.a2a.fixed=5, percent=0` / `feeConfig.p2p.fixed=2, percent=0`.
+- **Ledger fees** : `TRANSFER_FEE_INCOME` (INCOME) ↔ `SETTLEMENT_MAIN` (LIABILITY) en partie double.
+- **Atomicité transfers** : `@Transactional` rollback complet sur `RuntimeException` — vérifié runtime avec destination UUID inexistante et destination INACTIVE.
+- **P2P résolution PAN** : suffix → `CardRepository.findByCardNumberSuffix()` → `CardAccountRepository.findByCardholderId()` → `accounts.get(0)`. Simplifié en attendant HMAC hash complet.
+- **Card creation bug connu** : `@GeneratedValue(GenerationType.UUID)` sur `Card.id` + `card.setId(UUID.randomUUID())` manuel dans `createCard()` → `isNew()` retourne false → `merge()` appelé → `StaleObjectStateException`. Fix : supprimer `@GeneratedValue` ou retirer le setId manuel.
 
 ## Next Steps
-1. **Démarrer backend** : `mvn spring-boot:run -Dspring-boot.run.profiles=dev` avec variables d'env, smoke test crédit (2xx attendu avec token).
-2. **Démonstration concrète** : ouvrir ligne crédit → autoriser → achat → générer relevé → montrer intérêts + min payment.
-3. **Commit Module 1/3 Crédit** : après validation utilisateur.
-4. **Module 3/3** (à définir) : probablement prélèvements automatiques / SEPA / SCT.
-5. **À l'arrivée des specs** : type 40, 3e format, nommage fichier, slipNumber, Visa BASE II TC 05 TCR 0 (ARN + BID a compléter), Mastercard IPM, layout BCT FCOMPSMT.
+1. **Fix card creation API** : `StaleObjectStateException` dans `CardService.createCard()` due à `@GeneratedValue` + setId manuel.
+2. **Démarrer backend** : `mvn spring-boot:run -Dspring-boot.run.profiles=dev` avec variables d'env.
+3. **Démonstration concrète** : ouvrir ligne crédit → autoriser → achat → générer relevé → montrer intérêts + min payment.
+4. **À l'arrivée des specs** : type 40, 3e format, nommage fichier, slipNumber, Visa BASE II TC 05 TCR 0 (ARN + BID a compléter), Mastercard IPM, layout BCT FCOMPSMT.
 
 ## Critical Context
-- **Dernière migration** : V056__loyalty_programs.sql.
+- **Dernière migration** : V059__transfers.sql.
 - **JAVA_HOME** : /opt/homebrew/Cellar/openjdk@21/21.0.11.
-- **Backend** : 379 tests passent (366 orig. + 13 crédit + loyalty). Frontend : npm run build OK.
+- **Backend** : 393 tests passent (366 orig. + 13 crédit + loyalty + 12 transfers). Frontend : npm run build OK.
 - **Comptes ledger crédit** : CREDIT_RECEIVABLE (ASSET), CREDIT_FUNDING (LIABILITY) — seedés dans V055.
+- **Comptes ledger fees** : TRANSFER_FEE_INCOME (INCOME), SETTLEMENT_MAIN (LIABILITY) — seedés dans V059.
 - **AccountType.CREDIT** : existe déjà dans `CardAccount`, pas de migration enum.
 - **Visa BASE II** : DRAFT phase 1 commit `21338dc` sur `origin/main`, en pause.
+- **Card creation bug** : `@GeneratedValue` + manual `setId()` → `StaleObjectStateException`. Ne pas créer de cartes via API tant que non corrigé.
 - Kafka UnknownHostException cosmétique — HTTP fonctionne.
 - Serveur port 8085 : `mvn spring-boot:run -Dspring-boot.run.profiles=dev` avec env vars `PCI_ENCRYPTION_KEY`, `PAN_HASH_KEY`, `JWT_SECRET`, `PIN_ENCRYPTION_KEY`, `CORS_ALLOWED_ORIGINS`.
 
@@ -176,3 +198,24 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - `frontend/src/components/Layout.tsx` : nav Loyalty
 - `frontend/src/i18n/en.json` : loyalty section
 - `frontend/src/i18n/fr.json` : loyalty section
+
+### MODULE 3/3 — Transfers A2A / P2P
+- `resources/db/migration/V059__transfers.sql` : 3 tables + 2 ledgers seeds
+- `model/transfer/Transfer.java` : JPA entity with type/amount/fee/status/source/destination
+- `model/transfer/TransferLimit.java` : per-transfer-type daily limits
+- `model/transfer/TransferBeneficiary.java` : saved beneficiaries
+- `repository/transfer/TransferRepository.java`
+- `repository/transfer/TransferLimitRepository.java`
+- `repository/transfer/TransferBeneficiaryRepository.java`
+- `config/TransferConfig.java` : FeeConfig (fixed + percent)
+- `service/transfer/TransferService.java` : executeA2A/executeP2P/reverseTransfer + fee/ledger/limits
+- `controller/transfer/TransferController.java` : 5 endpoints `/api/v1/transfers`
+- `frontend/src/pages/Transfers.tsx` : A2A + P2P forms + history + limits
+- `frontend/src/types/transfers.ts` : transfer interfaces
+- `frontend/src/types/index.ts` : + transfer types
+- `frontend/src/services/api.ts` : transfers.* API calls
+- `frontend/src/App.tsx` : route `/transfers`
+- `frontend/src/components/Layout.tsx` : nav IconArrowsLeftRight
+- `frontend/src/i18n/en.json` : transfer section
+- `frontend/src/i18n/fr.json` : transfer section
+- `test/.../transfer/TransferServiceTest.java` : 12 tests (A2A/P2P, limits, fees, atomicity, reverse)

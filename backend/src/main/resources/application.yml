@@ -117,3 +117,15 @@ switch:
       secret: ${JWT_SECRET}
       access-token-expiration: 3600000
       refresh-token-expiration: 86400000
+
+transfer:
+  a2a:
+    fixed: 5.00
+    percent: 0.00
+    currency: TND
+    description: "A2A transfer fee"
+  p2p:
+    fixed: 2.00
+    percent: 0.00
+    currency: TND
+    description: "P2P transfer fee"

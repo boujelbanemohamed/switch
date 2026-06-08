@@ -34,7 +34,8 @@
     "loyalty": "Loyalty",
     "cof": "COF / Recurring",
     "fx": "FX Rates",
-    "regulatory": "Regulatory Reports"
+    "regulatory": "Regulatory Reports",
+    "transfers": "Transfers"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -1184,5 +1185,38 @@
     "inactive": "Inactive",
     "suspended": "Suspended",
     "benefits": "Benefits"
+  },
+  "transfers": {
+    "title": "Transfers",
+    "a2a": "A2A Transfer",
+    "p2p": "P2P Transfer",
+    "sourceAccount": "Source Account",
+    "destAccount": "Destination Account",
+    "sourcePan": "Source Card Number",
+    "destRef": "Destination (UUID / RIB)",
+    "amount": "Amount",
+    "currency": "Currency",
+    "channel": "Channel",
+    "execute": "Execute Transfer",
+    "reverse": "Reverse",
+    "transferType": "Type",
+    "fee": "Fee",
+    "status": "Status",
+    "date": "Date",
+    "completed": "Completed",
+    "reversed": "Reversed",
+    "failed": "Failed",
+    "history": "Transfer History",
+    "noTransfers": "No transfers yet.",
+    "limits": "Transfer Limits",
+    "perTransferMax": "Max per Transfer",
+    "dailyMaxAmount": "Daily Max Amount",
+    "dailyMaxCount": "Daily Max Count",
+    "beneficiaries": "Beneficiaries",
+    "alias": "Alias",
+    "beneficiaryType": "Type",
+    "accountReference": "Reference",
+    "addBeneficiary": "Add Beneficiary",
+    "reasonPlaceholder": "Reason for reversal"
   }
 }

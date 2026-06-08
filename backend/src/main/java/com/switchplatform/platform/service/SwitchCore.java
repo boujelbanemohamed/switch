@@ -705,6 +705,7 @@ public class SwitchCore {
                 case "02" -> "COMP";
                 case "20" -> "REFD";
                 case "21" -> "VOID";
+                case "40" -> "XFER";
                 default -> "OTHR";
             };
         }

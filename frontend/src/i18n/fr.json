@@ -34,7 +34,8 @@
     "loyalty": "Fidélité",
     "cof": "COF / Récurrent",
     "fx": "Taux de change",
-    "regulatory": "Rapports réglementaires"
+    "regulatory": "Rapports réglementaires",
+    "transfers": "Virements"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -1174,5 +1175,38 @@
     "inactive": "Inactif",
     "suspended": "Suspendu",
     "benefits": "Avantages"
+  },
+  "transfers": {
+    "title": "Virements",
+    "a2a": "Virement A2A",
+    "p2p": "Virement P2P",
+    "sourceAccount": "Compte source",
+    "destAccount": "Compte destinataire",
+    "sourcePan": "N° de carte source",
+    "destRef": "Destinataire (UUID / RIB)",
+    "amount": "Montant",
+    "currency": "Devise",
+    "channel": "Canal",
+    "execute": "Exécuter",
+    "reverse": "Annuler",
+    "transferType": "Type",
+    "fee": "Frais",
+    "status": "Statut",
+    "date": "Date",
+    "completed": "Effectué",
+    "reversed": "Annulé",
+    "failed": "Échoué",
+    "history": "Historique",
+    "noTransfers": "Aucun virement.",
+    "limits": "Plafonds",
+    "perTransferMax": "Max par virement",
+    "dailyMaxAmount": "Plafond journalier",
+    "dailyMaxCount": "Nb max par jour",
+    "beneficiaries": "Bénéficiaires",
+    "alias": "Alias",
+    "beneficiaryType": "Type",
+    "accountReference": "Référence",
+    "addBeneficiary": "Ajouter",
+    "reasonPlaceholder": "Motif d'annulation"
   }
 }

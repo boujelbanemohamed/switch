@@ -754,6 +754,49 @@ export interface LoyaltyReward {
   createdAt: string;
 }
 
+// Transfers
+export interface Transfer {
+  id: string;
+  transferType: 'A2A' | 'P2P';
+  sourceAccountId?: string;
+  destinationAccountId?: string;
+  sourceReference?: string;
+  destinationReference?: string;
+  amount: number;
+  currencyCode: string;
+  feeAmount: number;
+  feeCurrency?: string;
+  ledgerJournalId?: string;
+  reversedJournalId?: string;
+  originalTransferId?: string;
+  channel: string;
+  status: string;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface TransferLimit {
+  id: string;
+  transferType: string;
+  perTransferMax: number;
+  dailyMaxAmount: number;
+  dailyMaxCount: number;
+  currencyCode: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface TransferBeneficiary {
+  id: string;
+  cardholderId: string;
+  beneficiaryType: string;
+  accountReference: string;
+  alias?: string;
+  status: string;
+  createdAt: string;
+}
+
 export interface LoyaltyRedemption {
   id: string;
   membershipId: string;

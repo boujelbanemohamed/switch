@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Repeat, Building2, Network, GitCompare,
   CreditCard, Store, ShieldCheck, Siren, DollarSign, Settings, ShoppingCart,
   LogIn, User, Users as UsersIcon, Briefcase, Scale, Timer, GitMerge, Receipt, Layers, CreditCard as VirtualCardIcon, IdCard,
-  FileText, Sliders, Percent, Radio, Repeat2, ArrowLeftRight, FileBarChart, HandCoins,
+  FileText, Sliders, Percent, Radio, Repeat2, ArrowLeftRight, FileBarChart, HandCoins, Send,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -51,6 +51,7 @@ export function Layout({ children }: LayoutProps) {
     { to: '/interchange-fees', icon: Percent, label: t('nav.interchangeFees'), show: canSeeAnalyst },
     { to: '/credit', icon: HandCoins, label: t('nav.credit'), show: canSeeAdmin },
     { to: '/loyalty', icon: HandCoins, label: t('nav.loyalty'), show: canSeeAdmin },
+    { to: '/transfers', icon: Send, label: t('nav.transfers'), show: canSeeAdmin },
     { to: '/stand-in', icon: Radio, label: t('nav.standIn'), show: canSeeAdmin },
     { to: '/cof', icon: Repeat2, label: t('nav.cof'), show: canSeeAdmin },
     { to: '/fx-rates', icon: ArrowLeftRight, label: t('nav.fx'), show: canSeeAnalyst },

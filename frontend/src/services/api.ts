@@ -628,4 +628,29 @@ export const api = {
         request<import('../types').LoyaltyRedemption[]>(`/loyalty/memberships/${id}/redemptions`),
     },
   },
+  transfers: {
+    executeA2A: (data: { sourceAccountId: string; destinationAccountId: string; amount: number; currencyCode: string; channel: string }) =>
+      request<import('../types').Transfer>('/transfers/a2a', { method: 'POST', body: JSON.stringify(data) }),
+    executeP2P: (data: { sourcePan: string; destinationRef: string; amount: number; currencyCode: string; channel: string }) =>
+      request<import('../types').Transfer>('/transfers/p2p', { method: 'POST', body: JSON.stringify(data) }),
+    reverse: (id: string, reason: string) =>
+      request<import('../types').Transfer>(`/transfers/${id}/reverse`, { method: 'POST', body: JSON.stringify({ reason }) }),
+    list: (accountId?: string) =>
+      request<import('../types').Transfer[]>(accountId ? `/transfers?accountId=${accountId}` : '/transfers'),
+    get: (id: string) =>
+      request<import('../types').Transfer>(`/transfers/${id}`),
+    limits: {
+      list: () => request<import('../types').TransferLimit[]>('/transfers/limits'),
+      update: (id: string, data: Partial<import('../types').TransferLimit>) =>
+        request<import('../types').TransferLimit>(`/transfers/limits/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    },
+    beneficiaries: {
+      list: (cardholderId: string) =>
+        request<import('../types').TransferBeneficiary[]>(`/transfers/beneficiaries?cardholderId=${cardholderId}`),
+      create: (data: { cardholderId: string; beneficiaryType: string; accountReference: string; alias?: string }) =>
+        request<import('../types').TransferBeneficiary>('/transfers/beneficiaries', { method: 'POST', body: JSON.stringify(data) }),
+      delete: (id: string) =>
+        request<void>(`/transfers/beneficiaries/${id}`, { method: 'DELETE' }),
+    },
+  },
 };

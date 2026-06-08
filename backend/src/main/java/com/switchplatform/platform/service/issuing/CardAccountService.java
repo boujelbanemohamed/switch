@@ -24,9 +24,6 @@ public class CardAccountService {
 
     @Transactional
     public CardAccount createAccount(CardAccount account) {
-        if (account.getId() == null) {
-            account.setId(UUID.randomUUID());
-        }
         if (account.getBalance() == null) {
             account.setBalance(BigDecimal.ZERO);
         }

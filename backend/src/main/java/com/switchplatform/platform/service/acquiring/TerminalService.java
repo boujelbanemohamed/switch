@@ -27,9 +27,6 @@ public class TerminalService {
         if (terminalRepository.existsByTerminalId(terminal.getTerminalId())) {
             throw new IllegalArgumentException("terminalId already exists: " + terminal.getTerminalId());
         }
-        if (terminal.getId() == null) {
-            terminal.setId(UUID.randomUUID());
-        }
         terminal.setStatus(Terminal.TerminalStatus.ACTIVE);
         terminal.setCreatedAt(OffsetDateTime.now());
         terminal.setUpdatedAt(OffsetDateTime.now());

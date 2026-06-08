@@ -161,9 +161,6 @@ public class MerchantService {
 
     @Transactional
     public void addMdrPlan(MdrPlan plan) {
-        if (plan.getId() == null) {
-            plan.setId(UUID.randomUUID());
-        }
         mdrPlanRepository.save(plan);
     }
 

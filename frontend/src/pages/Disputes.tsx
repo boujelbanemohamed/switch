@@ -3,8 +3,22 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { Dispute, DisputeEvidence, DisputeTimeline } from '../types';
 import { SectionHeader } from '../components/SectionHeader';
+import { DisputesHelp } from '../components/DisputesHelp';
 
 type Tab = 'all' | 'open' | 'resolved';
+
+const STATUS_LABELS: Record<string, string> = {
+  OPEN: 'Ouvert',
+  UNDER_REVIEW: 'Examen',
+  EVIDENCE_REQUESTED: 'Demander preuves',
+  EVIDENCE_SUBMITTED: 'Preuves soumises',
+  REPRESENTMENT: 'Représentation',
+  PRE_ARBITRATION: 'Pré-arbitrage',
+  ARBITRATION: 'Arbitrage',
+  WON: 'Gagné',
+  LOST: 'Perdu',
+  WITHDRAWN: 'Retiré',
+};
 
 const STATUS_COLORS: Record<string, string> = {
   OPEN: '#f59e0b',
@@ -118,7 +132,7 @@ export function Disputes() {
 
   function statusBadge(status: string) {
     const color = STATUS_COLORS[status] || '#6b7280';
-    return <span style={{ background: color + '20', color, padding: '2px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600 }}>{status}</span>;
+    return <span style={{ background: color + '20', color, padding: '2px 10px', borderRadius: 12, fontSize: 12, fontWeight: 600 }}>{STATUS_LABELS[status] || status}</span>;
   }
 
   const allowedTransitions: Record<string, string[]> = {
@@ -135,9 +149,12 @@ export function Disputes() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <h2 style={{ fontSize: 24, fontWeight: 700 }}>{t('disputes.title')}</h2>
-        <button onClick={() => setShowCreate(true)} style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#3b82f6', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
-          {t('disputes.openNew')}
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <DisputesHelp />
+          <button onClick={() => setShowCreate(true)} style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: '#3b82f6', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+            {t('disputes.openNew')}
+          </button>
+        </div>
       </div>
 
       <SectionHeader sectionKey="disputes" />
@@ -189,7 +206,7 @@ export function Disputes() {
                   <button key={s} onClick={() => transitionStatus(s)} style={{
                     padding: '6px 14px', borderRadius: 6, border: 'none', background: STATUS_COLORS[s] + '20',
                     color: STATUS_COLORS[s], fontWeight: 600, fontSize: 12, cursor: 'pointer',
-                  }}>{s}</button>
+                  }}>{STATUS_LABELS[s] || s}</button>
                 ))}
               </div>
               <input placeholder={t('disputes.transitionNotes')} value={transitionNotes} onChange={e => setTransitionNotes(e.target.value)}

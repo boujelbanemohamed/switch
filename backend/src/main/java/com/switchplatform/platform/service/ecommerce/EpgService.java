@@ -179,10 +179,6 @@ public class EpgService {
                 .updatedAt(OffsetDateTime.now())
                 .build();
 
-        if (config.getId() == null) {
-            config.setId(UUID.randomUUID());
-        }
-
         epgMerchantConfigRepository.save(config);
         return config;
     }

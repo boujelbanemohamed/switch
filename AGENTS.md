@@ -17,6 +17,11 @@ Compléter POS / Acquiring (mode d'entrée, cycle transactionnel, vues backoffic
 - Crédit frontend : `const data = await api.xxx()` sans destructuring `{ data }`. Les routes GET = ADMIN/OPERATOR/ANALYST, écritures = ADMIN/OPERATOR. `AntPathRequestMatcher` pour `/api/v1/credit/**`.
 - Crédit : valeurs par défaut proposées (APR 18%, min 5%/10 TND, grace period) — pas de décision métier sans validation client. Conformité réglementaire (taux d'usure, disclosures) hors scope technique.
 
+## Patterns interdits (anti-régression)
+
+- **`requestMatchers(HttpMethod, String)` dans SecurityConfig** → utiliser `requestMatchers(new AntPathRequestMatcher(path, method))` impérativement. La version `String` crée un `MvcRequestMatcher` qui **ne match que les routes avec un handler Spring MVC**. Toute route sans controller (forward vers `/error`, 404, etc.) reçoit un 401/403 fantôme.
+- **`.id(UUID.randomUUID())` / `setId(UUID.randomUUID())` sur une entité `@GeneratedValue`** → laisser Hibernate générer l'ID. Le set manuel fait croire à Hibernate que l'entité est *détachée* (existe déjà) plutôt que *nouvelle* → `merge()` au lieu de `persist()` → `StaleObjectStateException` au `save()`.
+
 ## Progress
 
 ### ✅ Done — P1–P6

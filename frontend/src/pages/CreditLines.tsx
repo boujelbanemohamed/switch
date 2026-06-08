@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { CreditLine, CreditStatement, InstallmentPlan, InstallmentEntry, CardAccount } from '../types';
+import { CreditLinesHelp, CREDIT_LINE_LABELS, STATEMENT_LABELS, INSTALLMENT_LABELS } from '../components/CreditLinesHelp';
 
 export function CreditLines() {
   const { t } = useTranslation();
@@ -127,7 +128,10 @@ export function CreditLines() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 700 }}>{t('credit.title')}</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700 }}>{t('credit.title')}</h2>
+          <CreditLinesHelp />
+        </div>
         <button onClick={() => setShowOpenModal(true)} style={{
           padding: '10px 20px', borderRadius: 8, border: 'none',
           background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600,
@@ -167,7 +171,7 @@ export function CreditLines() {
             </div>
             <div>
               <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{t('common.status')}</p>
-              <p style={{ fontSize: 18, fontWeight: 700 }}>{line.status}</p>
+              <p style={{ fontSize: 18, fontWeight: 700 }}>{CREDIT_LINE_LABELS[line.status] ?? line.status}</p>
             </div>
           </div>
         ))}
@@ -244,7 +248,7 @@ export function CreditLines() {
                             background: s.status === 'PAID' ? '#22c55e33' : s.status === 'OVERDUE' ? '#ef444433' : '#3b82f633',
                             color: s.status === 'PAID' ? '#22c55e' : s.status === 'OVERDUE' ? '#ef4444' : '#3b82f6',
                             padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
-                          }}>{s.status}</span>
+                          }}>{STATEMENT_LABELS[s.status] ?? s.status}</span>
                         </td>
                       </tr>
                     ))}
@@ -287,7 +291,7 @@ export function CreditLines() {
                     <div><p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{t('credit.installmentAmount')}</p><p style={{ fontWeight: 700 }}>{plan.installmentAmount}</p></div>
                     <div><p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{t('credit.count')}</p><p style={{ fontWeight: 700 }}>{plan.remainingCount}/{plan.installmentCount}</p></div>
                     <div><p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{t('credit.fee')}</p><p style={{ fontWeight: 700 }}>{plan.feeAmount}</p></div>
-                    <div><p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{t('common.status')}</p><p style={{ fontWeight: 700 }}>{plan.status}</p></div>
+                    <div><p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{t('common.status')}</p><p style={{ fontWeight: 700 }}>{INSTALLMENT_LABELS[plan.status] ?? plan.status}</p></div>
                   </div>
                   {entries.length > 0 && entries[0].installmentPlanId === plan.id && (
                     <div>

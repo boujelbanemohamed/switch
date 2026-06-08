@@ -65,6 +65,11 @@ public class LoyaltyController {
 
     // ─── Memberships ─────────────────────────────────────────────────────────
 
+    @GetMapping("/memberships")
+    public ResponseEntity<List<LoyaltyMembership>> listAllMemberships() {
+        return ResponseEntity.ok(loyaltyService.listAllMemberships());
+    }
+
     @PostMapping("/enroll")
     public ResponseEntity<LoyaltyMembership> enroll(@Valid @RequestBody EnrollRequest req) {
         return ResponseEntity.ok(loyaltyService.enroll(req.cardholderId, req.programId));

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { SectionHeader } from '../components/SectionHeader';
+import { NettingHelp, SETTLEMENT_LABELS } from '../components/NettingHelp';
 import { DollarSign, ArrowUpCircle, ArrowDownCircle, MinusCircle, RefreshCw } from 'lucide-react';
 
 interface NettingSession {
@@ -79,7 +80,10 @@ export function Netting() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t('netting.title')}</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold">{t('netting.title')}</h1>
+          <NettingHelp />
+        </div>
         <div className="flex gap-2">
           <button onClick={handleCalculate}
             className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">
@@ -146,7 +150,7 @@ export function Netting() {
                         p.settlementStatus === 'SETTLED' ? 'bg-green-900/50 text-green-400' :
                         p.settlementStatus === 'PENDING' ? 'bg-yellow-900/50 text-yellow-400' :
                         'bg-gray-700 text-gray-400'
-                      }`}>{p.settlementStatus}</span>
+                      }`}>{SETTLEMENT_LABELS[p.settlementStatus] ?? p.settlementStatus}</span>
                     </td>
                   </tr>
                 ))}

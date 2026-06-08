@@ -17,6 +17,9 @@ Compléter POS / Acquiring (mode d'entrée, cycle transactionnel, vues backoffic
 - Crédit frontend : `const data = await api.xxx()` sans destructuring `{ data }`. Les routes GET = ADMIN/OPERATOR/ANALYST, écritures = ADMIN/OPERATOR. `AntPathRequestMatcher` pour `/api/v1/credit/**`.
 - Crédit : valeurs par défaut proposées (APR 18%, min 5%/10 TND, grace period) — pas de décision métier sans validation client. Conformité réglementaire (taux d'usure, disclosures) hors scope technique.
 
+## Bugs corrigés (Lot 1)
+- **Loyalty loadMemberships** : 3 causes cumulées — (1) frontend appelait `listByCardholder('all')` mais l'API exige un UUID, (2) aucun endpoint backend ne listait toutes les adhésions, (3) `loadMemberships()` n'était déclenché par aucun `useEffect`. Fix : ajout de `GET /api/v1/loyalty/memberships` + `api.loyalty.memberships.list()` + `useEffect([activeTab])` pour charger les adhésions au clic sur l'onglet.
+
 ## Patterns interdits (anti-régression)
 
 - **`requestMatchers(HttpMethod, String)` dans SecurityConfig** → utiliser `requestMatchers(new AntPathRequestMatcher(path, method))` impérativement. La version `String` crée un `MvcRequestMatcher` qui **ne match que les routes avec un handler Spring MVC**. Toute route sans controller (forward vers `/error`, 404, etc.) reçoit un 401/403 fantôme.

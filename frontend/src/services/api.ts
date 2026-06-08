@@ -611,6 +611,8 @@ export const api = {
         request<import('../types').LoyaltyMembership>('/loyalty/enroll', { method: 'POST', body: JSON.stringify({ cardholderId, programId }) }),
       get: (cardholderId: string, programId: string) =>
         request<import('../types').LoyaltyMembership>(`/loyalty/cardholders/${cardholderId}/memberships/${programId}`),
+      list: () =>
+        request<import('../types').LoyaltyMembership[]>('/loyalty/memberships'),
       listByCardholder: (cardholderId: string) =>
         request<import('../types').LoyaltyMembership[]>(`/loyalty/cardholders/${cardholderId}/memberships`),
       suspend: (id: string) =>

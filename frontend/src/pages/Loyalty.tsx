@@ -5,6 +5,7 @@ import type {
   LoyaltyProgram, LoyaltyTier, LoyaltyMembership,
   LoyaltyTransaction, LoyaltyReward, LoyaltyRedemption,
 } from '../types';
+import { LoyaltyHelp, TX_TYPE_LABELS, REWARD_STATUS_LABELS, REDEMPTION_STATUS_LABELS } from '../components/LoyaltyHelp';
 
 const styles: Record<string, React.CSSProperties> = {
   page: { padding: 24, maxWidth: 1200, margin: '0 auto' },
@@ -100,7 +101,7 @@ export function Loyalty() {
   }, []);
 
   const loadMemberships = useCallback(async () => {
-    try { setMemberships(await api.loyalty.memberships.listByCardholder('all')); } catch { setMemberships([]); }
+    try { setMemberships(await api.loyalty.memberships.list()); } catch { setMemberships([]); }
   }, []);
 
   const loadTransactions = useCallback(async (mid: string) => {
@@ -112,6 +113,8 @@ export function Loyalty() {
   }, []);
 
   useEffect(() => { loadPrograms(); }, [loadPrograms]);
+
+  useEffect(() => { if (activeTab === 'memberships') loadMemberships(); }, [activeTab, loadMemberships]);
 
   useEffect(() => {
     if (selectedProgram) {
@@ -204,7 +207,10 @@ export function Loyalty() {
 
   return (
     <div style={styles.page}>
-      <h1 style={styles.header}>{t('loyalty.title')}</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', margin: 0 }}>{t('loyalty.title')}</h1>
+        <LoyaltyHelp />
+      </div>
 
       <div style={styles.tabs}>
         {(['programs', 'memberships', 'rewards'] as const).map(tab => (
@@ -309,7 +315,7 @@ export function Loyalty() {
                                 ...styles.badge,
                                 background: tx.type === 'EARN' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
                                 color: tx.type === 'EARN' ? '#22c55e' : '#ef4444',
-                              }}>{tx.type}</span>
+                              }}>{TX_TYPE_LABELS[tx.type] ?? tx.type}</span>
                             </td>
                             <td style={styles.td}>{tx.type === 'EARN' ? '+' : ''}{tx.points}</td>
                             <td style={styles.td}>{tx.description || '-'}</td>
@@ -335,7 +341,7 @@ export function Loyalty() {
                           <tr key={r.id}>
                             <td style={styles.td}>{r.pointsSpent}</td>
                             <td style={styles.td}>{r.balanceCreditAmount ? `${r.balanceCreditAmount} TND` : '-'}</td>
-                            <td style={styles.td}>{r.status}</td>
+                            <td style={styles.td}>{REDEMPTION_STATUS_LABELS[r.status] ?? r.status}</td>
                             <td style={styles.td}>{new Date(r.createdAt).toLocaleDateString()}</td>
                           </tr>
                         ))}
@@ -366,7 +372,7 @@ export function Loyalty() {
                       ...styles.badge,
                       background: r.status === 'ACTIVE' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
                       color: r.status === 'ACTIVE' ? '#22c55e' : '#ef4444',
-                    }}>{r.status}</span>
+                    }}>{REWARD_STATUS_LABELS[r.status] ?? r.status}</span>
                   </div>
                 </div>
               </div>

@@ -11,6 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +56,15 @@ public class TransferController {
         String reason = body.getOrDefault("reason", "Manual reversal");
         Transfer result = transferService.reverseTransfer(id, reason);
         return ResponseEntity.ok(result);
+    }
+
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> listAll(Pageable pageable) {
+        List<Transfer> transfers = transferRepository.findAll(
+                PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                        Sort.by(Sort.Direction.DESC, "createdAt"))
+        ).getContent();
+        return ResponseEntity.ok(Map.of("content", transfers));
     }
 
     @GetMapping("/{id}")

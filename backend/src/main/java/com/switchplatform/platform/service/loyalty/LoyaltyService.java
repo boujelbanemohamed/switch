@@ -109,6 +109,10 @@ public class LoyaltyService {
         return membershipRepository.findByCardholderId(cardholderId);
     }
 
+    public List<LoyaltyMembership> listAllMemberships() {
+        return membershipRepository.findAll();
+    }
+
     @Transactional
     public LoyaltyMembership enroll(UUID cardholderId, UUID programId) {
         membershipRepository.findByCardholderIdAndProgramId(cardholderId, programId)

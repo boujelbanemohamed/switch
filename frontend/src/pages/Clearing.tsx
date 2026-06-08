@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { ClearingRecord, NettingRecord, ReconciliationResult, ReconciliationRecord } from '../types';
 import { SectionHeader } from '../components/SectionHeader';
+import { ClearingHelp, RECORD_LABELS, RECON_LABELS, SRC_LABELS } from '../components/ClearingHelp';
 
 export function Clearing() {
   const { t } = useTranslation();
@@ -47,7 +48,10 @@ export function Clearing() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('clearing.title')}</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('clearing.title')}</h2>
+        <ClearingHelp />
+      </div>
 
       <SectionHeader sectionKey="clearing" />
 
@@ -83,7 +87,7 @@ export function Clearing() {
                         color: r.status === 'CLEARED' ? '#22c55e' : r.status === 'DISPUTED' ? '#ef4444' : '#64748b',
                         padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
                       }}>
-                        {r.status}
+                        {RECORD_LABELS[r.status] ?? r.status}
                       </span>
                     </td>
                   </tr>
@@ -158,8 +162,8 @@ export function Clearing() {
                 <option value="ISO20022">{t('clearing.files.formatIso20022')}</option>
                 <option value="COMPCONF">{t('clearing.files.formatCompconf')}</option>
                 <option value="CP50">{t('clearing.files.formatCp50')}</option>
-                <option value="VISA">{t('clearing.files.formatVisa')}</option>
-                <option value="MASTERCARD">{t('clearing.files.formatMastercard')}</option>
+                <option value="VISA" disabled>{t('clearing.files.formatVisa')} (bientôt disponible)</option>
+                <option value="MASTERCARD" disabled>{t('clearing.files.formatMastercard')} (bientôt disponible)</option>
               </select>
             </div>
             <button onClick={async () => {
@@ -323,7 +327,7 @@ export function Clearing() {
                         color: r.status === 'MATCHED' ? '#22c55e' : r.status === 'PARTIALLY_MATCHED' ? '#f97316' : '#ef4444',
                         padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
                       }}>
-                        {r.status}
+                        {RECON_LABELS[r.status] ?? r.status}
                       </span>
                     </td>
                   </tr>

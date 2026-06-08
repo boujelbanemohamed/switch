@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
+import { TransfersHelp } from '../components/TransfersHelp';
 import type { Transfer, TransferLimit } from '../types';
 
 export function Transfers() {
@@ -34,7 +35,7 @@ export function Transfers() {
   async function loadTransfers() {
     try {
       const data = await api.transfers.list();
-      setTransfers(data);
+      setTransfers((data as any).content ?? data);
     } catch { /* ignore */ }
   }
 
@@ -108,7 +109,10 @@ export function Transfers() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 24 }}>{t('transfers.title')}</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 700 }}>{t('transfers.title')}</h2>
+        <TransfersHelp />
+      </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         {(['history', 'a2a', 'p2p', 'limits'] as const).map(tabKey => (

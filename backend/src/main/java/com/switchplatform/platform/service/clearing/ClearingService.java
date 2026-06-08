@@ -343,9 +343,6 @@ public class ClearingService {
                 .createdAt(OffsetDateTime.now())
                 .build();
 
-        if (report.getId() == null) {
-            report.setId(UUID.randomUUID());
-        }
         report = reconciliationRecordRepository.save(report);
         log.info("Created reconciliation report for participant {} on {}", participantId, date);
         return report;

@@ -226,9 +226,6 @@ public class DisputeService {
                 .disputeId(disputeId)
                 .build();
 
-        if (representation.getId() == null) {
-            representation.setId(UUID.randomUUID());
-        }
         clearingRecordRepository.save(representation);
         log.info("Representation clearing record created for dispute {}", disputeId);
     }

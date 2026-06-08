@@ -12,6 +12,11 @@ spring:
         request.timeout.ms: 2000
 
 switch:
+  security:
+    encryption:
+      key: ${PCI_ENCRYPTION_KEY:gx+3an3CogvPuttoHcYQhWBoPjWGL9S9Ji4kdgDzcwM=}
+  pan:
+    hash-key: ${PAN_HASH_KEY:YmxpbmtfdG9vbGJveF9zYWx0X3NlY3JldA==}
   auth:
     jwt:
       secret: ${JWT_SECRET:6c156d8b6c9e8a3f4d2e5f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7}

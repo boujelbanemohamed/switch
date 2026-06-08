@@ -31,9 +31,6 @@ public class CardService {
 
     @Transactional
     public Card createCard(Card card) {
-        if (card.getId() == null) {
-            card.setId(UUID.randomUUID());
-        }
         String cardNumber = generateCardNumber();
         card.setCardNumberHash(hashCardNumber(cardNumber));
         card.setCardNumberSuffix(cardNumber.substring(cardNumber.length() - 4));
@@ -138,7 +135,6 @@ public class CardService {
         cardRepository.save(oldCard);
 
         Card renewed = Card.builder()
-                .id(UUID.randomUUID())
                 .cardholderId(oldCard.getCardholderId())
                 .cardAccountId(oldCard.getCardAccountId())
                 .cardType(oldCard.getCardType())

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 
 @RestController
@@ -35,6 +36,12 @@ public class CreditController {
                 req.statementDay, req.paymentDueDays,
                 req.minPaymentPct, req.minPaymentFloor);
         return ResponseEntity.ok(line);
+    }
+
+    @GetMapping("/lines")
+    public ResponseEntity<Map<String, Object>> listAll(Pageable pageable) {
+        List<CreditLine> lines = creditLineService.findAll(pageable);
+        return ResponseEntity.ok(Map.of("content", lines));
     }
 
     @GetMapping("/lines/{id}")

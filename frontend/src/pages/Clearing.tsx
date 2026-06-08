@@ -40,7 +40,7 @@ export function Clearing() {
   }, []);
 
   const totalAmount = records.reduce((s, r) => s + r.amount, 0);
-  const totalFee = records.reduce((s, r) => s + r.fee, 0);
+  const totalFee = records.reduce((s, r) => s + (r.feeAmount ?? 0), 0);
   const pendingDisputes = records.filter(r => r.status === 'DISPUTED').length;
 
   if (loading) return <div style={{ opacity: 0.5 }}>{t('common.loading')}</div>;
@@ -75,8 +75,8 @@ export function Clearing() {
                 {records.map(r => (
                   <tr key={r.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontSize: 12 }}>{r.transactionId?.substring(0, 12)}...</td>
-                    <td style={{ padding: '10px 12px' }}>${r.amount.toLocaleString()}</td>
-                    <td style={{ padding: '10px 12px', color: '#f97316' }}>${r.fee.toLocaleString()}</td>
+                    <td style={{ padding: '10px 12px' }}>${(r.amount ?? 0).toLocaleString()}</td>
+                    <td style={{ padding: '10px 12px', color: '#f97316' }}>${(r.feeAmount ?? 0).toLocaleString()}</td>
                     <td style={{ padding: '10px 12px' }}>
                       <span style={{
                         background: r.status === 'CLEARED' ? '#22c55e33' : r.status === 'DISPUTED' ? '#ef444433' : '#64748b33',
@@ -116,10 +116,10 @@ export function Clearing() {
                 {netting.map(n => (
                   <tr key={n.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontWeight: 600 }}>{n.participantId?.substring(0, 8)}</td>
-                    <td style={{ padding: '10px 12px', color: '#ef4444' }}>(${n.grossDebit.toLocaleString()})</td>
-                    <td style={{ padding: '10px 12px', color: '#22c55e' }}>${n.grossCredit.toLocaleString()}</td>
-                    <td style={{ padding: '10px 12px', fontWeight: 700, color: n.netAmount >= 0 ? '#22c55e' : '#ef4444' }}>
-                      {n.netAmount >= 0 ? '+' : ''}${n.netAmount.toLocaleString()}
+                    <td style={{ padding: '10px 12px', color: '#ef4444' }}>(${(n.totalSent ?? 0).toLocaleString()})</td>
+                    <td style={{ padding: '10px 12px', color: '#22c55e' }}>${(n.totalReceived ?? 0).toLocaleString()}</td>
+                    <td style={{ padding: '10px 12px', fontWeight: 700, color: (n.netAmount ?? 0) >= 0 ? '#22c55e' : '#ef4444' }}>
+                      {(n.netAmount ?? 0) >= 0 ? '+' : ''}${(n.netAmount ?? 0).toLocaleString()}
                     </td>
                   </tr>
                 ))}

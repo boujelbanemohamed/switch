@@ -157,7 +157,7 @@ public class SecurityConfig {
                 .requestMatchers(new AntPathRequestMatcher("/api/v1/standin/**")).hasAnyRole(
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name())
-                .requestMatchers(HttpMethod.GET, "/api/v1/credit/**").hasAnyRole(
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/credit/**", "GET")).hasAnyRole(
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name(),
                         AuthUser.Role.ANALYST.name())

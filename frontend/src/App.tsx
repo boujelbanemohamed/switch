@@ -11,6 +11,7 @@ import { Acquiring } from './pages/Acquiring';
 import { Authorization } from './pages/Authorization';
 import { Fraud } from './pages/Fraud';
 import { Clearing } from './pages/Clearing';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Backoffice } from './pages/Backoffice';
 import { Ecommerce } from './pages/Ecommerce';
 import { MerchantPortal } from './pages/MerchantPortal';
@@ -58,7 +59,7 @@ function AppRoutes() {
       <Route path="/acquiring" element={<ProtectedRoute><Layout><Acquiring /></Layout></ProtectedRoute>} />
       <Route path="/authorization" element={<ProtectedRoute><Layout><Authorization /></Layout></ProtectedRoute>} />
       <Route path="/fraud" element={<ProtectedRoute><Layout><Fraud /></Layout></ProtectedRoute>} />
-      <Route path="/clearing" element={<ProtectedRoute><Layout><Clearing /></Layout></ProtectedRoute>} />
+      <Route path="/clearing" element={<ProtectedRoute><Layout><ErrorBoundary><Clearing /></ErrorBoundary></Layout></ProtectedRoute>} />
       <Route path="/backoffice" element={<ProtectedRoute><Layout><Backoffice /></Layout></ProtectedRoute>} />
       <Route path="/ecommerce" element={<ProtectedRoute><Layout><Ecommerce /></Layout></ProtectedRoute>} />
       <Route path="/disputes" element={<ProtectedRoute><Layout><Disputes /></Layout></ProtectedRoute>} />

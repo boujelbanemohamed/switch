@@ -126,6 +126,7 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - **AccountType.CREDIT** : existe déjà dans `CardAccount`, pas de migration enum.
 - **Visa BASE II** : DRAFT phase 1 commit `21338dc` sur `origin/main`, en pause.
 - **Card creation bug** : `@GeneratedValue` + manual `setId()` → `StaleObjectStateException`. Ne pas créer de cartes via API tant que non corrigé.
+- **Convention signe netting vs BCT** : `NettingRecord.netAmount = totalSent - totalReceived`. Négatif = participant reçoit (créancier net). BCT `net_position = totalReceived - totalSent`, signe inverse. Les deux sont cohérents, juste conventions opposées (comptable vs flux).
 - Kafka UnknownHostException cosmétique — HTTP fonctionne.
 - Serveur port 8085 : `mvn spring-boot:run -Dspring-boot.run.profiles=dev` avec env vars `PCI_ENCRYPTION_KEY`, `PAN_HASH_KEY`, `JWT_SECRET`, `PIN_ENCRYPTION_KEY`, `CORS_ALLOWED_ORIGINS`.
 

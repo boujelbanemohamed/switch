@@ -10,6 +10,7 @@ import com.switchplatform.platform.repository.issuing.CardAccountRepository;
 import com.switchplatform.platform.repository.ledger.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -156,6 +158,10 @@ public class CreditLineService {
         log.info("Credit hold released: line={}, amount={}, available={}",
                 creditLineId, amount, cl.getAvailableCredit());
         return cl;
+    }
+
+    public List<CreditLine> findAll(Pageable pageable) {
+        return creditLineRepository.findAll(pageable).getContent();
     }
 
     public Optional<CreditLine> findByCardAccountId(UUID cardAccountId) {

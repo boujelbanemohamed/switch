@@ -40,13 +40,11 @@ export function CreditLines() {
     api.issuing.accounts.list().then(data => {
       const list = (data as any).content ?? data as CardAccount[];
       setAccounts(list);
-      // Load any existing credit lines for each account
-      Promise.all(list.map((acct: CardAccount) =>
-        api.credit.lines.getByCardAccount(acct.id).catch(() => null)
-      )).then(results => {
-        setLines(results.filter(Boolean) as CreditLine[]);
-      });
     });
+    api.credit.lines.list().then(data => {
+      const allLines = Array.isArray(data) ? data : (data as any)?.content ?? [];
+      setLines(allLines as CreditLine[]);
+    }).catch(() => {});
   }, []);
 
   function selectLine(line: CreditLine) {

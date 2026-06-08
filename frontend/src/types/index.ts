@@ -108,7 +108,6 @@ export interface WalletToken {
 
 export interface CardAccount {
   id: string;
-  cardId: string;
   cardholderId: string;
   balance: number;
   availableBalance: number;
@@ -281,9 +280,8 @@ export interface FraudAlert {
 export interface ClearingRecord {
   id: string;
   transactionId: string;
-  participantId: string;
   amount: number;
-  fee: number;
+  feeAmount: number;
   netAmount: number;
   currencyCode: string;
   status: string;
@@ -316,12 +314,12 @@ export interface ReconciliationRecord {
 export interface NettingRecord {
   id: string;
   participantId: string;
-  grossDebit: number;
-  grossCredit: number;
+  totalSent: number;
+  totalReceived: number;
   netAmount: number;
   currencyCode: string;
   status: string;
-  settlementRef?: string;
+  settlementReference?: string;
 }
 
 // Backoffice

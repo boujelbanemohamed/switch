@@ -549,6 +549,7 @@ export const api = {
   },
   credit: {
     lines: {
+      list: () => request<import('../types').CreditLine[]>('/credit/lines'),
       open: (data: Record<string, unknown>) =>
         request<import('../types').CreditLine>('/credit/lines', { method: 'POST', body: JSON.stringify(data) }),
       get: (id: string) => request<import('../types').CreditLine>(`/credit/lines/${id}`),

@@ -10,9 +10,13 @@ import com.switchplatform.platform.model.Participant;
 import com.switchplatform.platform.model.RoutingRule;
 import com.switchplatform.platform.model.Transaction;
 import com.switchplatform.platform.model.acquiring.Merchant;
+import com.switchplatform.platform.model.issuing.Card;
+import com.switchplatform.platform.model.loyalty.LoyaltyMembership;
 import com.switchplatform.platform.repository.BinTableRepository;
 import com.switchplatform.platform.repository.RoutingRuleRepository;
 import com.switchplatform.platform.repository.TransactionRepository;
+import com.switchplatform.platform.repository.issuing.CardRepository;
+import com.switchplatform.platform.repository.loyalty.LoyaltyMembershipRepository;
 import com.switchplatform.platform.router.RoutingContext;
 import com.switchplatform.platform.router.RoutingResult;
 import com.switchplatform.platform.service.acquiring.MerchantService;
@@ -22,6 +26,7 @@ import com.switchplatform.platform.service.clearing.InterchangeService;
 import com.switchplatform.platform.service.standin.StandInService;
 import com.switchplatform.platform.model.standin.StandInAuthorization;
 import com.switchplatform.platform.service.ledger.LedgerPostingEngine;
+import com.switchplatform.platform.service.loyalty.LoyaltyService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +35,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.*;
@@ -42,6 +49,8 @@ public class SwitchCore {
 
     private final Iso8583Engine iso8583Engine;
     private final Iso20022Engine iso20022Engine;
+
+    public Iso8583Engine iso8583Engine() { return iso8583Engine; }
     private final TransactionRouterService routerService;
     private final TransactionRepository transactionRepository;
     private final RoutingRuleRepository routingRuleRepository;
@@ -55,6 +64,12 @@ public class SwitchCore {
     private final InterchangeService interchangeService;
     private final StandInService standInService;
     private final LedgerPostingEngine ledgerPostingEngine;
+    private final CardRepository cardRepository;
+    private final LoyaltyMembershipRepository loyaltyMembershipRepository;
+    private final LoyaltyService loyaltyService;
+
+    private static final UUID DEFAULT_LOYALTY_PROGRAM_ID =
+            UUID.fromString("11111111-1111-1111-1111-111111111111");
 
     @Value("${switch.pan.hash-key}")
     private String panHashKey;
@@ -605,6 +620,9 @@ public class SwitchCore {
                         transaction.getTransactionId(), e.getMessage());
             }
         }
+
+        awardLoyaltyPoints(panValue, transaction.getAmount(), txType,
+                transaction.getTransactionId().toString());
     }
 
     private Transaction processAdvice(Transaction transaction) {
@@ -709,6 +727,53 @@ public class SwitchCore {
         } catch (Exception e) {
             log.error("PAN hash failed", e);
             return pan;
+        }
+    }
+
+    private void awardLoyaltyPoints(String panValue, BigDecimal amount, String txType, String transactionId) {
+        if (panValue == null || amount == null
+                || !"PURC".equals(txType)
+                || amount.compareTo(BigDecimal.ZERO) <= 0) return;
+        try {
+            String hexHash = hexHashPan(panValue);
+            if (hexHash == null) return;
+            Optional<Card> cardOpt = cardRepository.findByCardNumberHash(hexHash);
+            if (cardOpt.isEmpty()) {
+                log.debug("No card found for hex hash, skipping loyalty award for tx {}", transactionId);
+                return;
+            }
+            UUID cardholderId = cardOpt.get().getCardholderId();
+            Optional<LoyaltyMembership> membershipOpt =
+                    loyaltyMembershipRepository.findByCardholderIdAndProgramId(cardholderId, DEFAULT_LOYALTY_PROGRAM_ID);
+            if (membershipOpt.isEmpty()) {
+                log.debug("Cardholder {} not enrolled in loyalty, skipping award for tx {}",
+                        cardholderId, transactionId);
+                return;
+            }
+            loyaltyService.earnPoints(membershipOpt.get().getId(), amount,
+                    transactionId, "Auto-earn from PURC " + transactionId);
+            log.info("Loyalty points awarded for transaction {}: amount={}, cardholder={}",
+                    transactionId, amount, cardholderId);
+        } catch (Exception e) {
+            log.warn("Loyalty award failed for transaction {}: {}", transactionId, e.getMessage());
+        }
+    }
+
+    private String hexHashPan(String pan) {
+        if (pan == null) return null;
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec spec = new SecretKeySpec(panHashKey.getBytes("UTF-8"), "HmacSHA256");
+            mac.init(spec);
+            byte[] hash = mac.doFinal(pan.getBytes("UTF-8"));
+            StringBuilder hex = new StringBuilder();
+            for (byte b : hash) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (Exception e) {
+            log.error("PAN hex hash failed", e);
+            return null;
         }
     }
 

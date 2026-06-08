@@ -47,4 +47,100 @@
     <field num="121" length="999" name="Reserved for Private Use" class="ISO8583_TYPE_LLLVAR"/>
     <field num="123" length="999" name="Reserved for National Use" class="ISO8583_TYPE_LLLVAR"/>
     <field num="128" length="8" name="Message Authentication Code" class="ISO8583_TYPE_BINARY"/>
+
+    <!-- Parse guide for Financial Request (0100) -->
+    <parse type="0100">
+        <field num="2" length="19" type="LLVAR"/>
+        <field num="3" length="6" type="NUMERIC"/>
+        <field num="4" length="12" type="AMOUNT"/>
+        <field num="7" length="10" type="DATE10"/>
+        <field num="11" length="6" type="NUMERIC"/>
+        <field num="12" length="6" type="TIME"/>
+        <field num="13" length="4" type="DATE4"/>
+        <field num="22" length="3" type="NUMERIC"/>
+        <field num="25" length="2" type="NUMERIC"/>
+        <field num="35" length="37" type="LLVAR"/>
+        <field num="37" length="12" type="ALPHA"/>
+        <field num="41" length="8" type="ALPHA"/>
+        <field num="42" length="15" type="ALPHA"/>
+        <field num="49" length="3" type="ALPHA"/>
+    </parse>
+
+    <!-- Parse guide for Financial Transaction Request (0200) -->
+    <parse type="0200">
+        <field num="2" length="19" type="LLVAR"/>
+        <field num="3" length="6" type="NUMERIC"/>
+        <field num="4" length="12" type="AMOUNT"/>
+        <field num="7" length="10" type="DATE10"/>
+        <field num="11" length="6" type="NUMERIC"/>
+        <field num="12" length="6" type="TIME"/>
+        <field num="13" length="4" type="DATE4"/>
+        <field num="22" length="3" type="NUMERIC"/>
+        <field num="25" length="2" type="NUMERIC"/>
+        <field num="35" length="37" type="LLVAR"/>
+        <field num="37" length="12" type="ALPHA"/>
+        <field num="41" length="8" type="ALPHA"/>
+        <field num="42" length="15" type="ALPHA"/>
+        <field num="49" length="3" type="ALPHA"/>
+    </parse>
+
+    <!-- Parse guide for Acquisition Advice (0220) -->
+    <parse type="0220">
+        <field num="2" length="19" type="LLVAR"/>
+        <field num="3" length="6" type="NUMERIC"/>
+        <field num="4" length="12" type="AMOUNT"/>
+        <field num="7" length="10" type="DATE10"/>
+        <field num="11" length="6" type="NUMERIC"/>
+        <field num="12" length="6" type="TIME"/>
+        <field num="13" length="4" type="DATE4"/>
+        <field num="22" length="3" type="NUMERIC"/>
+        <field num="35" length="37" type="LLVAR"/>
+        <field num="37" length="12" type="ALPHA"/>
+        <field num="41" length="8" type="ALPHA"/>
+        <field num="42" length="15" type="ALPHA"/>
+        <field num="49" length="3" type="ALPHA"/>
+    </parse>
+
+    <!-- Parse guide for Reversal Request (0400) -->
+    <parse type="0400">
+        <field num="2" length="19" type="LLVAR"/>
+        <field num="3" length="6" type="NUMERIC"/>
+        <field num="4" length="12" type="AMOUNT"/>
+        <field num="7" length="10" type="DATE10"/>
+        <field num="11" length="6" type="NUMERIC"/>
+        <field num="12" length="6" type="TIME"/>
+        <field num="37" length="12" type="ALPHA"/>
+        <field num="90" length="42" type="LLVAR"/>
+    </parse>
+
+    <!-- Parse guide for Financial Transaction Response (0210) -->
+    <parse type="0210">
+        <field num="2" length="19" type="LLVAR"/>
+        <field num="3" length="6" type="NUMERIC"/>
+        <field num="4" length="12" type="AMOUNT"/>
+        <field num="7" length="10" type="DATE10"/>
+        <field num="11" length="6" type="NUMERIC"/>
+        <field num="12" length="6" type="TIME"/>
+        <field num="13" length="4" type="DATE4"/>
+        <field num="22" length="3" type="NUMERIC"/>
+        <field num="35" length="37" type="LLVAR"/>
+        <field num="37" length="12" type="ALPHA"/>
+        <field num="38" length="6" type="ALPHA"/>
+        <field num="39" length="2" type="ALPHA"/>
+        <field num="41" length="8" type="ALPHA"/>
+        <field num="42" length="15" type="ALPHA"/>
+        <field num="49" length="3" type="ALPHA"/>
+    </parse>
+
+    <!-- Parse guide for Reversal Advice (0420) -->
+    <parse type="0420">
+        <field num="2" length="19" type="LLVAR"/>
+        <field num="3" length="6" type="NUMERIC"/>
+        <field num="4" length="12" type="AMOUNT"/>
+        <field num="7" length="10" type="DATE10"/>
+        <field num="11" length="6" type="NUMERIC"/>
+        <field num="12" length="6" type="TIME"/>
+        <field num="37" length="12" type="ALPHA"/>
+        <field num="90" length="42" type="LLVAR"/>
+    </parse>
 </isopackager>

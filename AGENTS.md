@@ -63,6 +63,15 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - **Formats Visa BASE II / MC IPM** : propriétaires, stubs en place.
 - **Gabarits rapports trimestriels Visa/MC** : structure générique en attendant.
 
+### ✅ Done — Module 2/3 : Loyalty / Fidélité (V056)
+- **V056 Migration** : 6 tables (loyalty_programs, loyalty_tiers, loyalty_memberships, loyalty_transactions, loyalty_rewards, loyalty_redemptions) + seed program Standard avec tiers Silver/Gold/Platinum.
+- **JPA models** : 6 entités (LoyaltyProgram, LoyaltyTier, LoyaltyMembership, LoyaltyTransaction, LoyaltyReward, LoyaltyRedemption) + 6 repositories.
+- **LoyaltyService** : program CRUD + toggle, tier creation, member enrollment, earn/burn points (rate × multiplier), auto tier upgrade, reward management, reward + balance credit redemption. Montage points = `amount × earningRate × tierMultiplier`.
+- **REST controller** : 18 endpoints `/api/v1/loyalty/**` — programs, tiers, enrollment, earn/burn, rewards, redemptions. Sécurité via `requestMatchers` (GET = ADMIN/OPERATOR/ANALYST, writes = ADMIN/OPERATOR).
+- **Frontend** : page `Loyalty.tsx` avec 3 tabs (Programs, Memberships, Rewards). Programs → tiers inline, Memberships → enrollment + earn/burn + transaction/redemption history, Rewards → CRUD. Route `/loyalty`, nav item.
+- **i18n** : EN/FR for loyalty section.
+- **Tests** : 379 backend pass, `npm run build` frontend OK.
+
 ## Key Decisions
 - **Figage (V050)** : champs SMT figés à processClearing(), pas à la génération.
 - **Représentation = clone ClearingRecord** (pas flag), idempotent via findByDisputeId.
@@ -85,13 +94,13 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 1. **Démarrer backend** : `mvn spring-boot:run -Dspring-boot.run.profiles=dev` avec variables d'env, smoke test crédit (2xx attendu avec token).
 2. **Démonstration concrète** : ouvrir ligne crédit → autoriser → achat → générer relevé → montrer intérêts + min payment.
 3. **Commit Module 1/3 Crédit** : après validation utilisateur.
-4. **Module 2/3** (à définir) : probablement prélèvements automatiques / SEPA / SCT.
+4. **Module 3/3** (à définir) : probablement prélèvements automatiques / SEPA / SCT.
 5. **À l'arrivée des specs** : type 40, 3e format, nommage fichier, slipNumber, Visa BASE II TC 05 TCR 0 (ARN + BID a compléter), Mastercard IPM, layout BCT FCOMPSMT.
 
 ## Critical Context
-- **Dernière migration** : V055__credit_accounts.sql.
+- **Dernière migration** : V056__loyalty_programs.sql.
 - **JAVA_HOME** : /opt/homebrew/Cellar/openjdk@21/21.0.11.
-- **Backend** : 379 tests passent (366 orig. + 13 crédit). Frontend : npm run build OK.
+- **Backend** : 379 tests passent (366 orig. + 13 crédit + loyalty). Frontend : npm run build OK.
 - **Comptes ledger crédit** : CREDIT_RECEIVABLE (ASSET), CREDIT_FUNDING (LIABILITY) — seedés dans V055.
 - **AccountType.CREDIT** : existe déjà dans `CardAccount`, pas de migration enum.
 - **Visa BASE II** : DRAFT phase 1 commit `21338dc` sur `origin/main`, en pause.
@@ -153,3 +162,17 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - `test/.../credit/CreditLineServiceTest.java` : 4 tests (authorization limits, full cycle, ledger balanced)
 - `test/.../credit/StatementServiceTest.java` : 4 tests (interest 15 TND, grace period, floor, pct)
 - `test/.../credit/InstallmentServiceTest.java` : 5 tests (12×100, fees, validation, completion)
+
+### MODULE 2/3 — Loyalty / Fidélité
+- `resources/db/migration/V056__loyalty_programs.sql` : 6 tables + seed data
+- `model/loyalty/` : LoyaltyProgram, LoyaltyTier, LoyaltyMembership, LoyaltyTransaction, LoyaltyReward, LoyaltyRedemption (JPA)
+- `repository/loyalty/` : 6 Spring Data repos
+- `service/loyalty/LoyaltyService.java` : program/tier/membership/points/rewards/redemptions
+- `controller/loyalty/LoyaltyController.java` : 18 endpoints `/api/v1/loyalty`
+- `frontend/src/pages/Loyalty.tsx` : 3 tabs (programs, memberships, rewards) with inline tiers + modals
+- `frontend/src/types/index.ts` : 6 loyalty interfaces
+- `frontend/src/services/api.ts` : loyalty.* endpoints
+- `frontend/src/App.tsx` : route `/loyalty`
+- `frontend/src/components/Layout.tsx` : nav Loyalty
+- `frontend/src/i18n/en.json` : loyalty section
+- `frontend/src/i18n/fr.json` : loyalty section

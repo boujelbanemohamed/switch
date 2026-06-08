@@ -46,10 +46,10 @@ public class Card {
     @Column(name = "product_code", length = 32)
     private String productCode;
 
-    @Column(name = "embossed_line_1", length = 100)
+    @Column(name = "embossed_line1", length = 100)
     private String embossedLine1;
 
-    @Column(name = "embossed_line_2", length = 100)
+    @Column(name = "embossed_line2", length = 100)
     private String embossedLine2;
 
     @Column(name = "expiry_date")

@@ -1,6 +1,8 @@
 package com.switchplatform.platform.controller;
 
 import com.switchplatform.platform.model.Transaction;
+import com.solab.iso8583.IsoMessage;
+import com.switchplatform.platform.iso8583.Iso8583Engine;
 import com.switchplatform.platform.service.MonitoringService;
 import com.switchplatform.platform.service.SwitchCore;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +11,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.solab.iso8583.IsoType;
+import com.solab.iso8583.IsoValue;
 import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
@@ -21,6 +25,7 @@ public class SwitchController {
 
     private final SwitchCore switchCore;
     private final MonitoringService monitoringService;
+    private final Iso8583Engine iso8583Engine;
 
     @PostMapping(value = "/iso8583", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<Map<String, Object>> processIso8583(
@@ -86,6 +91,23 @@ public class SwitchController {
             @RequestParam(required = false) String posEntryMode) {
         return ResponseEntity.ok(monitoringService.getRecentTransactions(
                 page, size, channel, transactionType, posEntryMode));
+    }
+
+    @GetMapping("/debug/iso8583-sample")
+    public ResponseEntity<Map<String, Object>> debugSample() {
+        IsoMessage msg = iso8583Engine.createAuthorizationRequest(
+                "4905123456789012", new java.math.BigDecimal("50.00"),
+                "TND", "123457", "MERCH01", "TERM01");
+        byte[] encoded = iso8583Engine.encode(msg);
+        String b64 = java.util.Base64.getEncoder().encodeToString(encoded);
+        StringBuilder hex = new StringBuilder();
+        for (byte b : encoded) hex.append(String.format("%02x ", b));
+        return ResponseEntity.ok(Map.of(
+                "hex", hex.toString().trim(),
+                "base64", b64,
+                "length", encoded.length,
+                "mti", String.format("%04d", msg.getType())
+        ));
     }
 
     @GetMapping("/health")

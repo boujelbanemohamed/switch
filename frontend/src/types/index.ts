@@ -700,3 +700,66 @@ export interface InstallmentEntry {
   statementId?: string;
   createdAt: string;
 }
+
+export interface LoyaltyProgram {
+  id: string;
+  name: string;
+  description?: string;
+  earningRate: number;
+  currency: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface LoyaltyTier {
+  id: string;
+  programId: string;
+  name: string;
+  minLifetimePoints: number;
+  earningMultiplier: number;
+  benefits?: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface LoyaltyMembership {
+  id: string;
+  cardholderId: string;
+  programId: string;
+  tierId: string;
+  pointsBalance: number;
+  lifetimePoints: number;
+  enrolledAt: string;
+  status: string;
+}
+
+export interface LoyaltyTransaction {
+  id: string;
+  membershipId: string;
+  type: string;
+  points: number;
+  transactionRef?: string;
+  description?: string;
+  createdAt: string;
+}
+
+export interface LoyaltyReward {
+  id: string;
+  programId: string;
+  name: string;
+  description?: string;
+  pointsCost: number;
+  stock?: number;
+  status: string;
+  createdAt: string;
+}
+
+export interface LoyaltyRedemption {
+  id: string;
+  membershipId: string;
+  rewardId?: string;
+  pointsSpent: number;
+  balanceCreditAmount?: number;
+  status: string;
+  createdAt: string;
+}

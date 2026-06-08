@@ -586,4 +586,46 @@ export const api = {
         request<import('../types').InstallmentEntry>(`/credit/installment-entries/${id}/pay`, { method: 'POST', body: JSON.stringify({ statementId }) }),
     },
   },
+  loyalty: {
+    programs: {
+      list: () => request<import('../types').LoyaltyProgram[]>('/loyalty/programs'),
+      get: (id: string) => request<import('../types').LoyaltyProgram>(`/loyalty/programs/${id}`),
+      create: (data: { name: string; description?: string; earningRate: number; currency?: string }) =>
+        request<import('../types').LoyaltyProgram>('/loyalty/programs', { method: 'POST', body: JSON.stringify(data) }),
+      toggle: (id: string) =>
+        request<void>(`/loyalty/programs/${id}/toggle`, { method: 'POST' }),
+      tiers: {
+        list: (programId: string) => request<import('../types').LoyaltyTier[]>(`/loyalty/programs/${programId}/tiers`),
+        create: (programId: string, data: { name: string; minLifetimePoints: number; earningMultiplier: number; benefits?: string }) =>
+          request<import('../types').LoyaltyTier>(`/loyalty/programs/${programId}/tiers`, { method: 'POST', body: JSON.stringify(data) }),
+      },
+      rewards: {
+        list: (programId: string) => request<import('../types').LoyaltyReward[]>(`/loyalty/programs/${programId}/rewards`),
+        create: (programId: string, data: { name: string; description?: string; pointsCost: number; stock?: number }) =>
+          request<import('../types').LoyaltyReward>(`/loyalty/programs/${programId}/rewards`, { method: 'POST', body: JSON.stringify(data) }),
+      },
+    },
+    memberships: {
+      enroll: (cardholderId: string, programId: string) =>
+        request<import('../types').LoyaltyMembership>('/loyalty/enroll', { method: 'POST', body: JSON.stringify({ cardholderId, programId }) }),
+      get: (cardholderId: string, programId: string) =>
+        request<import('../types').LoyaltyMembership>(`/loyalty/cardholders/${cardholderId}/memberships/${programId}`),
+      listByCardholder: (cardholderId: string) =>
+        request<import('../types').LoyaltyMembership[]>(`/loyalty/cardholders/${cardholderId}/memberships`),
+      suspend: (id: string) =>
+        request<void>(`/loyalty/memberships/${id}/suspend`, { method: 'POST' }),
+      earn: (id: string, data: { amount: number; transactionRef?: string; description?: string }) =>
+        request<import('../types').LoyaltyTransaction>(`/loyalty/memberships/${id}/earn`, { method: 'POST', body: JSON.stringify(data) }),
+      burn: (id: string, data: { points: number; description?: string }) =>
+        request<import('../types').LoyaltyTransaction>(`/loyalty/memberships/${id}/burn`, { method: 'POST', body: JSON.stringify(data) }),
+      transactions: (id: string) =>
+        request<import('../types').LoyaltyTransaction[]>(`/loyalty/memberships/${id}/transactions`),
+      redeemReward: (membershipId: string, rewardId: string) =>
+        request<import('../types').LoyaltyRedemption>(`/loyalty/memberships/${membershipId}/redeem-reward/${rewardId}`, { method: 'POST' }),
+      redeemCredit: (id: string, points: number) =>
+        request<import('../types').LoyaltyRedemption>(`/loyalty/memberships/${id}/redeem-credit`, { method: 'POST', body: JSON.stringify({ points }) }),
+      redemptions: (id: string) =>
+        request<import('../types').LoyaltyRedemption[]>(`/loyalty/memberships/${id}/redemptions`),
+    },
+  },
 };

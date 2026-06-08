@@ -2,6 +2,8 @@ package com.switchplatform.platform.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -67,6 +69,7 @@ public class Transaction {
 
     @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private TransactionStatus status = TransactionStatus.PENDING;
 
     @Column(name = "response_code", length = 2)
@@ -75,6 +78,7 @@ public class Transaction {
     @Column(columnDefinition = "TEXT")
     private String originalMessage;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSONB")
     private String parsedMessage;
 
@@ -89,8 +93,10 @@ public class Transaction {
     private Integer processingTimeMs;
 
     @Column(name = "retry_count")
+    @Builder.Default
     private Integer retryCount = 0;
 
+    @Builder.Default
     @Column(name = "stand_in_used", nullable = false)
     private Boolean standInUsed = false;
 

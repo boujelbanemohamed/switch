@@ -50,6 +50,7 @@ export function Layout({ children }: LayoutProps) {
     { to: '/fees', icon: Receipt, label: t('nav.fees'), show: canSeeAnalyst },
     { to: '/interchange-fees', icon: Percent, label: t('nav.interchangeFees'), show: canSeeAnalyst },
     { to: '/credit', icon: HandCoins, label: t('nav.credit'), show: canSeeAdmin },
+    { to: '/loyalty', icon: HandCoins, label: t('nav.loyalty'), show: canSeeAdmin },
     { to: '/stand-in', icon: Radio, label: t('nav.standIn'), show: canSeeAdmin },
     { to: '/cof', icon: Repeat2, label: t('nav.cof'), show: canSeeAdmin },
     { to: '/fx-rates', icon: ArrowLeftRight, label: t('nav.fx'), show: canSeeAnalyst },

@@ -5,6 +5,7 @@ import com.solab.iso8583.IsoType;
 import com.solab.iso8583.IsoValue;
 import com.solab.iso8583.MessageFactory;
 import com.solab.iso8583.parse.ConfigParser;
+import com.solab.iso8583.parse.FieldParseInfo;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -34,17 +35,60 @@ public class Iso8583Engine {
     @PostConstruct
     public void init() {
         try {
-            ConfigParser.configureFromClasspathConfig(messageFactory, "/iso8583-config.xml");
-            log.info("ISO 8583 MessageFactory initialised with classpath config");
+            ConfigParser.configureFromClasspathConfig(messageFactory, "iso8583-config.xml");
         } catch (IOException e) {
-            log.warn("Could not load ISO 8583 config from classpath, using defaults");
-            initDefaultFields();
+            log.warn("Could not load ISO 8583 config from classpath, using defaults: {}", e.getMessage());
+        }
+        registerParseGuides();
+        log.info("ISO 8583 MessageFactory initialised");
+    }
+
+    private void registerParseGuides() {
+        // j8583 binary reads/writes MTI as 2-byte big-endian integer value:
+        // "0200" -> int 200 -> bytes 0x00, 0xC8
+        int[][] mtisAndFields = {
+            {200, 2, 3, 4, 7, 11, 12, 13, 22, 35, 37, 41, 42, 49},
+            {210, 2, 3, 4, 5, 7, 11, 12, 13, 22, 35, 37, 38, 39, 41, 42, 49},
+            {100, 2, 3, 4, 7, 11, 12, 13, 22, 35, 37, 41, 42, 49},
+            {220, 2, 3, 4, 7, 11, 12, 13, 22, 35, 37, 41, 42, 49},
+            {400, 2, 3, 4, 7, 11, 12, 37, 90},
+            {420, 2, 3, 4, 7, 11, 12, 37, 90},
+        };
+        for (int[] mtiAndFields : mtisAndFields) {
+            int mti = mtiAndFields[0];
+            Map<Integer, FieldParseInfo> map = new HashMap<>();
+            for (int i = 1; i < mtiAndFields.length; i++) {
+                int f = mtiAndFields[i];
+                map.put(f, parserForField(f));
+            }
+            messageFactory.setParseMap(mti, map);
         }
     }
 
-    private void initDefaultFields() {
-        messageFactory.setCustomField(48, new AdditionalDataField());
-        messageFactory.setCustomField(62, new ReservedPrivateField());
+    private FieldParseInfo parserForField(int field) {
+        String enc = messageFactory.getCharacterEncoding();
+        return switch (field) {
+            case 2 -> FieldParseInfo.getInstance(IsoType.LLVAR, 19, enc);
+            case 3 -> FieldParseInfo.getInstance(IsoType.NUMERIC, 6, enc);
+            case 4 -> FieldParseInfo.getInstance(IsoType.AMOUNT, 12, enc);
+            case 5 -> FieldParseInfo.getInstance(IsoType.AMOUNT, 12, enc);
+            case 6 -> FieldParseInfo.getInstance(IsoType.AMOUNT, 12, enc);
+            case 7 -> FieldParseInfo.getInstance(IsoType.DATE10, 10, enc);
+            case 11 -> FieldParseInfo.getInstance(IsoType.NUMERIC, 6, enc);
+            case 12 -> FieldParseInfo.getInstance(IsoType.TIME, 6, enc);
+            case 13 -> FieldParseInfo.getInstance(IsoType.DATE4, 4, enc);
+            case 22 -> FieldParseInfo.getInstance(IsoType.NUMERIC, 3, enc);
+            case 25 -> FieldParseInfo.getInstance(IsoType.NUMERIC, 2, enc);
+            case 35 -> FieldParseInfo.getInstance(IsoType.LLVAR, 37, enc);
+            case 37 -> FieldParseInfo.getInstance(IsoType.ALPHA, 12, enc);
+            case 41 -> FieldParseInfo.getInstance(IsoType.ALPHA, 8, enc);
+            case 42 -> FieldParseInfo.getInstance(IsoType.ALPHA, 15, enc);
+            case 38 -> FieldParseInfo.getInstance(IsoType.ALPHA, 6, enc);
+            case 39 -> FieldParseInfo.getInstance(IsoType.ALPHA, 2, enc);
+            case 49 -> FieldParseInfo.getInstance(IsoType.ALPHA, 3, enc);
+            case 90 -> FieldParseInfo.getInstance(IsoType.LLVAR, 42, enc);
+            default -> throw new IllegalArgumentException("Unknown field: " + field);
+        };
     }
 
     public IsoMessage parse(byte[] data) {

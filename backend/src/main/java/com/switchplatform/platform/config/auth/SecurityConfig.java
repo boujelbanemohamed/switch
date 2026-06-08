@@ -164,6 +164,13 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/credit/**").hasAnyRole(
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name())
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/loyalty/**", "GET")).hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name(),
+                        AuthUser.Role.ANALYST.name())
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/loyalty/**")).hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name())
                 .requestMatchers("/api/v1/batch/**").hasAnyRole("ADMIN", "OPERATOR")
                 .requestMatchers("/api/v1/netting/**").hasAnyRole("ADMIN", "OPERATOR")
                 .requestMatchers("/api/v1/fees/**").hasAnyRole("ADMIN", "OPERATOR", "ANALYST")

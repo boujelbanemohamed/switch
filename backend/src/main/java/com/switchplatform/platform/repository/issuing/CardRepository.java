@@ -11,5 +11,6 @@ import java.util.UUID;
 @Repository
 public interface CardRepository extends JpaRepository<Card, UUID> {
     Optional<Card> findByCardNumberSuffix(String suffix);
+    Optional<Card> findByCardNumberHash(String cardNumberHash);
     List<Card> findByCardholderId(UUID cardholderId);
 }

@@ -47,9 +47,6 @@ public class ThreeDsService {
                 .updatedAt(OffsetDateTime.now())
                 .build();
 
-        if (session.getId() == null) {
-            session.setId(UUID.randomUUID());
-        }
         if (session.getAcsReferenceNumber() == null) {
             session.setAcsReferenceNumber("ACS-" + UUID.randomUUID().toString().substring(0, 8));
         }

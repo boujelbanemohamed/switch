@@ -36,10 +36,6 @@ public class AcsService {
                 .updatedAt(OffsetDateTime.now())
                 .build();
 
-        if (auth.getId() == null) {
-            auth.setId(UUID.randomUUID());
-        }
-
         authRepository.save(auth);
         log.info("ACS authentication created: id={}, txn={}", auth.getId(), transactionId);
         return auth;
@@ -106,10 +102,6 @@ public class AcsService {
                 .createdAt(OffsetDateTime.now())
                 .updatedAt(OffsetDateTime.now())
                 .build();
-
-        if (challenge.getId() == null) {
-            challenge.setId(UUID.randomUUID());
-        }
 
         challengeRepository.save(challenge);
         auth.setStatus(AcsAuthentication.Status.CHALLENGE_REQUIRED);

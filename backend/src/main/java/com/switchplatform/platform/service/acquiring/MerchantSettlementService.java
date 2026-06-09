@@ -24,7 +24,6 @@ public class MerchantSettlementService {
     @Transactional
     public MerchantSettlement createSettlement(UUID merchantId, LocalDate date, String currency) {
         MerchantSettlement settlement = MerchantSettlement.builder()
-                .id(UUID.randomUUID())
                 .merchantId(merchantId)
                 .settlementDate(date)
                 .currencyCode(currency)

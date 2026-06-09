@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { Merchant, Terminal, MerchantSettlement, NettingRecord as NettingResult, Participant } from '../types';
 import { SectionHeader } from '../components/SectionHeader';
+import { AcquiringHelp, MERCHANT_STATUS_LABELS, TERMINAL_STATUS_LABELS, SETTLEMENT_STATUS_LABELS } from '../components/AcquiringHelp';
 
 type Tab = 'merchants' | 'terminals' | 'settlement';
 
@@ -35,9 +36,9 @@ function MiniBtn({ label, color, onClick }: { label: string; color: string; onCl
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, label }: { status: string; label?: string }) {
   const color = statusColors[status] || '#6b7280';
-  return <span style={{ background: color + '33', color, padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{status}</span>;
+  return <span style={{ background: color + '33', color, padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{label ?? status}</span>;
 }
 
 export function Acquiring() {
@@ -56,7 +57,7 @@ export function Acquiring() {
   const [saving, setSaving] = useState(false);
 
   const [merchantForm, setMerchantForm] = useState({
-    name: '', mcc: '5999', country: 'TN', status: 'ACTIVE',
+    name: '', mcc: '5999', country: 'TN', status: 'PENDING_ONBOARDING',
     contactEmail: '', contactPhone: '', address: '',
     acquiringParticipantId: '',
   });
@@ -168,7 +169,10 @@ export function Acquiring() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('acquiring.title')}</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('acquiring.title')}</h2>
+        <AcquiringHelp />
+      </div>
       <SectionHeader sectionKey="acquiring" />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
@@ -219,7 +223,7 @@ export function Acquiring() {
                     <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>{m.categoryCode || '-'}</td>
                     <td style={{ padding: '10px 12px' }}>{m.countryCode || '-'}</td>
                     <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>-</td>
-                    <td style={{ padding: '10px 12px' }}><StatusBadge status={m.status} /></td>
+                    <td style={{ padding: '10px 12px' }}><StatusBadge status={m.status} label={MERCHANT_STATUS_LABELS[m.status] ?? m.status} /></td>
                   </tr>
                 ))}
                 {merchants.length === 0 && (
@@ -263,7 +267,7 @@ export function Acquiring() {
                       <td style={{ padding: '10px 12px' }}>{tm.serialNumber || '-'}</td>
                       <td style={{ padding: '10px 12px' }}>{tm.type || '-'}</td>
                       <td style={{ padding: '10px 12px' }}>{tm.location || '-'}</td>
-                      <td style={{ padding: '10px 12px' }}><StatusBadge status={tm.status} /></td>
+                      <td style={{ padding: '10px 12px' }}><StatusBadge status={tm.status} label={TERMINAL_STATUS_LABELS[tm.status] ?? tm.status} /></td>
                       <td style={{ padding: '10px 12px', display: 'flex', gap: 4 }}>
                         <MiniBtn label={t('acquiring.injectKeys')} color="#3b82f6" onClick={() => {
                           setKeyForm({ ...keyForm, tid: tm.terminalId });
@@ -345,7 +349,7 @@ export function Acquiring() {
                     <td style={{ padding: '10px 12px', fontFamily: 'monospace' }}>{s.totalAmount.toLocaleString()} {s.currencyCode}</td>
                     <td style={{ padding: '10px 12px', fontFamily: 'monospace', color: '#ef4444' }}>{s.totalFee.toLocaleString()} {s.currencyCode}</td>
                     <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontWeight: 700, color: s.netAmount >= 0 ? '#22c55e' : '#ef4444' }}>{s.netAmount.toLocaleString()} {s.currencyCode}</td>
-                    <td style={{ padding: '10px 12px' }}><StatusBadge status={s.status} /></td>
+                    <td style={{ padding: '10px 12px' }}><StatusBadge status={s.status} label={SETTLEMENT_STATUS_LABELS[s.status] ?? s.status} /></td>
                     <td style={{ padding: '10px 12px', display: 'flex', gap: 4 }}>
                       {s.status === 'PENDING' && (
                         <MiniBtn label={t('acquiring.confirmSettlement')} color="#22c55e" onClick={async () => {
@@ -410,7 +414,7 @@ export function Acquiring() {
               <Field label={t('acquiring.address')}><input style={styles.input} value={merchantForm.address} onChange={e => setMerchantForm({ ...merchantForm, address: e.target.value })} /></Field>
               <Field label={t('acquiring.status')}>
                 <select style={styles.select} value={merchantForm.status} onChange={e => setMerchantForm({ ...merchantForm, status: e.target.value })}>
-                  {['ACTIVE', 'PENDING_APPROVAL', 'SUSPENDED', 'TERMINATED'].map(s => <option key={s}>{s}</option>)}
+                  {['ACTIVE', 'PENDING_ONBOARDING', 'SUSPENDED', 'TERMINATED', 'UNDER_REVIEW'].map(s => <option key={s} value={s}>{MERCHANT_STATUS_LABELS[s] ?? s}</option>)}
                 </select>
               </Field>
               <Field label="Acquiring Bank">
@@ -456,7 +460,7 @@ export function Acquiring() {
               </div>
               <Field label={t('acquiring.status')}>
                 <select style={styles.select} value={terminalForm.status} onChange={e => setTerminalForm({ ...terminalForm, status: e.target.value })}>
-                  {['ACTIVE', 'INACTIVE', 'SUSPENDED'].map(s => <option key={s}>{s}</option>)}
+                  {['ACTIVE', 'INACTIVE', 'SUSPENDED'].map(s => <option key={s} value={s}>{TERMINAL_STATUS_LABELS[s] ?? s}</option>)}
                 </select>
               </Field>
             </div>

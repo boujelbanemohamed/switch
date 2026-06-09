@@ -96,6 +96,24 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - **Runtime P2P validé** : cross‑account (source suffix 1234 → dst UUID → 50 TND + fee 2 TND → COMPLETED), source=destination rejet (400), atomicité dest INACTIVE (rollback prouvé).
 - **Total** : 393 tests backend pass, `npm run build` frontend OK.
 
+### ✅ Done — Lot 2 : Issuing FR guide + label maps
+- **IssuingHelp.tsx** : panneau latéral Aide avec 6 sections en français (concepts, pas à pas, statuts, FAQ).
+- **Label maps exportées** : CARD_STATUS_LABELS, ACCOUNT_STATUS_LABELS, CARDHOLDER_STATUS_LABELS, TOKEN_STATUS_LABELS, CARD_PRODUCT_LABELS, WALLET_PROVIDER_LABELS, CARD_ACTION_LABELS, NOTIFICATION_TYPE_LABELS + getNotificationLabel().
+- **Issuing.tsx** : tous les statuts/selects/actions traduits via labels ; StatusBadge utilise label ; notification type via getNotificationLabel().
+- **Runtime test** : blocage carte → BLOCKED, déblocage → ACTIVE, crédit compte +1000 → solde 16300. Hold 30 min confirmé dans HoldService.java (Duration.ofMinutes(30) + @Scheduled expireHolds).
+- **Guide vérifié** : PIN et tokenisation correspondent au code. FAQ corrigée : capture via flux d'autorisation, pas depuis Issuing.
+
+### ✅ Done — Lot 2 : Acquiring FR guide + label maps
+- **AcquiringHelp.tsx** : panneau latéral Aide avec 6 sections en français (concepts, pas à pas, statuts, FAQ).
+- **Label maps** : MERCHANT_STATUS_LABELS (5 statuts), TERMINAL_STATUS_LABELS (5 statuts), SETTLEMENT_STATUS_LABELS (5 statuts).
+- **Acquiring.tsx** : StatusBadge accepte label prop, 3 usages traduits. Selects merchant/terminal status utilisent value + labels. Help button ajouté.
+- **Runtime test** : liste commerçants OK, création commerçant OK, liste terminaux OK, enregistrement terminal OK, injection clés OK. Settlement 500 (pré-existant, pas lié au frontend).
+- **IssuingHelp.tsx** : panneau latéral Aide avec 6 sections en français (concepts, pas à pas, statuts, FAQ).
+- **Label maps exportées** : CARD_STATUS_LABELS, ACCOUNT_STATUS_LABELS, CARDHOLDER_STATUS_LABELS, TOKEN_STATUS_LABELS, CARD_PRODUCT_LABELS, WALLET_PROVIDER_LABELS, CARD_ACTION_LABELS, NOTIFICATION_TYPE_LABELS + getNotificationLabel().
+- **Issuing.tsx** : tous les statuts/selects/actions traduits via labels ; StatusBadge utilise label ; notification type via getNotificationLabel().
+- **Runtime test** : blocage carte → BLOCKED, déblocage → ACTIVE, crédit compte +1000 → solde 16300. Hold 30 min confirmé dans HoldService.java (Duration.ofMinutes(30) + @Scheduled expireHolds).
+- **Guide vérifié** : PIN et tokenisation correspondent au code. FAQ corrigée : capture via flux d'autorisation, pas depuis Issuing.
+
 ## Key Decisions
 - **Figage (V050)** : champs SMT figés à processClearing(), pas à la génération.
 - **Représentation = clone ClearingRecord** (pas flag), idempotent via findByDisputeId.
@@ -118,6 +136,8 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - **Atomicité transfers** : `@Transactional` rollback complet sur `RuntimeException` — vérifié runtime avec destination UUID inexistante et destination INACTIVE.
 - **P2P résolution PAN** : suffix → `CardRepository.findByCardNumberSuffix()` → `CardAccountRepository.findByCardholderId()` → `accounts.get(0)`. Simplifié en attendant HMAC hash complet.
 - **Card creation bug connu** : `@GeneratedValue(GenerationType.UUID)` sur `Card.id` + `card.setId(UUID.randomUUID())` manuel dans `createCard()` → `isNew()` retourne false → `merge()` appelé → `StaleObjectStateException`. Fix : supprimer `@GeneratedValue` ou retirer le setId manuel.
+- ~~**Settlement creation bug** : MÊME PATTERN que Card — `MerchantSettlement` a `@GeneratedValue(GenerationType.UUID)` sur `id` (MerchantSettlement.java:19) mais `MerchantSettlementService.createSettlement()` (ligne 27) appelle `.id(UUID.randomUUID())` → `StaleObjectStateException` au `save()`. **CORRIGÉ** : retrait de `.id(UUID.randomUUID())` ligne 27 (same pattern as Card fix).~~
+- ~~**Merchant status mismatch** : frontend select `Acquiring.tsx:413` liste `PENDING_APPROVAL` mais le backend `MerchantStatus` enum contient `PENDING_ONBOARDING` (pas PENDING_APPROVAL). **CORRIGÉ** : select aligné sur les 5 valeurs backend (ACTIVE, PENDING_ONBOARDING, SUSPENDED, TERMINATED, UNDER_REVIEW).~~
 
 ## Next Steps
 1. **Fix card creation API** : `StaleObjectStateException` dans `CardService.createCard()` due à `@GeneratedValue` + setId manuel.
@@ -137,6 +157,10 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - **Convention signe netting vs BCT** : `NettingRecord.netAmount = totalSent - totalReceived`. Négatif = participant reçoit (créancier net). BCT `net_position = totalReceived - totalSent`, signe inverse. Les deux sont cohérents, juste conventions opposées (comptable vs flux).
 - Kafka UnknownHostException cosmétique — HTTP fonctionne.
 - Serveur port 8085 : `mvn spring-boot:run -Dspring-boot.run.profiles=dev` avec env vars `PCI_ENCRYPTION_KEY`, `PAN_HASH_KEY`, `JWT_SECRET`, `PIN_ENCRYPTION_KEY`, `CORS_ALLOWED_ORIGINS`.
+
+## UX à améliorer
+
+- **Issuing — Set PIN : le champ pinBlock est dans la section Verify PIN au lieu de Set PIN (Issuing.tsx:335 vs 344).** L'utilisateur qui suit le guide ("saisissez le PIN en clair et un pin block") ne voit qu'un champ rawPin dans Set PIN ; le second champ pinBlock est physiquement sous l'intitulé "Verify PIN". À corriger : déplacer le champ pinBlock dans la section Set PIN pour que les deux champs soient côte à côte.
 
 ## Relevant Files
 ### Migrations

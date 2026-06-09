@@ -54,9 +54,7 @@ public class FxService {
                         sourceCurrency.toUpperCase(), targetCurrency.toUpperCase(), LocalDate.now())
                 .orElseThrow(() -> new IllegalArgumentException(
                         "No rate found for " + sourceCurrency + "/" + targetCurrency));
-        BigDecimal effectiveRate = rate.getRate().multiply(
-                BigDecimal.ONE.add(rate.getMarginPercentage().divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP)));
-        return amount.multiply(effectiveRate).setScale(3, RoundingMode.HALF_UP);
+        return amount.multiply(rate.getRate()).setScale(3, RoundingMode.HALF_UP);
     }
 
     public BigDecimal proposeDcc(BigDecimal amount, String sourceCurrency, String targetCurrency) {
@@ -65,8 +63,8 @@ public class FxService {
                 .findTopBySourceCurrencyAndTargetCurrencyAndEffectiveDateLessThanEqualOrderByEffectiveDateDesc(
                         sourceCurrency.toUpperCase(), targetCurrency.toUpperCase(), LocalDate.now())
                 .orElseThrow(() -> new IllegalArgumentException("No rate found"));
-        BigDecimal marginAmount = converted.multiply(
+        BigDecimal marginMultiplier = BigDecimal.ONE.add(
                 rate.getMarginPercentage().divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP));
-        return converted.add(marginAmount).setScale(3, RoundingMode.HALF_UP);
+        return converted.multiply(marginMultiplier).setScale(3, RoundingMode.HALF_UP);
     }
 }

@@ -12,7 +12,7 @@ export function FxRates() {
   const [showForm, setShowForm] = useState(false);
   const [showConvert, setShowConvert] = useState(false);
   const [convertResult, setConvertResult] = useState<{ convertedAmount: number; dccAmount: number } | null>(null);
-  const [newRate, setNewRate] = useState<Partial<FxRate>>({ sourceCurrency: '', targetCurrency: '', rate: 0, effectiveDate: '' });
+  const [newRate, setNewRate] = useState<Partial<FxRate>>({ sourceCurrency: '', targetCurrency: '', rate: 0, marginPercentage: 0, effectiveDate: '' });
   const [convert, setConvert] = useState({ amount: 0, sourceCurrency: 'TND', targetCurrency: 'EUR' });
 
   const load = () => {
@@ -25,7 +25,7 @@ export function FxRates() {
   const createRate = async () => {
     await api.fx.rates.create(newRate);
     setShowForm(false);
-    setNewRate({ sourceCurrency: '', targetCurrency: '', rate: 0, effectiveDate: '' });
+    setNewRate({ sourceCurrency: '', targetCurrency: '', rate: 0, marginPercentage: 0, effectiveDate: '' });
     load();
   };
 
@@ -63,6 +63,8 @@ export function FxRates() {
                   style={{ flex: 1, padding: '8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
               </div>
               <input type="number" step="0.0001" placeholder={t('fx.rate')} value={newRate.rate || ''} onChange={e => setNewRate({ ...newRate, rate: parseFloat(e.target.value) || 0 })}
+                style={{ padding: '8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
+              <input type="number" step="0.01" placeholder={t('fx.margin')} value={newRate.marginPercentage ?? ''} onChange={e => setNewRate({ ...newRate, marginPercentage: parseFloat(e.target.value) || 0 })}
                 style={{ padding: '8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
               <input type="date" placeholder={t('fx.effectiveDate')} value={newRate.effectiveDate || ''} onChange={e => setNewRate({ ...newRate, effectiveDate: e.target.value })}
                 style={{ padding: '8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />

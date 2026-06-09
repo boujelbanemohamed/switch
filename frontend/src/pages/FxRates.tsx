@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { FxRate } from '../types';
 import { SectionHeader } from '../components/SectionHeader';
+import { FxRatesHelp } from '../components/FxRatesHelp';
 
 export function FxRates() {
   const { t } = useTranslation();
@@ -40,7 +41,10 @@ export function FxRates() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('fx.title')}</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('fx.title')}</h2>
+        <FxRatesHelp />
+      </div>
       <SectionHeader sectionKey="fx" />
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24, marginBottom: 24 }}>

@@ -108,16 +108,37 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - **Runtime test** : blocage carte → BLOCKED, déblocage → ACTIVE, crédit compte +1000 → solde 16300. Hold 30 min confirmé dans HoldService.java (Duration.ofMinutes(30) + @Scheduled expireHolds).
 - **Guide vérifié** : PIN et tokenisation correspondent au code. FAQ corrigée : capture via flux d'autorisation, pas depuis Issuing.
 
-### ✅ Done — Lot 2 : Acquiring FR guide + label maps
-- **AcquiringHelp.tsx** : panneau latéral Aide avec 6 sections en français (concepts, pas à pas, statuts, FAQ).
-- **Label maps** : MERCHANT_STATUS_LABELS (5 statuts), TERMINAL_STATUS_LABELS (5 statuts), SETTLEMENT_STATUS_LABELS (5 statuts).
-- **Acquiring.tsx** : StatusBadge accepte label prop, 3 usages traduits. Selects merchant/terminal status utilisent value + labels. Help button ajouté.
-- **Runtime test** : liste commerçants OK, création commerçant OK, liste terminaux OK, enregistrement terminal OK, injection clés OK. Settlement 500 (pré-existant, pas lié au frontend).
-- **IssuingHelp.tsx** : panneau latéral Aide avec 6 sections en français (concepts, pas à pas, statuts, FAQ).
-- **Label maps exportées** : CARD_STATUS_LABELS, ACCOUNT_STATUS_LABELS, CARDHOLDER_STATUS_LABELS, TOKEN_STATUS_LABELS, CARD_PRODUCT_LABELS, WALLET_PROVIDER_LABELS, CARD_ACTION_LABELS, NOTIFICATION_TYPE_LABELS + getNotificationLabel().
-- **Issuing.tsx** : tous les statuts/selects/actions traduits via labels ; StatusBadge utilise label ; notification type via getNotificationLabel().
-- **Runtime test** : blocage carte → BLOCKED, déblocage → ACTIVE, crédit compte +1000 → solde 16300. Hold 30 min confirmé dans HoldService.java (Duration.ofMinutes(30) + @Scheduled expireHolds).
-- **Guide vérifié** : PIN et tokenisation correspondent au code. FAQ corrigée : capture via flux d'autorisation, pas depuis Issuing.
+### ✅ Done — Lot 2 : Ecommerce FR guide + label maps
+- **EcommerceHelp.tsx** : panneau latéral Aide avec 6 sections (concepts, pas à pas, statuts 3DS, FAQ).
+- **Label maps** : CARDHOLDER_LANGUAGE_LABELS, CHALLENGE_LABELS, METHOD_PREFERENCE_LABELS, EPG_INTEGRATION_LABELS (4 types : HOSTED, API, IFRAME, WEBHOOK).
+- **Ecommerce.tsx** : EPG merchantId dropdowns avec create + status toggle. Guide vérifié contre EpgService, ThreeDsService, AcsService.
+- **Runtime test** : création PG, listing PGs, lien merchant, porteur 3DS, transaction 3DS. 400/401 codes validés.
+- **Bug trouvé** : `EpgService.setMerchant()` recherche `merchantId` mais le MERCHANT n'a pas ce champ — seule la table `merchant_terminal` a un `merchant_id`. Non bloquant (création PG sans merchant).
+
+### ✅ Done — Lot 2 : StandIn FR guide + label maps
+- **StandInHelp.tsx** : guide + STANDIN_DECISION_LABELS (3 valeurs), STANDIN_REASON_LABELS (7 raisons).
+- **StandIn.tsx** : auth.reason traduit via STANDIN_REASON_LABELS ; auth.decision via STANDIN_DECISION_LABELS.
+- **Runtime test** : create/update/delete rule, listing all rules OK.
+- **Bugs 1-2** : `SwitchCore.java:226` passe `"VISA"` hardcodé + `:231` passe `null` pour MCC — documentés dans AGENTS.md.
+
+### ✅ Done — Lot 2 : FxRates FR guide + label maps
+- **FxRatesHelp.tsx** : guide 6 sections (concepts, pas à pas, DCC, FAQ).
+- **Bug backend** : `FxService.convert()` incluait la marge (rate × (1+margin%)), et `proposeDcc()` appelait `convert()` puis ajoutait encore la marge → marge². Fix : `convert()` ne fait plus que `amount × rate` ; `proposeDcc()` ajoute la marge une seule fois.
+- **Frontend** : ajout du champ `marginPercentage` dans le formulaire de création.
+- **Runtime test** : create rate + convert + DCC proposé OK.
+
+### ✅ Done — Lot 2 : CofPage FR guide + label maps
+- **CofHelp.tsx** : guide 6 sections + TOKEN_STATUS_LABELS, SCHEDULE_STATUS_LABELS, FREQUENCY_LABELS, TOKEN_TYPE_LABELS.
+- **Bug backend** : `processDueSchedules()` n'avait pas d'annotation `@Scheduled` — ajout de `@Scheduled(cron = 0 0 5 * * *)`.
+- **Guide corrigé** : PAN display max 8 caractères (colonne DB `length=8`), retrait mentions "plafond" et "transaction au switch" (seulement mise à jour du schedule).
+- **Runtime test** : create token (8-char PAN), create schedule, list tokens/schedules OK.
+
+### ✅ Done — Lot 2 : Transactions FR guide + label maps
+- **TransactionsHelp.tsx** : guide 6 sections + 5 label maps + 2 color maps (TRANSACTION_STATUS_COLORS, CHANNEL_COLORS).
+- **Toutes les maps déjà utilisées dans Transactions.tsx** : statuts, types, canaux, couleurs — aucune modification nécessaire.
+- **Guide vérifié** : sections techniques (SwitchCore, RoutingEngine, stand-in, clearing) exactes par rapport au code.
+- **Runtime test** : liste, filtre POS, filtre PURC, combinaison POS+PURC OK (11 transactions, 8 POS, 8 PURC).
+
 
 ## Key Decisions
 - **Figage (V050)** : champs SMT figés à processClearing(), pas à la génération.

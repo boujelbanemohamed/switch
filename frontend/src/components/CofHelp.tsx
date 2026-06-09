@@ -82,8 +82,8 @@ export function CofHelp() {
                     réelles. Seul un affichage partiel (PAN masqué) et une référence interne sont stockés.
                     Pas de numéro complet, pas de cryptogramme.</li>
                   <li><strong>PAN display</strong> — représentation partielle du numéro de carte
-                    (ex: <code>4970XXXXXX1234</code>). Permet au porteur d'identifier sa carte sans exposer
-                    le numéro complet.</li>
+                    (ex: <code>4970XXXX</code>). Permet au porteur d'identifier sa carte sans exposer
+                    le numéro complet (limité à 8 caractères).</li>
                   <li><strong>PAN reference</strong> — identifiant interne liant ce token au porteur
                     dans le système du commerçant ou de l'émetteur.</li>
                   <li><strong>Échéancier récurrent</strong> — plan de paiement avec une fréquence
@@ -103,7 +103,7 @@ export function CofHelp() {
                     <h4 className="font-medium text-indigo-300 mb-1">Créer un token COF</h4>
                     <ol className="list-decimal list-inside space-y-1 text-gray-300 ml-2">
                       <li>Cliquer sur <strong>Ajouter</strong> dans la section Tokens</li>
-                      <li>Saisir un PAN display (ex: <code>4970XXXXXX1234</code>)</li>
+                      <li>Saisir un PAN display (ex: <code>4970XXXX</code>)</li>
                       <li>Saisir un PAN reference (identifiant interne)</li>
                       <li>Cliquer sur <strong>Sauvegarder</strong></li>
                     </ol>
@@ -147,13 +147,13 @@ export function CofHelp() {
                 </p>
                 <p className="mt-2">
                   Le service <code>CofTokenService</code> gère le cycle de vie des tokens
-                  (création, suspension, annulation). Les échéanciers sont exécutés par
-                  un batch programmé (<code>@Scheduled</code>) qui déclenche les transactions
-                  selon la fréquence configurée.
+                  (création, suspension, annulation). Les échéanciers sont exécutés automatiquement chaque nuit à 5h
+                  par un batch programmé (<code>@Scheduled</code>) qui met à jour la date
+                  de prochaine exécution et le compteur d'occurrences.
                 </p>
                 <p className="mt-2">
-                  Chaque exécution d'échéancier vérifie le plafond, le nombre d'occurrences
-                  max, et la date de fin avant de soumettre la transaction au switch.
+                  Chaque exécution d'échéancier vérifie le nombre d'occurrences
+                  max et la date de fin avant de mettre à jour l'échéancier.
                 </p>
               </section>
 
@@ -178,7 +178,7 @@ export function CofHelp() {
                   </div>
                   <div>
                     <dt className="font-medium text-amber-300">Le PAN display est-il le vrai numéro de carte ?</dt>
-                    <dd className="text-gray-300 mt-1">Non, c'est une version masquée (premiers chiffres + X + derniers chiffres). Le PAN complet n'est jamais stocké en clair.</dd>
+                    <dd className="text-gray-300 mt-1">Non, c'est une version masquée limitée à 8 caractères. Le PAN complet n'est jamais stocké en clair.</dd>
                   </div>
                 </dl>
               </section>

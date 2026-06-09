@@ -25,6 +25,11 @@ Compléter POS / Acquiring (mode d'entrée, cycle transactionnel, vues backoffic
 - **`requestMatchers(HttpMethod, String)` dans SecurityConfig** → utiliser `requestMatchers(new AntPathRequestMatcher(path, method))` impérativement. La version `String` crée un `MvcRequestMatcher` qui **ne match que les routes avec un handler Spring MVC**. Toute route sans controller (forward vers `/error`, 404, etc.) reçoit un 401/403 fantôme.
 - **`.id(UUID.randomUUID())` / `setId(UUID.randomUUID())` sur une entité `@GeneratedValue`** → laisser Hibernate générer l'ID. Le set manuel fait croire à Hibernate que l'entité est *détachée* (existe déjà) plutôt que *nouvelle* → `merge()` au lieu de `persist()` → `StaleObjectStateException` au `save()`.
 
+## Bugs connus non corrigés
+
+- **Stand-in : marque de carte codée en dur "VISA"** (`SwitchCore.java:226`) — le paramètre `cardBrand` passé à `StandInService.attemptStandIn()` est toujours `"VISA"` quelle que soit la vraie marque de la carte. Résultat : les règles stand-in configurées pour Mastercard, CB, Amex ou toute autre marque ne se déclenchent jamais. Seules les règles `cardBrand = "VISA"` ou `cardBrand = "ALL"` fonctionnent.
+- **Stand-in : MCC passé null** (`SwitchCore.java:231`) — le paramètre `mcc` de `attemptStandIn()` est `null`. Dans `isMccAllowed()`, si `mcc == null` et `allowedMcc != "*"`, la méthode retourne `false`. Donc toute règle stand-in avec une restriction MCC (ex: `allowedMcc = "5812,5813"`) échoue systématiquement pour toutes les transactions STIP, même si le MCC réel est autorisé.
+
 ## Progress
 
 ### ✅ Done — P1–P6

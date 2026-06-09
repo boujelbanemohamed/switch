@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { SectionHeader } from '../components/SectionHeader';
-import { StandInHelp, STANDIN_DECISION_LABELS } from '../components/StandInHelp';
+import { StandInHelp, STANDIN_DECISION_LABELS, STANDIN_REASON_LABELS } from '../components/StandInHelp';
 import { Plus, Pencil, Trash2, RefreshCw } from 'lucide-react';
 
 interface StandInRuleItem {
@@ -242,7 +242,7 @@ export function StandIn() {
                     {STANDIN_DECISION_LABELS[auth.decision] ?? auth.decision}
                   </span>
                 </td>
-                <td className="p-3 text-gray-400 text-xs">{auth.reason || '-'}</td>
+                <td className="p-3 text-gray-400 text-xs">{(STANDIN_REASON_LABELS[auth.reason ?? ''] ?? auth.reason) || '-'}</td>
                 <td className="p-3 text-center">
                   {auth.reconciled ? (
                     <span className="text-green-400 text-xs">{t('common.yes')}</span>

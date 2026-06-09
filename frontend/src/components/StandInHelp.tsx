@@ -6,6 +6,16 @@ export const STANDIN_DECISION_LABELS: Record<string, string> = {
   DECLINED: 'Refusé',
 };
 
+export const STANDIN_REASON_LABELS: Record<string, string> = {
+  STAND_IN_APPROVED: 'Approuvé en stand-in',
+  NO_RULE: 'Aucune règle trouvée',
+  RULE_DISABLED: 'Règle désactivée',
+  EXCEEDS_MAX_AMOUNT: 'Montant dépasse le plafond',
+  MCC_NOT_ALLOWED: 'Code MCC non autorisé',
+  DAILY_COUNT_LIMIT: 'Limite de nombre journalier atteinte',
+  DAILY_AMOUNT_LIMIT: 'Limite de montant journalier atteinte',
+};
+
 export function StandInHelp() {
   const [open, setOpen] = useState(false);
 

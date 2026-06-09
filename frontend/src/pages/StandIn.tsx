@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { SectionHeader } from '../components/SectionHeader';
+import { StandInHelp, STANDIN_DECISION_LABELS } from '../components/StandInHelp';
 import { Plus, Pencil, Trash2, RefreshCw } from 'lucide-react';
 
 interface StandInRuleItem {
@@ -88,7 +89,10 @@ export function StandIn() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{t('standIn.title')}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold">{t('standIn.title')}</h1>
+            <StandInHelp />
+          </div>
           {pendingCount > 0 && (
             <p className="text-sm text-amber-400 mt-1">
               {pendingCount} {t('standIn.pendingReconciliation')}
@@ -235,7 +239,7 @@ export function StandIn() {
                 <td className="p-3">{auth.currencyCode}</td>
                 <td className="p-3 text-center">
                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${auth.decision === 'APPROVED' ? 'bg-green-900 text-green-300' : 'bg-red-900 text-red-300'}`}>
-                    {auth.decision}
+                    {STANDIN_DECISION_LABELS[auth.decision] ?? auth.decision}
                   </span>
                 </td>
                 <td className="p-3 text-gray-400 text-xs">{auth.reason || '-'}</td>

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { CofToken, RecurringSchedule } from '../types';
 import { SectionHeader } from '../components/SectionHeader';
+import { CofHelp, TOKEN_STATUS_LABELS, SCHEDULE_STATUS_LABELS, FREQUENCY_LABELS, TOKEN_TYPE_LABELS } from '../components/CofHelp';
 
 export function CofPage() {
   const { t } = useTranslation();
@@ -42,7 +43,10 @@ export function CofPage() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('cof.title')}</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('cof.title')}</h2>
+        <CofHelp />
+      </div>
       <SectionHeader sectionKey="cof" />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
@@ -77,9 +81,9 @@ export function CofPage() {
                 {tokens.map(t => (
                   <tr key={t.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '10px 12px', fontFamily: 'monospace' }}>{t.panDisplay}</td>
-                    <td style={{ padding: '10px 12px' }}>{t.tokenType}</td>
+                    <td style={{ padding: '10px 12px' }}>{TOKEN_TYPE_LABELS[t.tokenType] ?? t.tokenType}</td>
                     <td style={{ padding: '10px 12px' }}>
-                      <span style={{ background: t.status === 'ACTIVE' ? '#22c55e33' : '#64748b33', color: t.status === 'ACTIVE' ? '#22c55e' : '#64748b', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{t.status}</span>
+                      <span style={{ background: t.status === 'ACTIVE' ? '#22c55e33' : '#64748b33', color: t.status === 'ACTIVE' ? '#22c55e' : '#64748b', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{TOKEN_STATUS_LABELS[t.status] ?? t.status}</span>
                     </td>
                   </tr>
                 ))}
@@ -127,10 +131,10 @@ export function CofPage() {
                 {schedules.map(s => (
                   <tr key={s.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '10px 12px' }}>{s.amount.toLocaleString()} {s.currencyCode}</td>
-                    <td style={{ padding: '10px 12px' }}>{s.frequency}</td>
+                    <td style={{ padding: '10px 12px' }}>{FREQUENCY_LABELS[s.frequency] ?? s.frequency}</td>
                     <td style={{ padding: '10px 12px', fontSize: 12 }}>{s.nextRunDate}</td>
                     <td style={{ padding: '10px 12px' }}>
-                      <span style={{ background: s.status === 'ACTIVE' ? '#22c55e33' : s.status === 'COMPLETED' ? '#3b82f633' : '#64748b33', color: s.status === 'ACTIVE' ? '#22c55e' : s.status === 'COMPLETED' ? '#3b82f6' : '#64748b', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{s.status}</span>
+                      <span style={{ background: s.status === 'ACTIVE' ? '#22c55e33' : s.status === 'COMPLETED' ? '#3b82f633' : '#64748b33', color: s.status === 'ACTIVE' ? '#22c55e' : s.status === 'COMPLETED' ? '#3b82f6' : '#64748b', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{SCHEDULE_STATUS_LABELS[s.status] ?? s.status}</span>
                     </td>
                   </tr>
                 ))}

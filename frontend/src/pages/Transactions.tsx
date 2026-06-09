@@ -3,32 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { Transaction } from '../types';
 import { SectionHeader } from '../components/SectionHeader';
-
-const statusColors: Record<string, string> = {
-  PENDING: '#eab308',
-  ROUTING: '#3b82f6',
-  PROCESSING: '#8b5cf6',
-  COMPLETED: '#22c55e',
-  FAILED: '#ef4444',
-  TIMEOUT: '#f97316',
-  REJECTED: '#dc2626',
-};
-
-const typeLabels: Record<string, string> = {
-  PURC: 'Purchase',
-  PRAU: 'Pre-Auth',
-  COMP: 'Completion',
-  REFD: 'Refund',
-  VOID: 'Void',
-  REVS: 'Reversal',
-  OTHR: 'Other',
-};
-
-const channelColors: Record<string, string> = {
-  POS: '#3b82f6',
-  ATM: '#8b5cf6',
-  ECOM: '#f59e0b',
-};
+import { TransactionsHelp, TRANSACTION_STATUS_LABELS, TRANSACTION_TYPE_LABELS, CHANNEL_LABELS, TRANSACTION_STATUS_COLORS, CHANNEL_COLORS } from '../components/TransactionsHelp';
 
 export function Transactions() {
   const { t } = useTranslation();
@@ -51,7 +26,10 @@ export function Transactions() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('transactions.title')}</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('transactions.title')}</h2>
+        <TransactionsHelp />
+      </div>
 
       <SectionHeader sectionKey="transactions" />
 
@@ -59,14 +37,14 @@ export function Transactions() {
         <select value={channelFilter} onChange={e => setChannelFilter(e.target.value)}
           style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13 }}>
           <option value="">{t('transactions.allChannels')}</option>
-          <option value="POS">POS</option>
-          <option value="ATM">ATM</option>
-          <option value="ECOM">E-Commerce</option>
+          <option value="POS">{CHANNEL_LABELS.POS}</option>
+          <option value="ATM">{CHANNEL_LABELS.ATM}</option>
+          <option value="ECOM">{CHANNEL_LABELS.ECOM}</option>
         </select>
         <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
           style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: 13 }}>
           <option value="">{t('transactions.allTypes')}</option>
-          {Object.entries(typeLabels).map(([k, v]) => (
+          {Object.entries(TRANSACTION_TYPE_LABELS).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>
           ))}
         </select>
@@ -119,30 +97,30 @@ export function Transactions() {
                   <td style={{ padding: '12px 16px' }}>
                     {tx.channel ? (
                       <span style={{
-                        background: `${(channelColors[tx.channel] || '#64748b')}22`,
-                        color: channelColors[tx.channel] || '#64748b',
+                        background: `${(CHANNEL_COLORS[tx.channel] || '#64748b')}22`,
+                        color: CHANNEL_COLORS[tx.channel] || '#64748b',
                         padding: '2px 6px',
                         borderRadius: 4,
                         fontSize: 11,
                         fontWeight: 600,
-                      }}>{tx.channel}</span>
+                      }}>{CHANNEL_LABELS[tx.channel] || tx.channel}</span>
                     ) : (
                       <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>-</span>
                     )}
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: 12 }}>
-                    {tx.transactionType ? (typeLabels[tx.transactionType] || tx.transactionType) : '-'}
+                    {tx.transactionType ? (TRANSACTION_TYPE_LABELS[tx.transactionType] || tx.transactionType) : '-'}
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <span style={{
-                      background: `${statusColors[tx.status]}22`,
-                      color: statusColors[tx.status],
+                      background: `${TRANSACTION_STATUS_COLORS[tx.status]}22`,
+                      color: TRANSACTION_STATUS_COLORS[tx.status],
                       padding: '2px 8px',
                       borderRadius: 4,
                       fontSize: 12,
                       fontWeight: 600,
                     }}>
-                      {tx.status}
+                      {TRANSACTION_STATUS_LABELS[tx.status] || tx.status}
                     </span>
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: 13 }}>

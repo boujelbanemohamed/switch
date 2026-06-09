@@ -48,16 +48,22 @@ public class BinTableService {
     }
 
     public String resolveCardBrand(String pan) {
-        if (pan == null || pan.length() < 6) return "ALL";
+        if (pan == null || pan.length() < 6) {
+            log.debug("resolveCardBrand: pan too short or null, returning ALL");
+            return "ALL";
+        }
         for (int len : new int[]{8, 6}) {
             if (pan.length() >= len) {
                 String bin = pan.substring(0, len);
                 Optional<BinTable> match = binTableRepository.findByBinAndIsActiveTrue(bin);
                 if (match.isPresent() && match.get().getCardBrand() != null) {
-                    return match.get().getCardBrand().name();
+                    String brand = match.get().getCardBrand().name();
+                    log.debug("resolveCardBrand: pan={} bin={} len={} -> {}", pan, bin, len, brand);
+                    return brand;
                 }
             }
         }
+        log.debug("resolveCardBrand: no BIN match for pan={}, returning ALL", pan);
         return "ALL";
     }
 }

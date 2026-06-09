@@ -126,6 +126,10 @@ public class StandInService {
             if (brandAll.isPresent()) return brandAll.get();
         }
 
+        List<StandInRule> brandRules = ruleRepository
+                .findByIssuerParticipantIdIsNullAndCardBrandAndEnabledTrue(cardBrand);
+        if (!brandRules.isEmpty()) return brandRules.get(0);
+
         List<StandInRule> global = ruleRepository
                 .findByIssuerParticipantIdIsNullAndCardBrandAndEnabledTrue("ALL");
         return global.isEmpty() ? null : global.get(0);

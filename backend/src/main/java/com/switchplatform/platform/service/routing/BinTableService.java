@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -44,5 +45,19 @@ public class BinTableService {
 
     public void delete(UUID id) {
         binTableRepository.deleteById(id);
+    }
+
+    public String resolveCardBrand(String pan) {
+        if (pan == null || pan.length() < 6) return "ALL";
+        for (int len : new int[]{8, 6}) {
+            if (pan.length() >= len) {
+                String bin = pan.substring(0, len);
+                Optional<BinTable> match = binTableRepository.findByBinAndIsActiveTrue(bin);
+                if (match.isPresent() && match.get().getCardBrand() != null) {
+                    return match.get().getCardBrand().name();
+                }
+            }
+        }
+        return "ALL";
     }
 }

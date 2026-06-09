@@ -47,12 +47,12 @@ public class Iso8583Engine {
         // j8583 binary reads/writes MTI as 2-byte big-endian integer value:
         // "0200" -> int 200 -> bytes 0x00, 0xC8
         int[][] mtisAndFields = {
-            {200, 2, 3, 4, 7, 11, 12, 13, 22, 35, 37, 41, 42, 49},
-            {210, 2, 3, 4, 5, 7, 11, 12, 13, 22, 35, 37, 38, 39, 41, 42, 49},
-            {100, 2, 3, 4, 7, 11, 12, 13, 22, 35, 37, 41, 42, 49},
-            {220, 2, 3, 4, 7, 11, 12, 13, 22, 35, 37, 41, 42, 49},
-            {400, 2, 3, 4, 7, 11, 12, 37, 90},
-            {420, 2, 3, 4, 7, 11, 12, 37, 90},
+            {200, 2, 3, 4, 7, 11, 12, 13, 18, 22, 35, 37, 41, 42, 49},
+            {210, 2, 3, 4, 5, 7, 11, 12, 13, 18, 22, 35, 37, 38, 39, 41, 42, 49},
+            {100, 2, 3, 4, 7, 11, 12, 13, 18, 22, 35, 37, 41, 42, 49},
+            {220, 2, 3, 4, 7, 11, 12, 13, 18, 22, 35, 37, 41, 42, 49},
+            {400, 2, 3, 4, 7, 11, 12, 18, 37, 90},
+            {420, 2, 3, 4, 7, 11, 12, 18, 37, 90},
         };
         for (int[] mtiAndFields : mtisAndFields) {
             int mti = mtiAndFields[0];
@@ -77,6 +77,7 @@ public class Iso8583Engine {
             case 11 -> FieldParseInfo.getInstance(IsoType.NUMERIC, 6, enc);
             case 12 -> FieldParseInfo.getInstance(IsoType.TIME, 6, enc);
             case 13 -> FieldParseInfo.getInstance(IsoType.DATE4, 4, enc);
+            case 18 -> FieldParseInfo.getInstance(IsoType.NUMERIC, 4, enc);
             case 22 -> FieldParseInfo.getInstance(IsoType.NUMERIC, 3, enc);
             case 25 -> FieldParseInfo.getInstance(IsoType.NUMERIC, 2, enc);
             case 35 -> FieldParseInfo.getInstance(IsoType.LLVAR, 37, enc);
@@ -126,6 +127,12 @@ public class Iso8583Engine {
     public IsoMessage createAuthorizationRequest(
             String pan, BigDecimal amount, String currencyCode,
             String stan, String merchantId, String terminalId) {
+        return createAuthorizationRequest(pan, amount, currencyCode, stan, merchantId, terminalId, null);
+    }
+
+    public IsoMessage createAuthorizationRequest(
+            String pan, BigDecimal amount, String currencyCode,
+            String stan, String merchantId, String terminalId, String mcc) {
         IsoMessage msg = createMessage("0200");
         msg.setValue(2, pan, IsoType.LLVAR, 19);
         msg.setValue(3, "003000", IsoType.NUMERIC, 6);
@@ -134,6 +141,9 @@ public class Iso8583Engine {
         msg.setValue(11, stan, IsoType.NUMERIC, 6);
         msg.setValue(12, formatTime(new Date()), IsoType.TIME, 6);
         msg.setValue(13, formatMonthDay(new Date()), IsoType.DATE4, 4);
+        if (mcc != null) {
+            msg.setValue(18, mcc, IsoType.NUMERIC, 4);
+        }
         msg.setValue(22, "051", IsoType.NUMERIC, 3);
         msg.setValue(35, pan, IsoType.LLVAR, 37);
         msg.setValue(37, generateRrn(), IsoType.ALPHA, 12);

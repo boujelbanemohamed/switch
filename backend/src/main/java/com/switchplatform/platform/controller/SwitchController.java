@@ -94,10 +94,13 @@ public class SwitchController {
     }
 
     @GetMapping("/debug/iso8583-sample")
-    public ResponseEntity<Map<String, Object>> debugSample() {
+    public ResponseEntity<Map<String, Object>> debugSample(
+            @RequestParam(required = false) String pan,
+            @RequestParam(required = false) String mcc) {
+        String panVal = pan != null ? pan : "4905123456789012";
         IsoMessage msg = iso8583Engine.createAuthorizationRequest(
-                "4905123456789012", new java.math.BigDecimal("50.00"),
-                "TND", "123457", "MERCH01", "TERM01");
+                panVal, new java.math.BigDecimal("50.00"),
+                "TND", "123457", "MERCH01", "TERM01", mcc);
         byte[] encoded = iso8583Engine.encode(msg);
         String b64 = java.util.Base64.getEncoder().encodeToString(encoded);
         StringBuilder hex = new StringBuilder();

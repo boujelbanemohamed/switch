@@ -116,13 +116,15 @@ public class StandInService {
     }
 
     private StandInRule findRule(UUID issuerId, String cardBrand) {
-        Optional<StandInRule> specific = ruleRepository
-                .findByIssuerParticipantIdAndCardBrandAndEnabledTrue(issuerId, cardBrand);
-        if (specific.isPresent()) return specific.get();
+        if (issuerId != null) {
+            Optional<StandInRule> specific = ruleRepository
+                    .findByIssuerParticipantIdAndCardBrandAndEnabledTrue(issuerId, cardBrand);
+            if (specific.isPresent()) return specific.get();
 
-        Optional<StandInRule> brandAll = ruleRepository
-                .findByIssuerParticipantIdAndCardBrandAndEnabledTrue(issuerId, "ALL");
-        if (brandAll.isPresent()) return brandAll.get();
+            Optional<StandInRule> brandAll = ruleRepository
+                    .findByIssuerParticipantIdAndCardBrandAndEnabledTrue(issuerId, "ALL");
+            if (brandAll.isPresent()) return brandAll.get();
+        }
 
         List<StandInRule> global = ruleRepository
                 .findByIssuerParticipantIdIsNullAndCardBrandAndEnabledTrue("ALL");

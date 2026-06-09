@@ -5,14 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.solab.iso8583.IsoMessage;
 import com.switchplatform.platform.iso8583.Iso8583Engine;
 import com.switchplatform.platform.iso20022.Iso20022Engine;
-import com.switchplatform.platform.model.BinTable;
 import com.switchplatform.platform.model.Participant;
 import com.switchplatform.platform.model.RoutingRule;
 import com.switchplatform.platform.model.Transaction;
 import com.switchplatform.platform.model.acquiring.Merchant;
 import com.switchplatform.platform.model.issuing.Card;
 import com.switchplatform.platform.model.loyalty.LoyaltyMembership;
-import com.switchplatform.platform.repository.BinTableRepository;
 import com.switchplatform.platform.repository.RoutingRuleRepository;
 import com.switchplatform.platform.repository.TransactionRepository;
 import com.switchplatform.platform.repository.issuing.CardRepository;
@@ -23,6 +21,7 @@ import com.switchplatform.platform.service.acquiring.MerchantService;
 import com.switchplatform.platform.service.acquiring.SettlementService;
 import com.switchplatform.platform.service.clearing.ClearingService;
 import com.switchplatform.platform.service.clearing.InterchangeService;
+import com.switchplatform.platform.service.routing.BinTableService;
 import com.switchplatform.platform.service.standin.StandInService;
 import com.switchplatform.platform.model.standin.StandInAuthorization;
 import com.switchplatform.platform.service.ledger.LedgerPostingEngine;
@@ -54,7 +53,7 @@ public class SwitchCore {
     private final TransactionRouterService routerService;
     private final TransactionRepository transactionRepository;
     private final RoutingRuleRepository routingRuleRepository;
-    private final BinTableRepository binTableRepository;
+    private final BinTableService binTableService;
     private final ParticipantService participantService;
     private final MessageHandlerService messageHandlerService;
     private final ObjectMapper objectMapper;
@@ -97,6 +96,7 @@ public class SwitchCore {
         String merchantId = isoMsg.getField(42) != null ? isoMsg.getField(42).toString() : null;
         String terminalId = isoMsg.getField(41) != null ? isoMsg.getField(41).toString() : null;
         String rrn = isoMsg.getField(37) != null ? isoMsg.getField(37).toString() : null;
+        String mcc = isoMsg.getField(18) != null ? isoMsg.getField(18).toString() : null;
 
         String bin = pan != null && pan.length() >= 6 ? pan.substring(0, 6) : pan;
 
@@ -220,15 +220,32 @@ public class SwitchCore {
 
         } catch (Exception e) {
             log.error("Transaction {} failed: {}", transaction.getTransactionId(), e.getMessage());
+            String resolvedBrand = binTableService.resolveCardBrand(pan);
+            String resolvedMcc = mcc;
+            if (resolvedMcc == null || resolvedMcc.isBlank()) {
+                if (merchantId != null) {
+                    try {
+                        Optional<Merchant> merchantOpt = merchantService.getMerchantByCode(merchantId);
+                        if (merchantOpt.isPresent()) {
+                            String merchantMcc = merchantOpt.get().getMerchantCategoryCode();
+                            if (merchantMcc != null && !merchantMcc.isBlank()) {
+                                resolvedMcc = merchantMcc;
+                            }
+                        }
+                    } catch (Exception me) {
+                        log.warn("Merchant lookup failed for MCC fallback: {}", me.getMessage());
+                    }
+                }
+            }
             StandInAuthorization standIn = standInService.attemptStandIn(
                     transaction.getTransactionId(),
                     transaction.getIssuingParticipant() != null ? transaction.getIssuingParticipant().getId() : null,
-                    "VISA",
+                    resolvedBrand,
                     transaction.getPanHash() != null && transaction.getPanHash().length() >= 4
                             ? transaction.getPanHash().substring(transaction.getPanHash().length() - 4) : null,
                     transaction.getAmount(),
                     transaction.getCurrencyCode() != null ? transaction.getCurrencyCode() : "TND",
-                    null);
+                    resolvedMcc);
             if (standIn.getDecision() == StandInAuthorization.Decision.APPROVED) {
                 transaction.setResponseCode("00");
                 transaction.setStatus(Transaction.TransactionStatus.COMPLETED);
@@ -579,19 +596,8 @@ public class SwitchCore {
                         mcc = merchantCategoryCode;
                     }
 
-                    String cardBrand = null;
-                    if (panValue != null && panValue.length() >= 6) {
-                        try {
-                            String bin = panValue.substring(0, 6);
-                            Optional<BinTable> binOpt = binTableRepository.findByBinAndIsActiveTrue(bin);
-                            if (binOpt.isPresent()) {
-                                BinTable.CardBrand brand = binOpt.get().getCardBrand();
-                                if (brand != null) cardBrand = brand.name();
-                            }
-                        } catch (Exception e) {
-                            log.warn("BIN lookup failed for PAN prefix: {}", e.getMessage());
-                        }
-                    }
+                    String cardBrand = binTableService.resolveCardBrand(panValue);
+                    if ("ALL".equals(cardBrand)) cardBrand = null;
 
                     ClearingService.ClearingData clearingData = ClearingService.ClearingData.builder()
                             .transactionId(transaction.getTransactionId())

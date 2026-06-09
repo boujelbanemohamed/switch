@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { Cardholder, Card, CardAccount as CardAccountType, Notification as NotificationType } from '../types';
+import { IssuingHelp, CARD_STATUS_LABELS, ACCOUNT_STATUS_LABELS, CARDHOLDER_STATUS_LABELS, TOKEN_STATUS_LABELS, CARD_PRODUCT_LABELS, WALLET_PROVIDER_LABELS, CARD_ACTION_LABELS, getNotificationLabel } from '../components/IssuingHelp';
 import { SectionHeader } from '../components/SectionHeader';
 
 type Tab = 'cardholders' | 'cards' | 'accounts' | 'notifications' | 'pin' | 'tokenisation';
@@ -31,7 +32,7 @@ function MiniBtn({ label, color, onClick }: { label: string; color: string; onCl
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, label }: { status: string; label?: string }) {
   const colors: Record<string, string> = {
     ACTIVE: '#22c55e', BLOCKED: '#ef4444', PENDING: '#f59e0b',
     PENDING_ACTIVATION: '#f59e0b', LOST: '#ef4444', STOLEN: '#dc2626',
@@ -39,7 +40,7 @@ function StatusBadge({ status }: { status: string }) {
     INACTIVE: '#6b7280',
   };
   const color = colors[status] || '#6b7280';
-  return <span style={{ background: color + '33', color, padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{status}</span>;
+  return <span style={{ background: color + '33', color, padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{label ?? status}</span>;
 }
 
 export function Issuing() {
@@ -196,7 +197,10 @@ export function Issuing() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('issuing.title')}</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('issuing.title')}</h2>
+        <IssuingHelp />
+      </div>
       <SectionHeader sectionKey="issuing" />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
@@ -247,7 +251,7 @@ export function Issuing() {
                   <td style={{ padding: '10px 12px', fontWeight: 600 }}>{ch.firstName} {ch.lastName}</td>
                   <td style={{ padding: '10px 12px' }}>{ch.email}</td>
                   <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>{ch.phone || '-'}</td>
-                  <td style={{ padding: '10px 12px' }}><StatusBadge status={ch.status} /></td>
+                   <td style={{ padding: '10px 12px' }}><StatusBadge status={ch.status} label={CARDHOLDER_STATUS_LABELS[ch.status] ?? ch.status} /></td>
                   <td style={{ padding: '10px 12px', fontFamily: 'monospace' }}>{ch.kycLevel}</td>
                   <td style={{ padding: '10px 12px', fontSize: 12 }}>{new Date(ch.createdAt).toLocaleDateString()}</td>
                 </tr>
@@ -295,17 +299,17 @@ export function Issuing() {
                     <td style={{ padding: '10px 12px', fontFamily: 'monospace' }}>****{card.panSuffix}</td>
                     <td style={{ padding: '10px 12px' }}>{card.cardBrand}</td>
                     <td style={{ padding: '10px 12px' }}>{card.cardType}</td>
-                    <td style={{ padding: '10px 12px' }}><StatusBadge status={card.status} /></td>
+                    <td style={{ padding: '10px 12px' }}><StatusBadge status={card.status} label={CARD_STATUS_LABELS[card.status] ?? card.status} /></td>
                     <td style={{ padding: '10px 12px', fontSize: 12 }}>{card.expiresAt ? new Date(card.expiresAt).toLocaleDateString() : '-'}</td>
                     <td style={{ padding: '10px 12px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{card.panSuffix}</td>
                     <td style={{ padding: '10px 12px', fontFamily: 'monospace' }}>{card.dailyLimit}</td>
                     <td style={{ padding: '10px 12px', display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      <MiniBtn label="Activate" color="#22c55e" onClick={() => handleCardAction('activate', card.id)} />
-                      <MiniBtn label="Block" color="#ef4444" onClick={() => handleCardAction('block', card.id, 'MANUAL_BLOCK')} />
-                      <MiniBtn label="Unblock" color="#22c55e" onClick={() => handleCardAction('unblock', card.id)} />
-                      <MiniBtn label="Lost" color="#f59e0b" onClick={() => handleCardAction('lost', card.id)} />
-                      <MiniBtn label="Stolen" color="#ef4444" onClick={() => handleCardAction('stolen', card.id)} />
-                      <MiniBtn label="Renew" color="#3b82f6" onClick={() => handleCardAction('renew', card.id)} />
+                      <MiniBtn label={CARD_ACTION_LABELS['activate'] ?? 'Activer'} color="#22c55e" onClick={() => handleCardAction('activate', card.id)} />
+                      <MiniBtn label={CARD_ACTION_LABELS['block'] ?? 'Bloquer'} color="#ef4444" onClick={() => handleCardAction('block', card.id, 'MANUAL_BLOCK')} />
+                      <MiniBtn label={CARD_ACTION_LABELS['unblock'] ?? 'Débloquer'} color="#22c55e" onClick={() => handleCardAction('unblock', card.id)} />
+                      <MiniBtn label={CARD_ACTION_LABELS['lost'] ?? 'Perdue'} color="#f59e0b" onClick={() => handleCardAction('lost', card.id)} />
+                      <MiniBtn label={CARD_ACTION_LABELS['stolen'] ?? 'Volée'} color="#ef4444" onClick={() => handleCardAction('stolen', card.id)} />
+                      <MiniBtn label={CARD_ACTION_LABELS['renew'] ?? 'Renouveler'} color="#3b82f6" onClick={() => handleCardAction('renew', card.id)} />
                     </td>
                   </tr>
                 ))}
@@ -377,7 +381,7 @@ export function Issuing() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <Field label={t('issuing.walletProvider')}>
                 <select style={styles.select} value={tokenForm.walletProvider} onChange={e => setTokenForm({ ...tokenForm, walletProvider: e.target.value })}>
-                  {['APPLE_PAY', 'GOOGLE_PAY', 'SAMSUNG_PAY', 'OTHER'].map(p => <option key={p}>{p}</option>)}
+                  {['APPLE_PAY', 'GOOGLE_PAY', 'SAMSUNG_PAY', 'OTHER'].map(p => <option key={p} value={p}>{WALLET_PROVIDER_LABELS[p] ?? p}</option>)}
                 </select>
               </Field>
               <Field label={t('issuing.deviceId')}>
@@ -417,7 +421,7 @@ export function Issuing() {
                 {tokens.map(tk => (
                   <tr key={tk.uuid} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '10px 12px', fontFamily: 'monospace' }}>{tk.dpan}</td>
-                    <td style={{ padding: '10px 12px' }}><StatusBadge status={tk.status} /></td>
+                    <td style={{ padding: '10px 12px' }}><StatusBadge status={tk.status} label={TOKEN_STATUS_LABELS[tk.status] ?? tk.status} /></td>
                     <td style={{ padding: '10px 12px', display: 'flex', gap: 4 }}>
                       <MiniBtn label={t('issuing.revokeToken')} color="#ef4444" onClick={async () => {
                         await api.issuing.tokenVault.suspend(tk.dpan); loadTokenList();
@@ -460,7 +464,7 @@ export function Issuing() {
                 </div>
                 <div>
                   <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('issuing.status')}</p>
-                  <p style={{ fontSize: 18, fontWeight: 700 }}><StatusBadge status={acct.status} /></p>
+                  <p style={{ fontSize: 18, fontWeight: 700 }}><StatusBadge status={acct.status} label={ACCOUNT_STATUS_LABELS[acct.status] ?? acct.status} /></p>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -503,7 +507,7 @@ export function Issuing() {
                           color: n.type.includes('BLOCK') || n.type.includes('STOLEN') ? '#ef4444' :
                             n.type.includes('LOST') || n.type.includes('EXPIR') ? '#f59e0b' : '#22c55e',
                           padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
-                        }}>{n.type}</span>
+                        }}>{getNotificationLabel(n.type)}</span>
                       </td>
                       <td style={{ padding: '10px 12px' }}>{n.message}</td>
                       <td style={{ padding: '10px 12px' }}>{n.actionRequired ? '⚠️' : '-'}</td>
@@ -567,7 +571,7 @@ export function Issuing() {
               </Field>
               <Field label={t('issuing.cardProduct')}>
                 <select style={styles.select} value={cardForm.cardProduct} onChange={e => setCardForm({ ...cardForm, cardProduct: e.target.value })}>
-                  {['CREDIT', 'DEBIT', 'PREPAID', 'CHARGE'].map(p => <option key={p}>{p}</option>)}
+                  {['CREDIT', 'DEBIT', 'PREPAID', 'CHARGE'].map(p => <option key={p} value={p}>{CARD_PRODUCT_LABELS[p] ?? p}</option>)}
                 </select>
               </Field>
               <Field label={t('issuing.cardNumber')}><input style={styles.input} value={cardForm.cardNumber} onChange={e => setCardForm({ ...cardForm, cardNumber: e.target.value })} /></Field>
@@ -576,7 +580,7 @@ export function Issuing() {
                 <Field label={t('issuing.cvv')}><input style={styles.input} value={cardForm.cvv} onChange={e => setCardForm({ ...cardForm, cvv: e.target.value })} /></Field>
                 <Field label={t('issuing.status')}>
                   <select style={styles.select} value={cardForm.status} onChange={e => setCardForm({ ...cardForm, status: e.target.value })}>
-                    {['PENDING_ACTIVATION', 'ACTIVE', 'BLOCKED'].map(s => <option key={s}>{s}</option>)}
+                    {['PENDING_ACTIVATION', 'ACTIVE', 'BLOCKED'].map(s => <option key={s} value={s}>{CARD_STATUS_LABELS[s] ?? s}</option>)}
                   </select>
                 </Field>
               </div>

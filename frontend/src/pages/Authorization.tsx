@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { AuthRule, AuthDecision, HoldRecord, Condition, ConditionField, ConditionOperator } from '../types';
 import { CONDITION_FIELDS, OPERATORS_BY_FIELD, IS_MULTI_VALUE_OP, IS_RANGE_OP } from '../types';
+import { AuthorizationHelp, RULE_TYPE_LABELS, RULE_STATUS_LABELS, ACTION_LABELS, DECISION_LABELS, HOLD_STATUS_LABELS } from '../components/AuthorizationHelp';
 import { SectionHeader } from '../components/SectionHeader';
 
 type Tab = 'rules' | 'decisions' | 'holds' | 'simulator';
@@ -39,13 +40,13 @@ function MiniBtn({ label, color, onClick }: { label: string; color: string; onCl
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, label }: { status: string; label?: string }) {
   const colors: Record<string, string> = {
     ACTIVE: '#22c55e', INACTIVE: '#64748b', ACTIVE_HOLD: '#3b82f6',
     RELEASED: '#22c55e', EXPIRED: '#6b7280', CAPTURED: '#8b5cf6',
   };
   const color = colors[status] || '#6b7280';
-  return <span style={{ background: color + '33', color, padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{status}</span>;
+  return <span style={{ background: color + '33', color, padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{label ?? status}</span>;
 }
 
 export function Authorization() {
@@ -246,7 +247,10 @@ export function Authorization() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('authorization.title')}</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>{t('authorization.title')}</h2>
+        <AuthorizationHelp />
+      </div>
       <SectionHeader sectionKey="authorization" />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
@@ -298,10 +302,10 @@ export function Authorization() {
                 {rules.map(r => (
                   <tr key={r.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '12px 16px', fontWeight: 600 }}>{r.name}</td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{r.ruleType}</td>
+                    <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{RULE_TYPE_LABELS[r.ruleType] ?? r.ruleType}</td>
                     <td style={{ padding: '12px 16px' }}>-</td>
                     <td style={{ padding: '12px 16px', fontFamily: 'monospace' }}>{r.priority}</td>
-                    <td style={{ padding: '12px 16px' }}><StatusBadge status={r.status} /></td>
+                    <td style={{ padding: '12px 16px' }}><StatusBadge status={r.status} label={RULE_STATUS_LABELS[r.status] ?? r.status} /></td>
                     <td style={{ padding: '12px 16px', color: '#22c55e', fontWeight: 600 }}>{r.successCount}</td>
                     <td style={{ padding: '12px 16px', color: '#ef4444', fontWeight: 600 }}>{r.failureCount}</td>
                     <td style={{ padding: '12px 16px', display: 'flex', gap: 4 }}>
@@ -355,7 +359,7 @@ export function Authorization() {
                           background: `${(decisionColors[d.decision] || '#64748b')}33`,
                           color: decisionColors[d.decision] || '#64748b',
                           padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
-                        }}>{d.decision}</span>
+                        }}>{DECISION_LABELS[d.decision] ?? d.decision}</span>
                       </td>
                       <td style={{ padding: '10px 12px', fontFamily: 'monospace' }}>{d.responseCode}</td>
                       <td style={{ padding: '10px 12px' }}>{(d as any).riskScore || '-'}</td>
@@ -402,7 +406,7 @@ export function Authorization() {
                       <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontSize: 12 }}>{h.id.substring(0, 8)}...</td>
                       <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontWeight: 600 }}>{h.amount?.toLocaleString() || '-'}</td>
                       <td style={{ padding: '10px 12px' }}>{h.reason || '-'}</td>
-                      <td style={{ padding: '10px 12px' }}><StatusBadge status={h.status} /></td>
+                      <td style={{ padding: '10px 12px' }}><StatusBadge status={h.status} label={HOLD_STATUS_LABELS[h.status] ?? h.status} /></td>
                       <td style={{ padding: '10px 12px', fontSize: 12 }}>{h.expiresAt ? new Date(h.expiresAt).toLocaleString() : '-'}</td>
                       <td style={{ padding: '10px 12px', display: 'flex', gap: 4 }}>
                         {h.status === 'ACTIVE_HOLD' && (
@@ -459,7 +463,7 @@ export function Authorization() {
                       background: `${(decisionColors[simResult.decision] || '#64748b')}33`,
                       color: decisionColors[simResult.decision] || '#64748b',
                       padding: '4px 12px', borderRadius: 4, fontSize: 13, fontWeight: 700,
-                    }}>{simResult.decision}</span>
+                    }}>{DECISION_LABELS[simResult.decision] ?? simResult.decision}</span>
                   </div>
                   <div>
                     <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('authorization.simResponseCode')}</p>
@@ -487,12 +491,12 @@ export function Authorization() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <Field label={t('authorization.type')} required>
                   <select style={styles.select} value={ruleForm.ruleType} onChange={e => setRuleForm({ ...ruleForm, ruleType: e.target.value })}>
-                    {['LIMIT', 'VELOCITY', 'GEO', 'FRAUD', 'MERCHANT', 'RISK', 'PRODUCT', 'SOLDE', 'TIME', 'CUSTOM'].map(t => <option key={t}>{t}</option>)}
+                    {['LIMIT', 'VELOCITY', 'GEO', 'FRAUD', 'MERCHANT', 'RISK', 'PRODUCT', 'SOLDE', 'TIME', 'CUSTOM'].map(t => <option key={t} value={t}>{RULE_TYPE_LABELS[t] ?? t}</option>)}
                   </select>
                 </Field>
                 <Field label={t('authorization.action')}>
                   <select style={styles.select} value={ruleForm.action} onChange={e => setRuleForm({ ...ruleForm, action: e.target.value })}>
-                    {['APPROVE', 'DECLINE', 'REVIEW', 'CHALLENGE', 'TFA', 'PIN'].map(a => <option key={a}>{a}</option>)}
+                    {['APPROVE', 'DECLINE', 'REVIEW', 'CHALLENGE', 'TFA', 'PIN'].map(a => <option key={a} value={a}>{ACTION_LABELS[a] ?? a}</option>)}
                   </select>
                 </Field>
               </div>
@@ -500,7 +504,7 @@ export function Authorization() {
                 <Field label={t('authorization.priority')} required><input style={styles.input} type="number" value={ruleForm.priority} onChange={e => setRuleForm({ ...ruleForm, priority: e.target.value })} /></Field>
                 <Field label={t('authorization.status')}>
                   <select style={styles.select} value={ruleForm.status} onChange={e => setRuleForm({ ...ruleForm, status: e.target.value })}>
-                    {['ACTIVE', 'INACTIVE'].map(s => <option key={s}>{s}</option>)}
+                    {['ACTIVE', 'INACTIVE'].map(s => <option key={s} value={s}>{RULE_STATUS_LABELS[s] ?? s}</option>)}
                   </select>
                 </Field>
               </div>

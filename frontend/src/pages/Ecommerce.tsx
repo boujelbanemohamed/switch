@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
-import type { AcsAuthentication, AcsChallenge, AcsEnrollment, EpgTransaction, EpgMerchantConfig, ThreeDsSession, ThreeDsSessionCancelResponse } from '../types';
+import type { AcsAuthentication, AcsChallenge, AcsEnrollment, EpgTransaction, EpgMerchantConfig, Merchant, ThreeDsSession, ThreeDsSessionCancelResponse } from '../types';
 import { SectionHeader } from '../components/SectionHeader';
+import { EcommerceHelp, ACS_AUTH_STATUS_LABELS, ACS_ENROLLMENT_STATUS_LABELS, EPG_TXN_STATUS_LABELS, THREEDS_SESSION_STATUS_LABELS, EPG_MERCHANT_STATUS_LABEL } from '../components/EcommerceHelp';
 
 type Tab = 'acs' | 'epg' | 'threeDs';
 
@@ -23,7 +24,10 @@ export function Ecommerce() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('ecommerce.title')}</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700 }}>{t('ecommerce.title')}</h2>
+        <EcommerceHelp />
+      </div>
 
       <SectionHeader sectionKey="ecommerce" />
 
@@ -124,7 +128,7 @@ function AcsPanel({ loading, setLoading, onResult }: {
           {auth ? (
             <div>
               <DetailRow label={t('ecommerce.id')} value={auth.id} />
-              <DetailRow label={t('ecommerce.status')} value={auth.status} />
+              <DetailRow label={t('ecommerce.status')} value={ACS_AUTH_STATUS_LABELS[auth.status] ?? auth.status} />
               <DetailRow label={t('ecommerce.amount')} value={`${auth.amount} ${auth.currencyCode}`} />
               <DetailRow label={t('ecommerce.threeDsVersion')} value={auth.threeDsVersion} />
               <DetailRow label={t('ecommerce.authValue')} value={auth.authenticationValue || t('ecommerce.na')} />
@@ -162,6 +166,11 @@ function EpgPanel({ loading, setLoading, onResult }: {
   const [amount, setAmount] = useState('99.99');
   const [currency, setCurrency] = useState('TND');
   const [txn, setTxn] = useState<EpgTransaction | null>(null);
+  const [merchants, setMerchants] = useState<Merchant[]>([]);
+
+  useEffect(() => {
+    api.acquiring.merchants.list().then(setMerchants).catch(() => {});
+  }, []);
 
   const initiate = async () => {
     setLoading(true);
@@ -179,7 +188,10 @@ function EpgPanel({ loading, setLoading, onResult }: {
         <div style={{ background: 'var(--surface)', borderRadius: 12, padding: 20 }}>
           <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('ecommerce.initiatePayment')}</h3>
           <Field label={t('ecommerce.merchantId')}>
-            <input value={merchantId} onChange={e => setMerchantId(e.target.value)} />
+            <select value={merchantId} onChange={e => setMerchantId(e.target.value)} style={filterSelectStyle}>
+              <option value="">-- Sélectionner un commerçant --</option>
+              {merchants.map(m => <option key={m.id} value={m.id}>{m.legalName ?? m.name} ({m.merchantId})</option>)}
+            </select>
           </Field>
           <Field label={t('ecommerce.merchantTxnId')}>
             <input value={merchantTxnId} onChange={e => setMerchantTxnId(e.target.value)} />
@@ -204,7 +216,7 @@ function EpgPanel({ loading, setLoading, onResult }: {
           {txn ? (
             <div>
               <DetailRow label={t('ecommerce.id')} value={txn.id} />
-              <DetailRow label={t('ecommerce.status')} value={txn.status} />
+              <DetailRow label={t('ecommerce.status')} value={EPG_TXN_STATUS_LABELS[txn.status] ?? txn.status} />
               <DetailRow label={t('ecommerce.amount')} value={`${txn.amount} ${txn.currencyCode}`} />
               <DetailRow label={t('ecommerce.threeDsRequired')} value={txn.threeDsRequired ? t('ecommerce.yes') : t('ecommerce.no')} />
               <DetailRow label={t('ecommerce.threeDsStatus')} value={txn.threeDsStatus || t('ecommerce.na')} />
@@ -269,7 +281,7 @@ function ThreeDsPanel({ loading, setLoading, onResult }: {
           {session ? (
             <div>
               <DetailRow label={t('ecommerce.id')} value={session.id} />
-              <DetailRow label={t('ecommerce.status')} value={session.status} />
+              <DetailRow label={t('ecommerce.status')} value={THREEDS_SESSION_STATUS_LABELS[session.status] ?? session.status} />
               <DetailRow label={t('ecommerce.threeDsVersion')} value={session.threeDsVersion} />
               <DetailRow label={t('ecommerce.authValue')} value={session.authenticationValue || t('ecommerce.na')} />
               <DetailRow label={t('ecommerce.eci')} value={session.eci || t('ecommerce.na')} />
@@ -369,9 +381,9 @@ function AcsEnrollmentsSection() {
                 <RowLabel>Card ID</RowLabel>
                 <RowValue style={{ fontSize: 11 }}>{item.cardId}</RowValue>
               </div>
-              <div style={{ width: 80 }}>
+              <div style={{ width: 90 }}>
                 <RowLabel>{t('ecommerce.status')}</RowLabel>
-                <RowValue>{item.status}</RowValue>
+                <RowValue>{ACS_ENROLLMENT_STATUS_LABELS[item.status] ?? item.status}</RowValue>
               </div>
               <div style={{ width: 140 }}>
                 <RowLabel>{t('ecommerce.enrolledAt')}</RowLabel>
@@ -432,9 +444,9 @@ function AcsAuthenticationsSection() {
                   <RowLabel>{t('ecommerce.authId')}</RowLabel>
                   <RowValue>{item.id.length > 12 ? item.id.slice(0, 12) + '...' : item.id}</RowValue>
                 </div>
-                <div style={{ width: 120 }}>
+                <div style={{ width: 140 }}>
                   <RowLabel>{t('ecommerce.status')}</RowLabel>
-                  <RowValue>{item.status}</RowValue>
+                  <RowValue>{ACS_AUTH_STATUS_LABELS[item.status] ?? item.status}</RowValue>
                 </div>
                 <div style={{ width: 100 }}>
                   <RowLabel>{t('ecommerce.amount')}</RowLabel>
@@ -451,7 +463,7 @@ function AcsAuthenticationsSection() {
                   <DetailRow label={t('ecommerce.transactionId')} value={item.transactionId} />
                   <DetailRow label={t('ecommerce.cardId')} value={item.cardId || t('ecommerce.na')} />
                   {item.panHash && <DetailRow label="PAN Hash" value={item.panHash} />}
-                  <DetailRow label={t('ecommerce.status')} value={item.status} />
+                  <DetailRow label={t('ecommerce.status')} value={ACS_AUTH_STATUS_LABELS[item.status] ?? item.status} />
                   <DetailRow label={t('ecommerce.amount')} value={`${item.amount} ${item.currencyCode}`} />
                   <DetailRow label={t('ecommerce.threeDsVersion')} value={item.threeDsVersion} />
                   <DetailRow label={t('ecommerce.authValue')} value={item.authenticationValue || t('ecommerce.na')} />
@@ -476,6 +488,11 @@ function EpgMerchantsSection() {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ merchantId: '', apiKeyHash: '', apiSecretHash: '', webhookUrl: '' });
   const [saving, setSaving] = useState(false);
+  const [merchants, setMerchants] = useState<Merchant[]>([]);
+
+  useEffect(() => {
+    api.acquiring.merchants.list().then(setMerchants).catch(() => {});
+  }, []);
 
   const generateKey = () => {
     const randHex = (len: number) => Array.from({ length: len }, () => Math.floor(Math.random() * 16).toString(16)).join('');
@@ -537,7 +554,14 @@ function EpgMerchantsSection() {
       {(creating || editing) && (
         <div style={{ background: 'var(--surface)', borderRadius: 8, padding: 12, marginBottom: 12 }}>
           <Field label={t('ecommerce.merchantId')}>
-            <input value={form.merchantId} onChange={e => setForm(f => ({ ...f, merchantId: e.target.value }))} />
+            {editing ? (
+              <input value={form.merchantId} disabled style={{ ...inputStyle, opacity: 0.6 }} />
+            ) : (
+              <select value={form.merchantId} onChange={e => setForm(f => ({ ...f, merchantId: e.target.value }))} style={filterSelectStyle}>
+                <option value="">-- Sélectionner un commerçant --</option>
+                {merchants.map(m => <option key={m.id} value={m.id}>{m.legalName ?? m.name} ({m.merchantId})</option>)}
+              </select>
+            )}
           </Field>
           <Field label="API Key Hash">
             <div style={{ display: 'flex', gap: 6 }}>
@@ -576,7 +600,7 @@ function EpgMerchantsSection() {
               </div>
               <div style={{ width: 100 }}>
                 <RowLabel>{t('ecommerce.status')}</RowLabel>
-                <RowValue>{item.isActive ? 'ACTIVE' : 'INACTIVE'}</RowValue>
+                <RowValue>{EPG_MERCHANT_STATUS_LABEL(item.isActive)}</RowValue>
               </div>
               <div style={{ width: 140 }}>
                 <RowLabel>{t('ecommerce.createdAt')}</RowLabel>
@@ -625,7 +649,7 @@ function EpgTransactionsSection() {
       <div style={{ marginBottom: 8 }}>
         <select value={filter} onChange={e => setFilter(e.target.value)} style={filterSelectStyle}>
           <option value="">{t('ecommerce.allStatuses')}</option>
-          {uniqueStatuses.map(s => <option key={s} value={s}>{s}</option>)}
+          {uniqueStatuses.map(s => <option key={s} value={s}>{EPG_TXN_STATUS_LABELS[s] ?? s}</option>)}
         </select>
       </div>
 
@@ -649,9 +673,9 @@ function EpgTransactionsSection() {
                 <RowLabel>{t('ecommerce.txnAmount')}</RowLabel>
                 <RowValue>{txn.amount} {txn.currencyCode}</RowValue>
               </div>
-              <div style={{ width: 80 }}>
+              <div style={{ width: 90 }}>
                 <RowLabel>{t('ecommerce.status')}</RowLabel>
-                <RowValue>{txn.status}</RowValue>
+                <RowValue>{EPG_TXN_STATUS_LABELS[txn.status] ?? txn.status}</RowValue>
               </div>
               <div style={{ width: 60 }}>
                 <RowLabel>{t('ecommerce.txnThreeDs')}</RowLabel>
@@ -711,9 +735,9 @@ function ThreeDsSessionsSection() {
                   <RowLabel>{t('ecommerce.id')}</RowLabel>
                   <RowValue>{session.id.length > 12 ? session.id.slice(0, 12) + '...' : session.id}</RowValue>
                 </div>
-                <div style={{ width: 120 }}>
+                <div style={{ width: 140 }}>
                   <RowLabel>{t('ecommerce.status')}</RowLabel>
-                  <RowValue>{session.status}</RowValue>
+                  <RowValue>{THREEDS_SESSION_STATUS_LABELS[session.status] ?? session.status}</RowValue>
                 </div>
                 <div style={{ width: 140 }}>
                   <RowLabel>{t('ecommerce.txnDate')}</RowLabel>
@@ -733,7 +757,7 @@ function ThreeDsSessionsSection() {
                 <div style={{ background: 'var(--surface)', borderRadius: 8, padding: 12, margin: '4px 0 8px 0' }}>
                   <DetailRow label={t('ecommerce.id')} value={session.id} />
                   <DetailRow label={t('ecommerce.transactionId')} value={session.transactionId} />
-                  <DetailRow label={t('ecommerce.status')} value={session.status} />
+                  <DetailRow label={t('ecommerce.status')} value={THREEDS_SESSION_STATUS_LABELS[session.status] ?? session.status} />
                   <DetailRow label={t('ecommerce.threeDsVersion')} value={session.threeDsVersion} />
                   <DetailRow label={t('ecommerce.authValue')} value={session.authenticationValue || t('ecommerce.na')} />
                   <DetailRow label={t('ecommerce.eci')} value={session.eci || t('ecommerce.na')} />
@@ -857,4 +881,15 @@ const btnStyle: React.CSSProperties = {
   fontSize: 13,
   cursor: 'pointer',
   width: '100%',
+};
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '8px 10px',
+  borderRadius: 6,
+  border: '1px solid var(--border)',
+  background: 'var(--surface)',
+  fontSize: 12,
+  color: 'inherit',
+  boxSizing: 'border-box',
 };

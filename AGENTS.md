@@ -22,6 +22,10 @@ Compléter POS / Acquiring (mode d'entrée, cycle transactionnel, vues backoffic
 - **Loyalty loadMemberships** : 3 causes cumulées — (1) frontend appelait `listByCardholder('all')` mais l'API exige un UUID, (2) aucun endpoint backend ne listait toutes les adhésions, (3) `loadMemberships()` n'était déclenché par aucun `useEffect`. Fix : ajout de `GET /api/v1/loyalty/memberships` + `api.loyalty.memberships.list()` + `useEffect([activeTab])` pour charger les adhésions au clic sur l'onglet.
 - **Stand-in 3 bugs** : (1) `SwitchCore` passait `"VISA"` en dur à `attemptStandIn()` → Mastercard/CB/Amex jamais matché ; (2) DE 18 jamais extrait → `mcc=null` → toute règle avec restriction MCC retournait `false` ; (3) `findRule(null,cardBrand)` plantait `IncorrectResultSizeDataAccessException` avec plusieurs règles ALL sans issuer, ET ignorait les règles globales de marque spécifique avant de tomber sur ALL. Fix : `resolveCardBrand(pan)` via BIN 8→6, extraction DE 18 en début de `processIso8583Message()`, `findRule` avec garde `issuerId!=null` + recherche marque globale avant fallback ALL. Prouvé runtime : Mastercard 550000 → log `MASTERCARD`, VISA-only rule → Mastercard DECLINED (NO_RULE), VISA → APPROVED. 393 tests verts.
 - **POST /admin/participants** : String `metadata` mappée sur `JSONB` via `@Column(columnDefinition = "JSONB")` → PostgreSQL rejette l'insert car Hibernate bind le paramètre `String` comme `Types.VARCHAR` et PG ne caste pas implicitement `text` → `jsonb`. Fix : ajout de `@JdbcTypeCode(SqlTypes.JSON)` sur le champ — Hibernate 6 utilise alors le bon type JDBC (`Types.OTHER` avec les métadonnées JSON). 393 tests verts, runtime POST 200.
+- **Bug sécurité device fingerprint** : `DeviceFingerprintService.evaluate()` appelait `scoreDevice()` APRÈS `registerFingerprint()` → `registerFingerprint` mettait à jour l'IP avant la comparaison → `scoreDevice` voyait toujours IP identique → score 0.0, rendant la détection de changement d'IP/device inactive. Fix : `scoreDevice()` déplacé AVANT `registerFingerprint()`, avec `isKnownDevice()` pour l'état pré-enregistrement. Prouvé runtime : IP connue → score 0, IP différente → +30 pts, device inconnu → +90 pts. (commit [inséré])
+- **UUID `String` vs `UUID` résiduels** : `HoldRecord.cardId`/`cardAccountId` et `DeviceFingerprintRecord.cardId` déclarés `String` avec `@Column(length=64)` mais les appels passaient `Request.cardId` qui est `UUID` → conversions `.toString()`/`UUID.fromString()` dans toute la chaîne + perte de typage. Fix : migration `String→UUID` sur les 2 entités, repos, services, et contrôleurs — retire les conversions manuelles. Suppression de `.id(UUID.randomUUID())` dans `HoldService.placeHold()` et `DeviceFingerprintService.registerFingerprint()` (pattern `@GeneratedValue` incompatible avec setId manuel causant `StaleObjectStateException`).
+- **Règle "Block High Amount" inactive** : `FraudEngine.matchesCondition()` appelait `evaluateExpression()` qui retournait `false` pour toute expression non reconnue, et retournait aussi `false` pour `amount>{expr}` simple (confusion avec clause `false != true` au niveau supérieur). Fix : `evaluateExpression()` retourne `null` pour les formats non supportés, et `matchesCondition()` n'utilise le résultat que si non-null, laissant la règle tomber dans le `switch/case` par catégorie. Prouvé runtime : transaction > 10000 → score augmenté de 30pts.
+- **VelocityCheck enregistrement** : `FraudEngine.recordForVelocity()` créait `VelocityCheck` sans `windowStart`/`windowEnd` → requêtes de vélocité par fenêtre cassées. Fix : ajout `windowStart=now`, `windowEnd=now+1hour`.
 
 ## Bugs connus non corrigés
 - **BinTable.resolveCardBrand ignore bin_length** : `findByBinAndIsActiveTrue(bin)` retourne
@@ -55,6 +59,18 @@ Compléter POS / Acquiring (mode d'entrée, cycle transactionnel, vues backoffic
 - **Intégration** : help button + CATEGORY_LABELS (badges) + DATA_TYPE_LABELS (colonne type) dans ConfigLive.tsx.
 - **Corrections appliquées** : section 2 validation retirée, section 3 impact table, section 5 étapes corrigées (2 au lieu de 4), section 6 FAQ (valeur invalide + journalisation logs vs audit).
 - **Runtime validé** : GET 23 paramètres, PUT update temps réel (value → 999999).
+
+### ✅ Done — Volet Online : RBA 3DS (V060)
+- **RBA core (AcsService.evaluateRba)** : pont entre l'authentification 3DS et le FraudEngine — évalue le score de risque via 4 catégories (static rules, behavioral profile, velocity, device fingerprint), prend la décision (AUTHENTICATED < 30, CHALLENGE_REQUIRED 30-69, DECLINED ≥ 70). Seuils configurables dans `application.yml` (`score-low-threshold=30`, `score-high-threshold=70`).
+- **V060 migration** : ajoute `risk_score` (INTEGER) + `risk_decision` (VARCHAR 20) à `acs_authentications`.
+- **Phase 1 — Frictionless 3DS** : `POST /api/v1/simulator/ecommerce/frictionless` → EPG → 3DS → AReq → RBA réel → score < 30 → AUTHENTICATED (CAVV/ECI générés) → autorisation. Vérifié runtime.
+- **Phase 2 — Défi navigateur OTP** : `POST /api/v1/simulator/ecommerce/challenge` initie (score 30-69 → CHALLENGE_REQUIRED + OTP créé), `POST …/challenge/verify` valide OTP → AUTHENTICATED. Vérifié runtime + DB.
+- **Phase 3 — Défi app mobile** : `POST /api/v1/simulator/ecommerce/app-challenge` initie (challengeType=APP_NOTIFICATION), `POST …/app-challenge/respond` (APPROVE/REJECT) → AUTHENTICATED/DECLINED. Vérifié runtime + DB.
+- **Phase 4 — Batch transactionnel (vrai RBA)** : `POST /api/v1/simulator/ecommerce/batch` distribue N transactions entre 4 profils de risque calibrés (LOW_RISK, MEDIUM_DOMESTIC, MEDIUM_FOREIGN, HIGH_RISK) — chaque transaction passe par le vrai `AcsService.evaluateRba()`. Distribution approximative (documentée). Répartition par profils définie par `frictionlessPercent`, `challengePercent`, `appChallengePercent`, `declinedPercent`.
+- **Multi-cartes batch** : `cardIds` (List<UUID>) remplace `cardId` (UUID) — chaque transaction pioche une carte aléatoire dans le pool, répartissant la vélocité. `clearVelocity` au début du batch (ardoise vierge). Pré-enregistrement device fingerprints pour les profils utilisateurs connus.
+- **Device fingerprint fix (bug sécurité)** : `scoreDevice()` déplacé AVANT `registerFingerprint()` — la comparaison d'IP fonctionne désormais. Prouvé runtime : IP connue → score 0, IP nouvelle → +30, device inconnu → +90. Détection IP active prouvée : +30 entre même IP et IP différente sur un device connu.
+- **Bugs résiduels corrigés** : UUID `String→UUID` sur HoldRecord/DeviceFingerprintRecord/AuthorizationEngine, `evaluateExpression()` retourne `null` au lieu de `false` pour les expressions non supportées, `VelocityCheck.windowStart/windowEnd` ajoutés, `Block High Amount` rule active, `.id(UUID.randomUUID())` supprimé de HoldService/DeviceFingerprintService.
+- **Tests** : 393 passent (AcsServiceTest injecte le mock FraudEngine).
 
 ## Progress
 
@@ -223,15 +239,22 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - ~~**Merchant status mismatch** : frontend select `Acquiring.tsx:413` liste `PENDING_APPROVAL` mais le backend `MerchantStatus` enum contient `PENDING_ONBOARDING` (pas PENDING_APPROVAL). **CORRIGÉ** : select aligné sur les 5 valeurs backend (ACTIVE, PENDING_ONBOARDING, SUSPENDED, TERMINATED, UNDER_REVIEW).~~
 
 ## Next Steps
-1. **Fix card creation API** : `StaleObjectStateException` dans `CardService.createCard()` due à `@GeneratedValue` + setId manuel.
-2. **Démarrer backend** : `mvn spring-boot:run -Dspring-boot.run.profiles=dev` avec variables d'env.
-3. **Démonstration concrète** : ouvrir ligne crédit → autoriser → achat → générer relevé → montrer intérêts + min payment.
-4. **À l'arrivée des specs** : type 40, 3e format, nommage fichier, slipNumber, Visa BASE II TC 05 TCR 0 (ARN + BID a compléter), Mastercard IPM, layout BCT FCOMPSMT.
+1. **UI tableau de bord batch** : afficher les résultats du batch dans une page frontend simple (Phase 6).
+2. **Persistance d'historique des simulations** : enregistrer chaque run batch pour rejeu et comparaison.
+3. **Variations montant/devise** dans le batch.
+4. **Corriger `CardService.createCard()`** : `@GeneratedValue` + setId manuel → `StaleObjectStateException`.
+5. **À l'arrivée des specs** : type 40, 3e format, nommage fichier, slipNumber, Visa BASE II TC 05 TCR 0 (ARN + BID à compléter), Mastercard IPM, layout BCT FCOMPSMT.
 
 ## Critical Context
-- **Dernière migration** : V059__transfers.sql.
+- **Dernière migration** : V060__add_risk_score_to_acs.sql (ajoute risk_score + risk_decision à acs_authentications).
 - **JAVA_HOME** : /opt/homebrew/Cellar/openjdk@21/21.0.11.
-- **Backend** : 393 tests passent (366 orig. + 13 crédit + loyalty + 12 transfers). Frontend : npm run build OK.
+- **Backend** : 393 tests passent. Frontend : npm run build OK.
+- **Seuils RBA** : `score-low-threshold=30`, `score-high-threshold=70` (application.yml) — score < 30 → AUTHENTICATED, 30-69 → CHALLENGE_REQUIRED, ≥ 70 → DECLINED.
+- **6 endpoints simulator actifs** : `POST /api/v1/simulator/ecommerce/{frictionless,challenge,challenge/verify,app-challenge,app-challenge/respond,batch}` — tous permitAll via AntPathRequestMatcher.
+- **Device fingerprint fix prouvé** : `DeviceFingerprintService.evaluate()` appelle `scoreDevice()` AVANT `registerFingerprint()`. IP connue → 0 pts, IP nouvelle → 30 pts, device inconnu → 90 pts. Prouvé runtime par différence de score entre IP identique et IP différente sur device connu.
+- **Batch distribution approximative** : les % définissent la répartition des profils d'entrée, PAS les statuts de sortie. Le RBA décide réellement.
+- **OTP** stocké en clair dans `acs_challenges.challengeData` (pas de SMS réel).
+- **BehavioralProfileService** nécessite ≥ 5 échantillons avant de pouvoir détecter des anomalies.
 - **Comptes ledger crédit** : CREDIT_RECEIVABLE (ASSET), CREDIT_FUNDING (LIABILITY) — seedés dans V055.
 - **Comptes ledger fees** : TRANSFER_FEE_INCOME (INCOME), SETTLEMENT_MAIN (LIABILITY) — seedés dans V059.
 - **AccountType.CREDIT** : existe déjà dans `CardAccount`, pas de migration enum.

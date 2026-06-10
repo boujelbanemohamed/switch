@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import type { Participant, RoutingRule } from '../types';
 import { Plus, X, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { SectionHeader } from '../components/SectionHeader';
+import { RoutingRulesHelp, PROTOCOL_LABELS, RULE_STATUS_LABELS } from '../components/RoutingRulesHelp';
 
 const protocolOptions = ['ISO8583', 'ISO20022', 'BOTH'] as const;
 
@@ -157,7 +158,10 @@ export function RoutingRules() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700 }}>{t('switching.routingRules')}</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h2 style={{ fontSize: 24, fontWeight: 700 }}>{t('switching.routingRules')}</h2>
+          <RoutingRulesHelp />
+        </div>
         <button onClick={openCreate} style={{
           display: 'flex', alignItems: 'center', gap: 8,
           background: '#3b82f6', color: 'white', border: 'none',
@@ -218,7 +222,9 @@ export function RoutingRules() {
                       padding: '2px 8px', borderRadius: 4, fontSize: 11,
                       color: 'var(--text-secondary)',
                     }}>
-                      {rule.protocol}
+                      {rule.protocol === 'ISO8583' ? PROTOCOL_LABELS.ISO8583 :
+                       rule.protocol === 'ISO20022' ? PROTOCOL_LABELS.ISO20022 :
+                       PROTOCOL_LABELS.BOTH}
                     </span>
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: 13 }}>
@@ -233,7 +239,7 @@ export function RoutingRules() {
                       fontSize: 12,
                       fontWeight: 600,
                     }}>
-                      {rule.status}
+                      {rule.status === 'ACTIVE' ? RULE_STATUS_LABELS.ACTIVE : RULE_STATUS_LABELS.INACTIVE}
                     </span>
                   </td>
                   <td style={{ padding: '12px 16px' }}>
@@ -305,7 +311,11 @@ export function RoutingRules() {
                 <Field label={t('switching.protocol')}>
                   <select style={SELECT} value={form.protocol}
                     onChange={e => setForm({ ...form, protocol: e.target.value as 'ISO8583' | 'ISO20022' | 'BOTH' })}>
-                    {protocolOptions.map(p => <option key={p} value={p}>{p}</option>)}
+                    {protocolOptions.map(p => <option key={p} value={p}>
+                      {p === 'ISO8583' ? PROTOCOL_LABELS.ISO8583 :
+                       p === 'ISO20022' ? PROTOCOL_LABELS.ISO20022 :
+                       PROTOCOL_LABELS.BOTH}
+                    </option>)}
                   </select>
                 </Field>
               </div>
@@ -347,8 +357,8 @@ export function RoutingRules() {
                 <Field label={t('switching.status')}>
                   <select style={SELECT} value={form.status}
                     onChange={e => setForm({ ...form, status: e.target.value as 'ACTIVE' | 'INACTIVE' })}>
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="INACTIVE">INACTIVE</option>
+                    <option value="ACTIVE">{RULE_STATUS_LABELS.ACTIVE}</option>
+                    <option value="INACTIVE">{RULE_STATUS_LABELS.INACTIVE}</option>
                   </select>
                 </Field>
               </div>

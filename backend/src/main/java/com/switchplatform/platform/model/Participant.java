@@ -3,6 +3,8 @@ package com.switchplatform.platform.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -52,6 +54,7 @@ public class Participant {
     @Column(name = "is_domestic", nullable = false)
     private Boolean isDomestic = true;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSONB")
     private String metadata;
 

@@ -17,18 +17,44 @@ Compléter POS / Acquiring (mode d'entrée, cycle transactionnel, vues backoffic
 - Crédit frontend : `const data = await api.xxx()` sans destructuring `{ data }`. Les routes GET = ADMIN/OPERATOR/ANALYST, écritures = ADMIN/OPERATOR. `AntPathRequestMatcher` pour `/api/v1/credit/**`.
 - Crédit : valeurs par défaut proposées (APR 18%, min 5%/10 TND, grace period) — pas de décision métier sans validation client. Conformité réglementaire (taux d'usure, disclosures) hors scope technique.
 
-## Bugs corrigés (Lot 1)
+## Bugs corrigés
+- **POST /interchange/configure 500** : `@Valid` sur `Map<String, Object>` dans `ClearingController.configureInterchange()` — Spring Validation tente de valider un `Map` non typé, ce qui échoue après l'exécution du handler (l'entité est bien persistée mais la réponse est 500 → l'utilisateur croit que la création a échoué). Fix : retrait de l'annotation `@Valid`. Vérifié runtime : POST retourne désormais 200.
 - **Loyalty loadMemberships** : 3 causes cumulées — (1) frontend appelait `listByCardholder('all')` mais l'API exige un UUID, (2) aucun endpoint backend ne listait toutes les adhésions, (3) `loadMemberships()` n'était déclenché par aucun `useEffect`. Fix : ajout de `GET /api/v1/loyalty/memberships` + `api.loyalty.memberships.list()` + `useEffect([activeTab])` pour charger les adhésions au clic sur l'onglet.
+- **Stand-in 3 bugs** : (1) `SwitchCore` passait `"VISA"` en dur à `attemptStandIn()` → Mastercard/CB/Amex jamais matché ; (2) DE 18 jamais extrait → `mcc=null` → toute règle avec restriction MCC retournait `false` ; (3) `findRule(null,cardBrand)` plantait `IncorrectResultSizeDataAccessException` avec plusieurs règles ALL sans issuer, ET ignorait les règles globales de marque spécifique avant de tomber sur ALL. Fix : `resolveCardBrand(pan)` via BIN 8→6, extraction DE 18 en début de `processIso8583Message()`, `findRule` avec garde `issuerId!=null` + recherche marque globale avant fallback ALL. Prouvé runtime : Mastercard 550000 → log `MASTERCARD`, VISA-only rule → Mastercard DECLINED (NO_RULE), VISA → APPROVED. 393 tests verts.
+- **POST /admin/participants** : String `metadata` mappée sur `JSONB` via `@Column(columnDefinition = "JSONB")` → PostgreSQL rejette l'insert car Hibernate bind le paramètre `String` comme `Types.VARCHAR` et PG ne caste pas implicitement `text` → `jsonb`. Fix : ajout de `@JdbcTypeCode(SqlTypes.JSON)` sur le champ — Hibernate 6 utilise alors le bon type JDBC (`Types.OTHER` avec les métadonnées JSON). 393 tests verts, runtime POST 200.
+
+## Bugs connus non corrigés
+- **BinTable.resolveCardBrand ignore bin_length** : `findByBinAndIsActiveTrue(bin)` retourne
+  `Optional<BinTable>` mais n'a aucun filtre sur `binLength`. Si deux entrees ont le meme `bin`
+  avec des `binLength` differents (permis par la contrainte `(bin, bin_length, participant_id)`),
+  l'`Optional` lance `IncorrectResultSizeDataAccessException` — exactement le meme pattern
+  que le bug stand-in. Exemple : entree `bin=550000, binLength=6, brand=VISA` et entree
+  `bin=550000, binLength=8, brand=VISA` → un PAN commencant par 550000 trouve 2 lignes → crash.
+  **Fix attendu** : remplacer `Optional` par `List<BinTable>` dans la signature et le retour
+  de `findByBinAndIsActiveTrue` (ou creer une methode dedice filtrant par `binLength`),
+  puis trier la liste du BIN le plus long au plus court et prendre le premier resultat.
+  Alternativement, ne pas filtrer par `binLength` et laisser le tri par longueur de `bin`
+  (colonne) suffit car 8-chiffre != 6-chiffre dans la colonne `bin` — mais le cas
+  meme-valeur-de-bin-avec-lengths-differents doit etre protege par `List`.
 
 ## Patterns interdits (anti-régression)
 
 - **`requestMatchers(HttpMethod, String)` dans SecurityConfig** → utiliser `requestMatchers(new AntPathRequestMatcher(path, method))` impérativement. La version `String` crée un `MvcRequestMatcher` qui **ne match que les routes avec un handler Spring MVC**. Toute route sans controller (forward vers `/error`, 404, etc.) reçoit un 401/403 fantôme.
 - **`.id(UUID.randomUUID())` / `setId(UUID.randomUUID())` sur une entité `@GeneratedValue`** → laisser Hibernate générer l'ID. Le set manuel fait croire à Hibernate que l'entité est *détachée* (existe déjà) plutôt que *nouvelle* → `merge()` au lieu de `persist()` → `StaleObjectStateException` au `save()`.
+- **`String` sur `@Column(columnDefinition = "JSONB")` sans `@JdbcTypeCode(SqlTypes.JSON)`** → Hibernate bind le String comme `Types.VARCHAR` mais PostgreSQL attend un `jsonb` via `Types.OTHER`. L'insert échoue avec `ERROR: column "x" is of type jsonb but expression is of type character varying`. Toujours ajouter `@JdbcTypeCode(SqlTypes.JSON)` sur les champs String mappés à une colonne JSON/JSONB.
 
 ## Bugs connus non corrigés
 
-- **Stand-in : marque de carte codée en dur "VISA"** (`SwitchCore.java:226`) — le paramètre `cardBrand` passé à `StandInService.attemptStandIn()` est toujours `"VISA"` quelle que soit la vraie marque de la carte. Résultat : les règles stand-in configurées pour Mastercard, CB, Amex ou toute autre marque ne se déclenchent jamais. Seules les règles `cardBrand = "VISA"` ou `cardBrand = "ALL"` fonctionnent.
-- **Stand-in : MCC passé null** (`SwitchCore.java:231`) — le paramètre `mcc` de `attemptStandIn()` est `null`. Dans `isMccAllowed()`, si `mcc == null` et `allowedMcc != "*"`, la méthode retourne `false`. Donc toute règle stand-in avec une restriction MCC (ex: `allowedMcc = "5812,5813"`) échoue systématiquement pour toutes les transactions STIP, même si le MCC réel est autorisé.
+### ✅ Done — Lot 3 : RegulatoryReports FR guide + label maps
+- **RegulatoryReportsHelp.tsx** : guide 6 sections + PERIODICITY_LABELS (DAILY, MONTHLY), FORMAT_LABELS (CSV). Explique les 4 modèles (bct-daily, bct-monthly, sibtel-daily, sibtel-monthly) et l'état stub.
+- **Intégration** : help button + PERIODICITY_LABELS sur les cartes templates dans RegulatoryReports.tsx.
+- **Runtime validé** : GET 4 templates, POST generate retourne CSV stub.
+
+### ✅ Done — Lot 3 : ConfigLive FR guide + label maps
+- **ConfigLiveHelp.tsx** : guide 6 sections + CATEGORY_LABELS (9 catégories), DATA_TYPE_LABELS (5 types). Fausses affirmations corrigées (validation type, revalidation routage/cache, audit table → log seulement). Tableau d'impact par catégorie ajouté (section 3, SWITCH=Critique). FAQ valeur invalide détaille getInt() silencieux → défaut 0.
+- **Intégration** : help button + CATEGORY_LABELS (badges) + DATA_TYPE_LABELS (colonne type) dans ConfigLive.tsx.
+- **Corrections appliquées** : section 2 validation retirée, section 3 impact table, section 5 étapes corrigées (2 au lieu de 4), section 6 FAQ (valeur invalide + journalisation logs vs audit).
+- **Runtime validé** : GET 23 paramètres, PUT update temps réel (value → 999999).
 
 ## Progress
 
@@ -119,7 +145,7 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - **StandInHelp.tsx** : guide + STANDIN_DECISION_LABELS (3 valeurs), STANDIN_REASON_LABELS (7 raisons).
 - **StandIn.tsx** : auth.reason traduit via STANDIN_REASON_LABELS ; auth.decision via STANDIN_DECISION_LABELS.
 - **Runtime test** : create/update/delete rule, listing all rules OK.
-- **Bugs 1-2** : `SwitchCore.java:226` passe `"VISA"` hardcodé + `:231` passe `null` pour MCC — documentés dans AGENTS.md.
+- **Bugs 1-3 (corrigés commit a9ce614)** : `SwitchCore` passait `"VISA"` hardcodé + `mcc=null` + `findRule` ignorait les règles globales de marque. Voir section Bugs corrigés.
 
 ### ✅ Done — Lot 2 : FxRates FR guide + label maps
 - **FxRatesHelp.tsx** : guide 6 sections (concepts, pas à pas, DCC, FAQ).
@@ -138,6 +164,37 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - **Toutes les maps déjà utilisées dans Transactions.tsx** : statuts, types, canaux, couleurs — aucune modification nécessaire.
 - **Guide vérifié** : sections techniques (SwitchCore, RoutingEngine, stand-in, clearing) exactes par rapport au code.
 - **Runtime test** : liste, filtre POS, filtre PURC, combinaison POS+PURC OK (11 transactions, 8 POS, 8 PURC).
+
+### ✅ Done — Lot 3 : BinTables FR guide + label maps
+- **BinTablesHelp.tsx** : guide 6 sections + CARD_BRAND_LABELS, CARD_TYPE_LABELS.
+- **Intégration** : help button + label maps dans BinTables.tsx.
+- **Bug connu** : `resolveCardBrand` utilise `Optional<BinTable>` mais pas de filtre `binLength` → doublon de `bin` possible → `IncorrectResultSizeDataAccessException`.
+
+### ✅ Done — Lot 3 : RoutingRules FR guide + label maps
+- **RoutingRulesHelp.tsx** : guide (priority ASC, first-match-short-circuit, 7 operators, JSON format `{"operator":"AND","rules":[...]}`), PROTOCOL_LABELS, RULE_STATUS_LABELS.
+- **Runtime validé** : CRUD + toggle rule. Guide corrigé (exemples JSON en format réel, pas simplifié).
+
+### ✅ Done — Lot 3 : FeeSchedules FR guide + label maps
+- **FeeSchedulesHelp.tsx** : guide (priority DESC vs RoutingRules ASC, INTERCHANGE_LOOKUP intact description "code mort", 5 calc methods). SCHEDULE_TYPE_LABELS, SCHEDULE_STATUS_LABELS, APPLIES_TO_LABELS, CALC_METHOD_LABELS.
+- **Runtime validé** : CRUD + 4 calculs (flat, percentage, clamp-min, clamp-max).
+- **INTERCHANGE_LOOKUP** : décrit dans la FAQ comme non connecté à la table d'interchange (retourne toujours 0).
+
+### ✅ Done — Lot 3 : InterchangeFees FR guide + label maps
+- **InterchangeFeesHelp.tsx** : guide (formule, cascade wildcard, 2 systèmes indépendants). REGION_LABELS + réutilisation CARD_BRAND_LABELS/CARD_TYPE_LABELS depuis BinTablesHelp.
+- **Runtime validé** : GET list, PUT update, DELETE, 3 calculs (1,30/2,75/7,00 TND), POST retourne 200 après fix `@Valid`.
+- **INTERCHANGE_LOOKUP documenté comme code mort** : guide explique que cette table n'est pas liée aux barmes de frais.
+
+### ✅ Done — Lot 3 : CardPrograms FR guide + label maps
+- **CardProgramsHelp.tsx** : guide 6 sections + PROGRAM_TYPE_LABELS (8 types), PROGRAM_STATUS_LABELS (4 statuts), PRODUCT_CARD_TYPE_LABELS (DEBIT/CREDIT/PREPAID/CHARGE/VIRTUAL), CARD_NETWORK_LABELS (VISA_NET/MASTERCARD_NET/CB_NET/AMEX_NET/VERVE_NET).
+- **Intégration** : help button + label maps dans CardPrograms.tsx. Cartes types/produits/nouveaux labels.
+- **Extension BinTablesHelp** : ajout VERVE à CARD_BRAND_LABELS, ajout CHARGE + VIRTUAL à CARD_TYPE_LABELS.
+- **Runtime validé** : CRUD program, activate/deactivate, create product activable, cascading delete program→product (204). 3 seeds confirmés (Classic TND, Premium Business, Platinum Rewards).
+
+### ✅ Done — Lot 3 : Participants FR guide + label maps
+- **ParticipantsHelp.tsx** : guide 6 sections (types, statuts, endpoint, protocoles, flag domestique) + PARTICIPANT_TYPE_LABELS (4), PARTICIPANT_STATUS_LABELS (3), ENDPOINT_TYPE_LABELS (4). Tableau des 12 seeds.
+- **Intégration** : help button + label maps dans Participants.tsx (type badges, status, selects).
+- **Bug backend JSONB** : String `metadata` → JSONB nécessitait `@JdbcTypeCode(SqlTypes.JSON)`. Fixé.
+- **Runtime validé** : CRUD participant (POST 200, PUT SUSPENDED, GET by ID, DELETE 204). 393 tests verts.
 
 
 ## Key Decisions
@@ -187,6 +244,8 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 ## UX à améliorer
 
 - **Issuing — Set PIN : le champ pinBlock est dans la section Verify PIN au lieu de Set PIN (Issuing.tsx:335 vs 344).** L'utilisateur qui suit le guide ("saisissez le PIN en clair et un pin block") ne voit qu'un champ rawPin dans Set PIN ; le second champ pinBlock est physiquement sous l'intitulé "Verify PIN". À corriger : déplacer le champ pinBlock dans la section Set PIN pour que les deux champs soient côte à côte.
+- **CardPrograms — imports morts (CardPrograms.tsx:12)** : `Pencil`, `Trash2`, `RefreshCw` importés de `lucide-react` mais jamais utilisés dans le JSX. Aucun bouton Modifier ni Supprimer n'existe dans l'interface. Nettoyage cosmétique : supprimer les 3 imports.
+- **CardPrograms — isReissuable:true en dur sans UI (CardPrograms.tsx:281)** : `isReissuable: true` dans le state par défaut du ProductForm mais aucun checkbox correspondant dans le formulaire (lignes 327-364). La valeur est envoyée `true` à l'API sans que l'utilisateur puisse la modifier. Défaut UI mineur : ajouter un checkbox ou retirer le champ du form state.
 
 ## Relevant Files
 ### Migrations
@@ -278,3 +337,13 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - `frontend/src/i18n/en.json` : transfer section
 - `frontend/src/i18n/fr.json` : transfer section
 - `test/.../transfer/TransferServiceTest.java` : 12 tests (A2A/P2P, limits, fees, atomicity, reverse)
+- `frontend/src/components/CardProgramsHelp.tsx` : guide + PROGRAM_TYPE_LABELS, PROGRAM_STATUS_LABELS, PRODUCT_CARD_TYPE_LABELS, CARD_NETWORK_LABELS
+- `frontend/src/pages/CardPrograms.tsx` : help button + label maps (types, statuts, brand, network)
+- `frontend/src/components/ParticipantsHelp.tsx` : guide + PARTICIPANT_TYPE_LABELS, PARTICIPANT_STATUS_LABELS, ENDPOINT_TYPE_LABELS
+- `frontend/src/pages/Participants.tsx` : help button + label maps (type, status, selects)
+- `model/Participant.java` : fix `@JdbcTypeCode(SqlTypes.JSON)` pour le champ metadata (String→JSONB)
+- `service/ParticipantService.java` : CRUD participant
+- `frontend/src/components/RegulatoryReportsHelp.tsx` : guide + PERIODICITY_LABELS, FORMAT_LABELS
+- `frontend/src/pages/RegulatoryReports.tsx` : help button + periodicity label maps
+- `frontend/src/components/ConfigLiveHelp.tsx` : guide + CATEGORY_LABELS, DATA_TYPE_LABELS
+- `frontend/src/pages/ConfigLive.tsx` : help button + category/data type label maps

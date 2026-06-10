@@ -2,6 +2,7 @@ import { useState, useEffect, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { SectionHeader } from '../components/SectionHeader';
+import { FeeSchedulesHelp, SCHEDULE_TYPE_LABELS, SCHEDULE_STATUS_LABELS, APPLIES_TO_LABELS, CALC_METHOD_LABELS } from '../components/FeeSchedulesHelp';
 import {
   Plus, Pencil, Trash2, ToggleLeft, ToggleRight,
   DollarSign, RefreshCw,
@@ -82,13 +83,16 @@ export function FeeSchedules() {
       INACTIVE: 'bg-gray-700 text-gray-400',
       ARCHIVED: 'bg-red-900/50 text-red-400',
     };
-    return <span className={`px-2 py-0.5 rounded text-xs ${colors[s] || 'bg-gray-700 text-gray-400'}`}>{s}</span>;
+    return <span className={`px-2 py-0.5 rounded text-xs ${colors[s] || 'bg-gray-700 text-gray-400'}`}>{SCHEDULE_STATUS_LABELS[s] || s}</span>;
   };
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t('fees.title')}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h1 className="text-2xl font-bold">{t('fees.title')}</h1>
+          <FeeSchedulesHelp />
+        </div>
         <button onClick={() => setShowForm(true)}
           className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">
           <Plus className="w-4 h-4" /> {t('fees.newSchedule')}
@@ -116,7 +120,7 @@ export function FeeSchedules() {
                     <p className="font-medium text-sm">{s.name}</p>
                     {statusBadge(s.status)}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">{s.scheduleType} · {s.currencyCode}</p>
+                  <p className="text-xs text-gray-500 mt-1">{SCHEDULE_TYPE_LABELS[s.scheduleType] || s.scheduleType} · {s.currencyCode}</p>
                 </div>
               ))}
             </div>
@@ -147,9 +151,9 @@ export function FeeSchedules() {
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3 text-sm">
-                  <div><span className="text-gray-500">{t('fees.type')}</span> <p>{selectedSchedule.scheduleType}</p></div>
+                  <div><span className="text-gray-500">{t('fees.type')}</span> <p>{SCHEDULE_TYPE_LABELS[selectedSchedule.scheduleType] || selectedSchedule.scheduleType}</p></div>
                   <div><span className="text-gray-500">{t('fees.priority')}</span> <p>{selectedSchedule.priority}</p></div>
-                  <div><span className="text-gray-500">{t('fees.appliesTo')}</span> <p>{selectedSchedule.appliesTo || 'ALL'}</p></div>
+                  <div><span className="text-gray-500">{t('fees.appliesTo')}</span> <p>{APPLIES_TO_LABELS[selectedSchedule.appliesTo] || selectedSchedule.appliesTo || 'ALL'}</p></div>
                   <div><span className="text-gray-500">{t('fees.effectiveFrom')}</span> <p>{selectedSchedule.effectiveFrom}</p></div>
                   <div><span className="text-gray-500">{t('fees.effectiveUntil')}</span> <p>{selectedSchedule.effectiveUntil || '-'}</p></div>
                   <div><span className="text-gray-500">{t('fees.currency')}</span> <p>{selectedSchedule.currencyCode}</p></div>
@@ -178,7 +182,7 @@ export function FeeSchedules() {
                       <tr key={r.id} className="border-t border-gray-700 hover:bg-gray-800/50">
                         <td className="p-2 text-gray-500">{r.ruleOrder}</td>
                         <td className="p-2">{r.ruleName}</td>
-                        <td className="p-2 text-gray-400">{r.calcMethod}</td>
+                        <td className="p-2 text-gray-400">{CALC_METHOD_LABELS[r.calcMethod] || r.calcMethod}</td>
                         <td className="p-2 text-right">{r.percentageRate != null ? `${r.percentageRate}%` : '-'}</td>
                         <td className="p-2 text-right">{r.flatAmount != null ? r.flatAmount.toLocaleString() : '-'}</td>
                         <td className="p-2 text-right">{r.minAmount != null ? r.minAmount.toLocaleString() : '-'}</td>
@@ -251,6 +255,7 @@ function ScheduleForm({ onSave }: { onSave: () => void }) {
       <Input label={t('fees.description')} value={form.description} onChange={v => setForm(p => ({ ...p, description: v }))} />
       <Select label={t('fees.type')} value={form.scheduleType}
         options={['INTERCHANGE', 'SCHEME', 'PROCESSING', 'CROSS_BORDER', 'CURRENCY_CONVERSION', 'ATM', 'FIXED', 'COMPOSITE']}
+        optionLabels={SCHEDULE_TYPE_LABELS}
         onChange={v => setForm(p => ({ ...p, scheduleType: v }))} />
       <div className="grid grid-cols-2 gap-3">
         <Input label={t('fees.priority')} type="number" value={String(form.priority)}
@@ -266,6 +271,7 @@ function ScheduleForm({ onSave }: { onSave: () => void }) {
       </div>
       <Select label={t('fees.appliesTo')} value={form.appliesTo}
         options={['ALL', 'ISSUER', 'ACQUIRER', 'MERCHANT', 'PARTICIPANT']}
+        optionLabels={APPLIES_TO_LABELS}
         onChange={v => setForm(p => ({ ...p, appliesTo: v }))} />
       <div className="flex justify-end gap-2 pt-2">
         <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm">
@@ -306,6 +312,7 @@ function RuleForm({ scheduleId, onSave }: { scheduleId: string; onSave: () => vo
           onChange={v => setForm(p => ({ ...p, ruleOrder: parseInt(v) || 0 }))} />
         <Select label={t('fees.method')} value={form.calcMethod}
           options={['FLAT', 'PERCENTAGE', 'TIERED', 'MIXED', 'INTERCHANGE_LOOKUP']}
+          optionLabels={CALC_METHOD_LABELS}
           onChange={v => setForm(p => ({ ...p, calcMethod: v }))} />
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -350,15 +357,15 @@ function Input({ label, value, onChange, type = 'text', required }: {
   );
 }
 
-function Select({ label, value, options, onChange }: {
-  label: string; value: string; options: string[]; onChange: (v: string) => void;
+function Select({ label, value, options, optionLabels, onChange }: {
+  label: string; value: string; options: string[]; optionLabels?: Record<string, string>; onChange: (v: string) => void;
 }) {
   return (
     <div>
       <label className="block text-xs text-gray-400 mb-1">{label}</label>
       <select value={value} onChange={e => onChange(e.target.value)}
         className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500">
-        {options.map(o => <option key={o} value={o}>{o}</option>)}
+        {options.map(o => <option key={o} value={o}>{optionLabels?.[o] || o}</option>)}
       </select>
     </div>
   );

@@ -2,6 +2,11 @@ import { useState, useEffect, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { SectionHeader } from '../components/SectionHeader';
+import { CARD_BRAND_LABELS, CARD_TYPE_LABELS } from '../components/BinTablesHelp';
+import {
+  CardProgramsHelp, PROGRAM_TYPE_LABELS, PROGRAM_STATUS_LABELS,
+  PRODUCT_CARD_TYPE_LABELS, CARD_NETWORK_LABELS,
+} from '../components/CardProgramsHelp';
 import {
   Plus, Pencil, Trash2, ToggleLeft, ToggleRight,
   CreditCard, RefreshCw, ChevronDown, ChevronRight,
@@ -98,13 +103,16 @@ export function CardPrograms() {
       INACTIVE: 'bg-gray-700 text-gray-400',
       ARCHIVED: 'bg-red-900/50 text-red-400',
     };
-    return <span className={`px-2 py-0.5 rounded text-xs ${colors[s] || 'bg-gray-700 text-gray-400'}`}>{s}</span>;
+    return <span className={`px-2 py-0.5 rounded text-xs ${colors[s] || 'bg-gray-700 text-gray-400'}`}>{PROGRAM_STATUS_LABELS[s] || s}</span>;
   };
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t('cardPrograms.title')}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h1 className="text-2xl font-bold">{t('cardPrograms.title')}</h1>
+          <CardProgramsHelp />
+        </div>
         <div className="flex gap-2">
           <button onClick={() => { setSelectedProgram(null); setShowProductForm(true); }}
             className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
@@ -135,7 +143,7 @@ export function CardPrograms() {
                   {expandedProgram === p.id ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
                   <div>
                     <p className="font-medium">{p.name}</p>
-                    <p className="text-xs text-gray-500">{p.programType} {p.brand ? `· ${p.brand}` : ''}</p>
+                    <p className="text-xs text-gray-500">{PROGRAM_TYPE_LABELS[p.programType] || p.programType} {p.brand ? `· ${p.brand}` : ''}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -173,8 +181,8 @@ export function CardPrograms() {
                           <tr key={pr.id} className="border-t border-gray-700 hover:bg-gray-800/50">
                             <td className="p-2">{pr.name}</td>
                             <td className="p-2 text-gray-400 font-mono text-xs">{pr.productCode}</td>
-                            <td className="p-2">{pr.cardType}</td>
-                            <td className="p-2">{pr.cardBrand}</td>
+                            <td className="p-2">{PRODUCT_CARD_TYPE_LABELS[pr.cardType] || pr.cardType}</td>
+                            <td className="p-2">{CARD_BRAND_LABELS[pr.cardBrand] || pr.cardBrand}</td>
                             <td className="p-2 text-center">{statusBadge(pr.status)}</td>
                             <td className="p-2 text-right">{pr.annualFee ? `${pr.annualFee} ${pr.currencyCode}` : '-'}</td>
                             <td className="p-2 text-center">
@@ -243,6 +251,7 @@ function ProgramForm({ onSave }: { onSave: () => void }) {
       <div className="grid grid-cols-2 gap-3">
         <Select label={t('cardPrograms.programType')} value={form.programType}
           options={['CONSUMER', 'CORPORATE', 'STUDENT', 'PREMIUM', 'PLATINUM', 'SIGNATURE', 'BUSINESS', 'CLASSIC']}
+          optionLabels={PROGRAM_TYPE_LABELS}
           onChange={v => setForm(p => ({ ...p, programType: v }))} />
         <Input label={t('cardPrograms.brand')} value={form.brand} onChange={v => setForm(p => ({ ...p, brand: v }))} />
       </div>
@@ -304,12 +313,15 @@ function ProductForm({ programId, onSave }: { programId: string | null; onSave: 
       <div className="grid grid-cols-3 gap-3">
         <Select label={t('cardPrograms.type')} value={form.cardType}
           options={['DEBIT', 'CREDIT', 'PREPAID', 'CHARGE', 'VIRTUAL']}
+          optionLabels={PRODUCT_CARD_TYPE_LABELS}
           onChange={v => setForm(p => ({ ...p, cardType: v }))} />
         <Select label={t('cardPrograms.brand')} value={form.cardBrand}
           options={['VISA', 'MASTERCARD', 'AMEX', 'CB', 'VERVE', 'OTHER']}
+          optionLabels={CARD_BRAND_LABELS}
           onChange={v => setForm(p => ({ ...p, cardBrand: v }))} />
         <Select label={t('cardPrograms.network')} value={form.cardNetwork}
           options={['VISA_NET', 'MASTERCARD_NET', 'CB_NET', 'AMEX_NET', 'VERVE_NET']}
+          optionLabels={CARD_NETWORK_LABELS}
           onChange={v => setForm(p => ({ ...p, cardNetwork: v }))} />
       </div>
       <div className="grid grid-cols-3 gap-3">

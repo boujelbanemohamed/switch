@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import type { Participant } from '../types';
 import { Plus, X, Pencil } from 'lucide-react';
 import { SectionHeader } from '../components/SectionHeader';
+import { ParticipantsHelp, PARTICIPANT_TYPE_LABELS, PARTICIPANT_STATUS_LABELS } from '../components/ParticipantsHelp';
 
 const typeColors: Record<string, string> = {
   ACQUIRER: '#22c55e',
@@ -115,7 +116,10 @@ export function Participants() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700 }}>{t('participants.title')}</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h2 style={{ fontSize: 24, fontWeight: 700 }}>{t('participants.title')}</h2>
+          <ParticipantsHelp />
+        </div>
         <button onClick={() => setShowModal(true)} style={{
           display: 'flex', alignItems: 'center', gap: 8,
           background: '#3b82f6', color: 'white', border: 'none',
@@ -147,7 +151,7 @@ export function Participants() {
                     background: `${typeColors[p.type]}22`, color: typeColors[p.type],
                     padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600,
                   }}>
-                    {p.type}
+                    {PARTICIPANT_TYPE_LABELS[p.type] || p.type}
                   </span>
                   <button onClick={() => openEdit(p)} title={t('participants.edit')} style={{
                     background: 'none', border: 'none', cursor: 'pointer',
@@ -158,7 +162,7 @@ export function Participants() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 16, fontSize: 13, color: 'var(--text-secondary)' }}>
-                <span>{t('participants.status')}: <span style={{ color: statusColors[p.status], fontWeight: 600 }}>{p.status}</span></span>
+                <span>{t('participants.status')}: <span style={{ color: statusColors[p.status], fontWeight: 600 }}>{PARTICIPANT_STATUS_LABELS[p.status] || p.status}</span></span>
                 {p.endpointUrl && <span>{t('participants.endpoint')}: {p.endpointUrl}</span>}
               </div>
               {p.supportedProtocols && p.supportedProtocols.length > 0 && (
@@ -197,17 +201,17 @@ export function Participants() {
               </Field>
               <Field label={t('participants.type')}>
                 <select style={SELECT} value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
-                  <option value="ISSUER">ISSUER</option>
-                  <option value="ACQUIRER">ACQUIRER</option>
-                  <option value="SWITCH">SWITCH</option>
-                  <option value="PROCESSOR">PROCESSOR</option>
+                  <option value="ISSUER">{PARTICIPANT_TYPE_LABELS.ISSUER}</option>
+                  <option value="ACQUIRER">{PARTICIPANT_TYPE_LABELS.ACQUIRER}</option>
+                  <option value="SWITCH">{PARTICIPANT_TYPE_LABELS.SWITCH}</option>
+                  <option value="PROCESSOR">{PARTICIPANT_TYPE_LABELS.PROCESSOR}</option>
                 </select>
               </Field>
               <Field label={t('participants.status')}>
                 <select style={SELECT} value={form.status} onChange={e => setForm({ ...form, status: e.target.value as Participant['status'] })}>
-                  <option value="ACTIVE">ACTIVE</option>
-                  <option value="INACTIVE">INACTIVE</option>
-                  <option value="SUSPENDED">SUSPENDED</option>
+                  <option value="ACTIVE">{PARTICIPANT_STATUS_LABELS.ACTIVE}</option>
+                  <option value="INACTIVE">{PARTICIPANT_STATUS_LABELS.INACTIVE}</option>
+                  <option value="SUSPENDED">{PARTICIPANT_STATUS_LABELS.SUSPENDED}</option>
                 </select>
               </Field>
               <Field label={t('participants.endpointUrl')}>

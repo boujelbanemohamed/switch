@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { request } from '../services/api';
 import { SectionHeader } from '../components/SectionHeader';
+import { ConfigLiveHelp, CATEGORY_LABELS, DATA_TYPE_LABELS } from '../components/ConfigLiveHelp';
 
 interface ConfigItem {
   id: string;
@@ -73,7 +74,10 @@ export function ConfigLive() {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700 }}>{t('configLive.title')}</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h2 style={{ fontSize: 24, fontWeight: 700 }}>{t('configLive.title')}</h2>
+          <ConfigLiveHelp />
+        </div>
         <button onClick={loadConfigs}
           style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontSize: 13, cursor: 'pointer' }}>
           {t('common.refresh')}
@@ -89,7 +93,7 @@ export function ConfigLive() {
               padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
               background: CATEGORY_BG[category] || 'rgba(107,114,128,0.1)',
               color: CATEGORY_COLORS[category] || '#6b7280',
-            }}>{category}</span>
+            }}>{CATEGORY_LABELS[category] || category}</span>
             <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{grouped[category].length} parameters</span>
           </div>
           <div style={{ background: 'var(--surface)', borderRadius: 12, overflow: 'hidden' }}>
@@ -122,7 +126,7 @@ export function ConfigLive() {
                           <span style={{ fontWeight: 500 }}>{cfg.configValue}</span>
                         )}
                       </td>
-                      <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--text-secondary)' }}>{cfg.dataType}</td>
+                      <td style={{ padding: '10px 16px', fontSize: 11, color: 'var(--text-secondary)' }}>{DATA_TYPE_LABELS[cfg.dataType] || cfg.dataType}</td>
                       <td style={{ padding: '10px 16px', fontSize: 12, color: 'var(--text-secondary)' }}>{cfg.description}</td>
                       <td style={{ padding: '10px 16px' }}>
                         {cfg.mutable && editingId !== cfg.id && (

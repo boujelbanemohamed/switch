@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { SectionHeader } from '../components/SectionHeader';
+import { CARD_BRAND_LABELS, CARD_TYPE_LABELS } from '../components/BinTablesHelp';
+import { InterchangeFeesHelp, REGION_LABELS } from '../components/InterchangeFeesHelp';
 import { Plus, Pencil, Trash2, RefreshCw } from 'lucide-react';
 
 interface InterchangeFee {
@@ -62,7 +64,10 @@ export function InterchangeFees() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t('interchange.title')}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h1 className="text-2xl font-bold">{t('interchange.title')}</h1>
+          <InterchangeFeesHelp />
+        </div>
         <div className="flex gap-2">
           <button onClick={fetchFees}
             className="flex items-center gap-1 px-3 py-1.5 bg-gray-700 text-white rounded hover:bg-gray-600 text-sm">
@@ -140,9 +145,9 @@ export function InterchangeFees() {
                   </>
                 ) : (
                   <>
-                    <td className="p-3 font-medium">{fee.brand}</td>
-                    <td className="p-3">{fee.cardType}</td>
-                    <td className="p-3">{fee.region}</td>
+                    <td className="p-3 font-medium">{CARD_BRAND_LABELS[fee.brand] || fee.brand}</td>
+                    <td className="p-3">{CARD_TYPE_LABELS[fee.cardType] || fee.cardType}</td>
+                    <td className="p-3">{REGION_LABELS[fee.region] || fee.region}</td>
                     <td className="p-3 text-gray-400">{fee.mcc}</td>
                     <td className="p-3 text-right">{fee.flatFee.toFixed(3)}</td>
                     <td className="p-3 text-right">{fee.percentageFee.toFixed(4)}%</td>

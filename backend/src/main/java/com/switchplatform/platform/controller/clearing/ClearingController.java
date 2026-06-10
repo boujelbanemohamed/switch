@@ -81,7 +81,7 @@ public class ClearingController {
     }
 
     @PostMapping("/interchange/configure")
-    public ResponseEntity<Void> configureInterchange(@Valid @RequestBody Map<String, Object> body) {
+    public ResponseEntity<Void> configureInterchange(@RequestBody Map<String, Object> body) {
         String brand = (String) body.get("brand");
         String cardType = (String) body.get("cardType");
         String region = (String) body.get("region");

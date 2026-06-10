@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { RegulatoryReportTemplate } from '../types';
 import { SectionHeader } from '../components/SectionHeader';
+import { RegulatoryReportsHelp, PERIODICITY_LABELS, FORMAT_LABELS } from '../components/RegulatoryReportsHelp';
 
 export function RegulatoryReports() {
   const { t } = useTranslation();
@@ -40,7 +41,10 @@ export function RegulatoryReports() {
 
   return (
     <div>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>{t('regulatory.title')}</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700 }}>{t('regulatory.title')}</h2>
+        <RegulatoryReportsHelp />
+      </div>
       <SectionHeader sectionKey="regulatory" />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
@@ -52,7 +56,7 @@ export function RegulatoryReports() {
                 style={{ padding: 12, borderRadius: 8, border: selectedTemplate === t.id ? '2px solid var(--accent)' : '1px solid var(--border)', cursor: 'pointer', background: selectedTemplate === t.id ? 'var(--accent)11' : 'transparent' }}>
                 <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{t.name}</p>
                 <p style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{t.description}</p>
-                <span style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 600, textTransform: 'uppercase' }}>{t.periodicity}</span>
+                <span style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 600, textTransform: 'uppercase' }}>{PERIODICITY_LABELS[t.periodicity] || t.periodicity}</span>
               </div>
             ))}
           </div>

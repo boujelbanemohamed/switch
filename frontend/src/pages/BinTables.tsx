@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { BinTable, Participant } from '../types';
 import { SectionHeader } from '../components/SectionHeader';
+import { BinTablesHelp, CARD_BRAND_LABELS, CARD_TYPE_LABELS } from '../components/BinTablesHelp';
 import { ChevronDown, ChevronRight, Terminal, Plus, X, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
 
 const brandColors: Record<string, string> = {
@@ -187,7 +188,10 @@ export function BinTables() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2 style={{ fontSize: 24, fontWeight: 700 }}>{t('nav.binTables')}</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h2 style={{ fontSize: 24, fontWeight: 700 }}>{t('nav.binTables')}</h2>
+          <BinTablesHelp />
+        </div>
         <button onClick={openCreate} style={{
           display: 'flex', alignItems: 'center', gap: 8,
           background: '#3b82f6', color: 'white', border: 'none',
@@ -299,10 +303,10 @@ FROM participants WHERE code = 'SIB';`}
                     fontWeight: 700,
                     letterSpacing: '0.02em',
                   }}>
-                    {bt.cardBrand === 'VISA' ? 'VISA' :
-                     bt.cardBrand === 'MASTERCARD' ? 'MASTERCARD' :
-                     bt.cardBrand === 'AMEX' ? 'AMEX' :
-                     bt.cardBrand === 'CB' ? 'CB' : bt.cardBrand}
+                    {bt.cardBrand === 'VISA' ? CARD_BRAND_LABELS.VISA :
+                     bt.cardBrand === 'MASTERCARD' ? CARD_BRAND_LABELS.MASTERCARD :
+                     bt.cardBrand === 'AMEX' ? CARD_BRAND_LABELS.AMEX :
+                     bt.cardBrand === 'CB' ? CARD_BRAND_LABELS.CB : CARD_BRAND_LABELS.OTHER}
                   </span>
                 )}
               </div>
@@ -314,7 +318,7 @@ FROM participants WHERE code = 'SIB';`}
                 </div>
                 <div>
                   <span style={{ color: 'var(--text-secondary)' }}>{t('binTables.type')}: </span>
-                  {bt.cardType || t('binTables.na')}
+                  {bt.cardType ? (CARD_TYPE_LABELS[bt.cardType] || bt.cardType) : t('binTables.na')}
                 </div>
                 <div>
                   <span style={{ color: 'var(--text-secondary)' }}>{t('binTables.country')}: </span>
@@ -386,7 +390,7 @@ FROM participants WHERE code = 'SIB';`}
               <Field label={t('binTables.cardScheme')}>
                 <select style={SELECT} value={form.cardScheme}
                   onChange={e => setForm({ ...form, cardScheme: e.target.value })}>
-                  {cardSchemes.map(s => <option key={s} value={s}>{s}</option>)}
+                  {cardSchemes.map(s => <option key={s} value={s}>{CARD_BRAND_LABELS[s]}</option>)}
                 </select>
               </Field>
 
@@ -413,7 +417,7 @@ FROM participants WHERE code = 'SIB';`}
                 <Field label={t('binTables.cardType')}>
                   <select style={SELECT} value={form.cardType}
                     onChange={e => setForm({ ...form, cardType: e.target.value })}>
-                    {cardTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                    {cardTypes.map(t => <option key={t} value={t}>{CARD_TYPE_LABELS[t]}</option>)}
                   </select>
                 </Field>
               </div>

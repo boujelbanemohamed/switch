@@ -31,15 +31,14 @@ public class HoldService {
     private final EventPublisher eventPublisher;
 
     @Transactional
-    public HoldRecord placeHold(String transactionId, String cardId, String cardAccountId,
+    public HoldRecord placeHold(String transactionId, UUID cardId, UUID cardAccountId,
                                 BigDecimal amount, String currencyCode, Duration expiryDuration) {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(expiryDuration != null ? expiryDuration : Duration.ofMinutes(30));
 
-        cardAccountService.hold(UUID.fromString(cardAccountId), amount);
+        cardAccountService.hold(cardAccountId, amount);
 
         HoldRecord record = HoldRecord.builder()
-                .id(UUID.randomUUID())
                 .transactionId(transactionId)
                 .cardId(cardId)
                 .cardAccountId(cardAccountId)
@@ -54,7 +53,7 @@ public class HoldService {
         log.info("Hold placed: id={}, cardId={}, amount={}, expiresAt={}", saved.getId(), cardId, amount, expiresAt);
 
         eventPublisher.publishHoldPlaced(new HoldPlacedEvent(
-                saved.getId(), UUID.fromString(transactionId), cardId,
+                saved.getId(), UUID.fromString(transactionId), cardId.toString(),
                 amount.toPlainString(), currencyCode,
                 OffsetDateTime.ofInstant(expiresAt, java.time.ZoneOffset.UTC),
                 OffsetDateTime.now()));
@@ -71,14 +70,14 @@ public class HoldService {
         }
 
         try {
-            cardAccountService.releaseHold(UUID.fromString(record.getCardAccountId()), record.getAmount());
+            cardAccountService.releaseHold(record.getCardAccountId(), record.getAmount());
             record.setStatus("RELEASED");
             record.setReleasedAt(Instant.now());
             holdRecordRepository.save(record);
             log.info("Hold released: id={}, accountId={}, amount={}", holdId, record.getCardAccountId(), record.getAmount());
 
             eventPublisher.publishHoldReleased(new HoldReleasedEvent(
-                    holdId, UUID.fromString(record.getTransactionId()), record.getCardId(),
+                    holdId, UUID.fromString(record.getTransactionId()), record.getCardId().toString(),
                     record.getAmount().toPlainString(), record.getCurrencyCode(),
                     "MANUAL_RELEASE", OffsetDateTime.now()));
 
@@ -98,7 +97,7 @@ public class HoldService {
         }
 
         try {
-            UUID accountId = UUID.fromString(record.getCardAccountId());
+            UUID accountId = record.getCardAccountId();
             cardAccountService.releaseHold(accountId, record.getAmount());
             cardAccountService.debit(accountId, record.getAmount(), record.getCurrencyCode());
             record.setStatus("CAPTURED");
@@ -107,7 +106,7 @@ public class HoldService {
 
             try {
                 ledgerPostingEngine.postSettlement(
-                        record.getTransactionId(), record.getCardId(),
+                        record.getTransactionId(), record.getCardId().toString(),
                         record.getAmount(), BigDecimal.ZERO, BigDecimal.ZERO,
                         record.getCurrencyCode());
             } catch (Exception e2) {
@@ -117,7 +116,7 @@ public class HoldService {
             log.info("Hold captured: id={}, accountId={}, amount={}", holdId, accountId, record.getAmount());
 
             eventPublisher.publishHoldReleased(new HoldReleasedEvent(
-                    holdId, UUID.fromString(record.getTransactionId()), record.getCardId(),
+                    holdId, UUID.fromString(record.getTransactionId()), record.getCardId().toString(),
                     record.getAmount().toPlainString(), record.getCurrencyCode(),
                     "CAPTURE", OffsetDateTime.now()));
 
@@ -136,7 +135,7 @@ public class HoldService {
 
         for (HoldRecord record : expired) {
             try {
-                cardAccountService.releaseHold(UUID.fromString(record.getCardAccountId()), record.getAmount());
+                cardAccountService.releaseHold(record.getCardAccountId(), record.getAmount());
                 record.setStatus("EXPIRED");
                 record.setReleasedAt(Instant.now());
                 holdRecordRepository.save(record);
@@ -157,12 +156,12 @@ public class HoldService {
     }
 
     @Transactional(readOnly = true)
-    public List<HoldRecord> getActiveHoldsForCard(String cardId) {
+    public List<HoldRecord> getActiveHoldsForCard(UUID cardId) {
         return holdRecordRepository.findByCardIdAndStatus(cardId, "ACTIVE");
     }
 
     @Transactional(readOnly = true)
-    public List<HoldRecord> getActiveHoldsForAccount(String accountId) {
+    public List<HoldRecord> getActiveHoldsForAccount(UUID accountId) {
         return holdRecordRepository.findByCardAccountIdAndStatus(accountId, "ACTIVE");
     }
 }

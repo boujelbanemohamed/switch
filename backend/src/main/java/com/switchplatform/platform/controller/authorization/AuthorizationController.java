@@ -6,6 +6,7 @@ import com.switchplatform.platform.model.authorization.HoldRecord;
 import com.switchplatform.platform.service.authorization.AuthorizationEngine;
 import com.switchplatform.platform.service.authorization.HoldService;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -68,12 +69,12 @@ public class AuthorizationController {
 
     @GetMapping("/holds/card/{cardId}")
     public ResponseEntity<List<HoldRecord>> getHoldsForCard(@PathVariable String cardId) {
-        return ResponseEntity.ok(holdService.getActiveHoldsForCard(cardId));
+        return ResponseEntity.ok(holdService.getActiveHoldsForCard(UUID.fromString(cardId)));
     }
 
     @GetMapping("/holds/account/{accountId}")
     public ResponseEntity<List<HoldRecord>> getHoldsForAccount(@PathVariable String accountId) {
-        return ResponseEntity.ok(holdService.getActiveHoldsForAccount(accountId));
+        return ResponseEntity.ok(holdService.getActiveHoldsForAccount(UUID.fromString(accountId)));
     }
 
     @PostMapping("/holds/{holdId}/release")

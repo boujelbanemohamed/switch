@@ -21,11 +21,11 @@ public class HoldRecord {
     @Column(name = "transaction_id", length = 64)
     private String transactionId;
 
-    @Column(name = "card_id", length = 64)
-    private String cardId;
+    @Column(name = "card_id", nullable = false)
+    private UUID cardId;
 
-    @Column(name = "card_account_id", length = 64)
-    private String cardAccountId;
+    @Column(name = "card_account_id", nullable = false)
+    private UUID cardAccountId;
 
     @Column(precision = 18, scale = 3)
     private BigDecimal amount;

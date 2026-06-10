@@ -9,6 +9,7 @@ import com.switchplatform.platform.service.fraud.DeviceFingerprintService;
 import com.switchplatform.platform.service.fraud.DeviceScoreResult;
 import com.switchplatform.platform.service.fraud.FraudEngine;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -129,7 +130,7 @@ public class FraudController {
     public ResponseEntity<DeviceFingerprintRecord> registerDevice(
             @Valid @RequestBody RegisterDeviceRequest request) {
         return ResponseEntity.ok(deviceFingerprintService.registerFingerprint(
-                request.cardId(), request.deviceId(), request.deviceType(),
+                UUID.fromString(request.cardId()), request.deviceId(), request.deviceType(),
                 request.os(), request.browser(), request.userAgent(),
                 request.ipAddress(), request.attributes()));
     }
@@ -138,7 +139,7 @@ public class FraudController {
     public ResponseEntity<DeviceScoreResult> evaluateDevice(
             @Valid @RequestBody EvaluateDeviceRequest request) {
         return ResponseEntity.ok(deviceFingerprintService.evaluate(
-                request.cardId(), request.deviceId(), request.deviceType(),
+                UUID.fromString(request.cardId()), request.deviceId(), request.deviceType(),
                 request.os(), request.browser(), request.userAgent(),
                 request.ipAddress()));
     }
@@ -146,14 +147,14 @@ public class FraudController {
     @GetMapping("/devices/by-card/{cardId}")
     public ResponseEntity<List<DeviceFingerprintRecord>> getDevicesByCard(
             @PathVariable String cardId) {
-        return ResponseEntity.ok(deviceFingerprintService.getFingerprintsForCard(cardId));
+        return ResponseEntity.ok(deviceFingerprintService.getFingerprintsForCard(UUID.fromString(cardId)));
     }
 
     @GetMapping("/devices/{deviceId}/known")
     public ResponseEntity<Map<String, Boolean>> isDeviceKnown(
             @PathVariable String deviceId,
             @RequestParam String cardId) {
-        boolean known = deviceFingerprintService.isKnownDevice(cardId, deviceId);
+        boolean known = deviceFingerprintService.isKnownDevice(UUID.fromString(cardId), deviceId);
         return ResponseEntity.ok(Map.of("known", known));
     }
 

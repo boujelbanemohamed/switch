@@ -265,8 +265,8 @@ public class AuthorizationEngine {
                     String transactionId = request.getStan() != null ? request.getStan() : UUID.randomUUID().toString();
                     HoldRecord hold = holdService.placeHold(
                             transactionId,
-                            request.getCardId().toString(),
-                            account.getId().toString(),
+                            request.getCardId(),
+                            account.getId(),
                             request.getAmount(),
                             request.getCurrencyCode(),
                             Duration.ofMinutes(30)

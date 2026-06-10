@@ -156,7 +156,7 @@ public class FraudEngine {
         if (ctx.getDeviceId() != null && ctx.getCardId() != null) {
             try {
                 DeviceScoreResult deviceResult = deviceFingerprintService.evaluate(
-                        ctx.getCardId().toString(),
+                        ctx.getCardId(),
                         ctx.getDeviceId(),
                         ctx.getDeviceType(),
                         ctx.getOs(),
@@ -214,7 +214,8 @@ public class FraudEngine {
     private boolean matchesCondition(FraudRule rule, EvaluationContext ctx) {
         String expr = rule.getConditionExpression();
         if (expr != null && !expr.isBlank()) {
-            return evaluateExpression(expr, ctx);
+            Boolean exprResult = evaluateExpression(expr, ctx);
+            if (exprResult != null) return exprResult;
         }
 
         FraudRule.RuleCategory category = rule.getRuleCategory();
@@ -239,7 +240,7 @@ public class FraudEngine {
         };
     }
 
-    private boolean evaluateExpression(String expr, EvaluationContext ctx) {
+    private Boolean evaluateExpression(String expr, EvaluationContext ctx) {
         try {
             String e = expr.trim();
 
@@ -274,11 +275,11 @@ public class FraudEngine {
                 return ctx.getAmount() != null && ctx.getAmount().compareTo(BigDecimal.valueOf(5000)) > 0;
             }
 
-            log.warn("Unsupported expression: {}", expr);
-            return false;
+            log.warn("Unsupported expression format: {}", expr);
+            return null;
         } catch (Exception ex) {
             log.error("Failed to evaluate expression: {}", expr, ex);
-            return false;
+            return null;
         }
     }
 
@@ -321,11 +322,14 @@ public class FraudEngine {
     }
 
     private void recordForVelocity(UUID cardId, BigDecimal amount) {
+        OffsetDateTime now = OffsetDateTime.now();
         VelocityCheck vc = VelocityCheck.builder()
                 .cardId(cardId)
                 .currentAmount(amount)
                 .velocityType(VelocityCheck.VelocityType.TXNS_PER_HOUR)
-                .createdAt(OffsetDateTime.now())
+                .windowStart(now)
+                .windowEnd(now.plusHours(1))
+                .createdAt(now)
                 .build();
         velocityCheckRepository.save(vc);
     }

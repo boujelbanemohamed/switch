@@ -98,4 +98,10 @@ public class AcsController {
     public ResponseEntity<List<AcsChallenge>> getChallengesByAuth(@PathVariable UUID authId) {
         return ResponseEntity.ok(acsService.getChallengesByAuth(authId));
     }
+
+    @PostMapping("/authentications/{id}/evaluate-rba")
+    public ResponseEntity<AcsAuthentication> evaluateRba(@PathVariable UUID id,
+                                                          @RequestBody(required = false) Map<String, Object> context) {
+        return ResponseEntity.ok(acsService.evaluateRba(id, context));
+    }
 }

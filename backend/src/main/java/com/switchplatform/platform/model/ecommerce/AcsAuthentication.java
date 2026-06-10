@@ -67,6 +67,12 @@ public class AcsAuthentication {
     @Column(name = "acs_url", length = 512)
     private String acsUrl;
 
+    @Column(name = "risk_score")
+    private Integer riskScore;
+
+    @Column(name = "risk_decision", length = 20)
+    private String riskDecision;
+
     @Column(name = "challenge_canceled")
     private Boolean challengeCanceled;
 

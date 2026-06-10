@@ -111,6 +111,9 @@ switch:
   fraud:
     time-window-hours: 24
     velocity-max-per-hour: 10
+    rba:
+      score-low-threshold: 30
+      score-high-threshold: 70
 
   auth:
     jwt:

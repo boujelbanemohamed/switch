@@ -4,6 +4,7 @@ import com.switchplatform.platform.model.ecommerce.AcsAuthentication;
 import com.switchplatform.platform.model.ecommerce.AcsChallenge;
 import com.switchplatform.platform.repository.ecommerce.AcsAuthenticationRepository;
 import com.switchplatform.platform.repository.ecommerce.AcsChallengeRepository;
+import com.switchplatform.platform.service.fraud.FraudEngine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -31,6 +32,15 @@ class AcsServiceTest {
 
         AcsAuthenticationRepository authRepository = mock(AcsAuthenticationRepository.class);
         AcsChallengeRepository challengeRepository = mock(AcsChallengeRepository.class);
+        FraudEngine fraudEngine = mock(FraudEngine.class);
+
+        when(fraudEngine.evaluateTransaction(any())).thenReturn(
+                FraudEngine.FraudEvaluationResult.builder()
+                        .score(0)
+                        .riskLevel(FraudEngine.RiskLevel.LOW)
+                        .action(FraudEngine.FraudAction.ALLOW)
+                        .matchedRules(List.of())
+                        .build());
 
         when(authRepository.save(any())).thenAnswer(inv -> {
             AcsAuthentication a = inv.getArgument(0);
@@ -64,7 +74,7 @@ class AcsServiceTest {
                     .toList();
         });
 
-        acsService = new AcsService(authRepository, challengeRepository);
+        acsService = new AcsService(authRepository, challengeRepository, fraudEngine);
     }
 
     @Test

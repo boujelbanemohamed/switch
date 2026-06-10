@@ -4,8 +4,10 @@ import com.switchplatform.platform.model.ecommerce.AcsAuthentication;
 import com.switchplatform.platform.model.ecommerce.AcsChallenge;
 import com.switchplatform.platform.repository.ecommerce.AcsAuthenticationRepository;
 import com.switchplatform.platform.repository.ecommerce.AcsChallengeRepository;
+import com.switchplatform.platform.service.fraud.FraudEngine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,13 @@ public class AcsService {
 
     private final AcsAuthenticationRepository authRepository;
     private final AcsChallengeRepository challengeRepository;
+    private final FraudEngine fraudEngine;
+
+    @Value("${switch.fraud.rba.score-low-threshold:30}")
+    private int scoreLowThreshold;
+
+    @Value("${switch.fraud.rba.score-high-threshold:70}")
+    private int scoreHighThreshold;
 
     @Transactional
     public AcsAuthentication createAuthentication(String transactionId, UUID cardId, UUID merchantId,
@@ -136,5 +145,59 @@ public class AcsService {
         return challengeRepository.findByAuthenticationId(authId).stream()
                 .sorted(Comparator.comparing(AcsChallenge::getCreatedAt).reversed())
                 .toList();
+    }
+
+    @Transactional
+    public AcsAuthentication evaluateRba(UUID authId, Map<String, Object> extraContext) {
+        AcsAuthentication auth = authRepository.findById(authId)
+                .orElseThrow(() -> new IllegalArgumentException("Authentication not found: " + authId));
+
+        FraudEngine.EvaluationContext.EvaluationContextBuilder ctxBuilder = FraudEngine.EvaluationContext.builder()
+                .cardId(auth.getCardId())
+                .transactionId(auth.getTransactionId())
+                .amount(auth.getAmount())
+                .currencyCode(auth.getCurrencyCode())
+                .merchantId(auth.getMerchantId() != null ? auth.getMerchantId().toString() : null)
+                .panHash(auth.getPanHash())
+                .timestamp(OffsetDateTime.now());
+
+        if (extraContext != null) {
+            if (extraContext.get("deviceId") != null) ctxBuilder.deviceId((String) extraContext.get("deviceId"));
+            if (extraContext.get("ipAddress") != null) ctxBuilder.ipAddress((String) extraContext.get("ipAddress"));
+            if (extraContext.get("deviceType") != null) ctxBuilder.deviceType((String) extraContext.get("deviceType"));
+            if (extraContext.get("os") != null) ctxBuilder.os((String) extraContext.get("os"));
+            if (extraContext.get("browser") != null) ctxBuilder.browser((String) extraContext.get("browser"));
+            if (extraContext.get("userAgent") != null) ctxBuilder.userAgent((String) extraContext.get("userAgent"));
+            if (extraContext.get("countryCode") != null) ctxBuilder.countryCode((String) extraContext.get("countryCode"));
+            if (extraContext.get("merchantCategory") != null) ctxBuilder.merchantCategory((String) extraContext.get("merchantCategory"));
+            if (extraContext.get("cardholderId") != null)
+                ctxBuilder.cardholderId(UUID.fromString((String) extraContext.get("cardholderId")));
+        }
+
+        FraudEngine.FraudEvaluationResult result = fraudEngine.evaluateTransaction(ctxBuilder.build());
+
+        String riskDecision;
+        if (result.getScore() >= scoreHighThreshold) {
+            riskDecision = "DECLINED";
+            auth.setStatus(AcsAuthentication.Status.DECLINED);
+        } else if (result.getScore() >= scoreLowThreshold) {
+            riskDecision = "CHALLENGE_REQUIRED";
+            auth.setStatus(AcsAuthentication.Status.CHALLENGE_REQUIRED);
+        } else {
+            riskDecision = "AUTHENTICATED";
+            String cavv = "AAAB" + UUID.randomUUID().toString().replace("-", "").substring(0, 24).toUpperCase();
+            auth.setAuthenticationValue(cavv);
+            auth.setEci("05");
+            auth.setStatus(AcsAuthentication.Status.AUTHENTICATED);
+        }
+
+        auth.setRiskScore(result.getScore());
+        auth.setRiskDecision(riskDecision);
+        auth.setUpdatedAt(OffsetDateTime.now());
+
+        log.info("RBA evaluated: authId={}, score={}, riskLevel={}, decision={}, matchedRules={}",
+                authId, result.getScore(), result.getRiskLevel(), riskDecision, result.getMatchedRules());
+
+        return auth;
     }
 }

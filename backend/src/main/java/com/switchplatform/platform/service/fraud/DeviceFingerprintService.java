@@ -31,7 +31,7 @@ public class DeviceFingerprintService {
 
     @Transactional
     public DeviceFingerprintRecord registerFingerprint(
-            String cardId, String deviceId, String deviceType, String os,
+            UUID cardId, String deviceId, String deviceType, String os,
             String browser, String userAgent, String ipAddress,
             Map<String, String> attributes) {
 
@@ -57,7 +57,6 @@ public class DeviceFingerprintService {
         String country = resolveCountryFromIp(ipAddress);
 
         DeviceFingerprintRecord record = DeviceFingerprintRecord.builder()
-                .id(UUID.randomUUID())
                 .cardId(cardId)
                 .deviceId(deviceId)
                 .deviceType(deviceType != null ? deviceType : "UNKNOWN")
@@ -80,17 +79,17 @@ public class DeviceFingerprintService {
     }
 
     @Transactional(readOnly = true)
-    public List<DeviceFingerprintRecord> getFingerprintsForCard(String cardId) {
+    public List<DeviceFingerprintRecord> getFingerprintsForCard(UUID cardId) {
         return deviceFingerprintRecordRepository.findByCardIdOrderByLastSeenDesc(cardId);
     }
 
     @Transactional(readOnly = true)
-    public boolean isKnownDevice(String cardId, String deviceId) {
+    public boolean isKnownDevice(UUID cardId, String deviceId) {
         return deviceFingerprintRecordRepository.existsByCardIdAndDeviceId(cardId, deviceId);
     }
 
     @Transactional(readOnly = true)
-    public double scoreDevice(String cardId, String deviceId, String ipAddress) {
+    public double scoreDevice(UUID cardId, String deviceId, String ipAddress) {
         Optional<DeviceFingerprintRecord> knownOpt = deviceFingerprintRecordRepository.findByCardIdAndDeviceId(cardId, deviceId);
 
         if (knownOpt.isPresent()) {
@@ -116,20 +115,22 @@ public class DeviceFingerprintService {
 
     @Transactional
     public DeviceScoreResult evaluate(
-            String cardId, String deviceId, String deviceType, String os,
+            UUID cardId, String deviceId, String deviceType, String os,
             String browser, String userAgent, String ipAddress) {
 
         List<String> reasons = new ArrayList<>();
 
+        boolean knownBefore = isKnownDevice(cardId, deviceId);
+
+        double baseScore = scoreDevice(cardId, deviceId, ipAddress);
+
         DeviceFingerprintRecord registered = registerFingerprint(
                 cardId, deviceId, deviceType, os, browser, userAgent, ipAddress, null);
 
-        boolean knownDevice = registered.getUsageCount() > 1;
+        boolean knownDevice = knownBefore || registered.getUsageCount() > 1;
         boolean suspiciousUserAgent = isSuspiciousUserAgent(userAgent);
         String country = resolveCountryFromIp(ipAddress);
         boolean newCountry = !knownDevice && isNewCountryForCard(cardId, country);
-
-        double baseScore = scoreDevice(cardId, deviceId, ipAddress);
         double finalScore = baseScore;
 
         if (suspiciousUserAgent) {
@@ -169,7 +170,7 @@ public class DeviceFingerprintService {
                 .build();
     }
 
-    private boolean isNewCountryForCard(String cardId, String country) {
+    private boolean isNewCountryForCard(UUID cardId, String country) {
         if (country == null) return false;
         return deviceFingerprintRecordRepository.findByCardIdOrderByLastSeenDesc(cardId)
                 .stream()

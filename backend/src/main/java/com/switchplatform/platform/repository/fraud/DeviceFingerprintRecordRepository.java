@@ -10,8 +10,8 @@ import java.util.UUID;
 
 @Repository
 public interface DeviceFingerprintRecordRepository extends JpaRepository<DeviceFingerprintRecord, UUID> {
-    List<DeviceFingerprintRecord> findByCardIdOrderByLastSeenDesc(String cardId);
-    Optional<DeviceFingerprintRecord> findByCardIdAndDeviceId(String cardId, String deviceId);
-    boolean existsByCardIdAndDeviceId(String cardId, String deviceId);
+    List<DeviceFingerprintRecord> findByCardIdOrderByLastSeenDesc(UUID cardId);
+    Optional<DeviceFingerprintRecord> findByCardIdAndDeviceId(UUID cardId, String deviceId);
+    boolean existsByCardIdAndDeviceId(UUID cardId, String deviceId);
     List<DeviceFingerprintRecord> findByDeviceId(String deviceId);
 }

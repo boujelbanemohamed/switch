@@ -20,8 +20,8 @@ public class DeviceFingerprintRecord {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "card_id", length = 64)
-    private String cardId;
+    @Column(name = "card_id", nullable = false)
+    private UUID cardId;
 
     @Column(name = "device_id", length = 128)
     private String deviceId;

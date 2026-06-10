@@ -192,6 +192,7 @@ public class SecurityConfig {
                         "ADMIN", "OPERATOR", "ANALYST")
                 .requestMatchers(new AntPathRequestMatcher("/api/v1/kyc/**")).hasAnyRole(
                         "ADMIN", "OPERATOR", "ANALYST")
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/simulator/**")).permitAll()
                 .requestMatchers(new AntPathRequestMatcher("/api/v1/ecommerce/cof/**", "GET")).hasAnyRole(
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name(),

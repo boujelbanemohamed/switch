@@ -163,7 +163,7 @@ public class AcquiringController {
             @PathVariable UUID merchantId,
             @RequestParam(name = "date") String date) {
         LocalDate localDate = LocalDate.parse(date);
-        return ResponseEntity.ok(settlementRecordService.calculateMerchantNetting(merchantId.toString(), localDate));
+        return ResponseEntity.ok(settlementRecordService.calculateMerchantNetting(merchantId, localDate));
     }
 
     @PutMapping("/terminals/{tid}/keys")

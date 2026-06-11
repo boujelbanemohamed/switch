@@ -19,8 +19,8 @@ public class NettingResult {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "merchant_id", length = 15)
-    private String merchantId;
+    @Column(name = "merchant_id")
+    private UUID merchantId;
 
     @Column
     private LocalDate date;

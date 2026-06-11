@@ -11,8 +11,8 @@ import java.util.UUID;
 
 @Repository
 public interface SettlementRecordRepository extends JpaRepository<SettlementRecord, UUID> {
-    List<SettlementRecord> findByMerchantIdAndSettlementDateBetween(String merchantId, LocalDate from, LocalDate to);
-    List<SettlementRecord> findByMerchantId(String merchantId);
+    List<SettlementRecord> findByMerchantIdAndSettlementDateBetween(UUID merchantId, LocalDate from, LocalDate to);
+    List<SettlementRecord> findByMerchantId(UUID merchantId);
     long countByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
     List<SettlementRecord> findByCreatedAtBetween(OffsetDateTime from, OffsetDateTime to);
 }

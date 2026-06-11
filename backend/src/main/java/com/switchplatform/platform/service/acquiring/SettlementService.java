@@ -71,7 +71,7 @@ public class SettlementService {
 
         SettlementRecord record = SettlementRecord.builder()
                 .id(UUID.randomUUID())
-                .merchantId(merchantId)
+                .merchantId(merchant.getId())
                 .settlementDate(settlementDate)
                 .totalAmount(totalAmount)
                 .totalFee(totalFee)
@@ -109,7 +109,7 @@ public class SettlementService {
         try {
             String txnRef = record.getPaymentRef();
             ledgerPostingEngine.postSettlement(
-                    txnRef, record.getMerchantId(),
+                    txnRef, record.getMerchantId().toString(),
                     record.getNetAmount(), record.getTotalFee(),
                     BigDecimal.ZERO, record.getCurrencyCode());
         } catch (Exception e) {
@@ -119,9 +119,9 @@ public class SettlementService {
         log.info("Confirmed settlement {} with ref {}", settlementId, record.getPaymentRef());
 
         eventPublisher.publishSettlementCompleted(new SettlementCompletedEvent(
-                settlementId, null, record.getMerchantId(),
+                settlementId, null, record.getMerchantId().toString(),
                 record.getNetAmount().toPlainString(), record.getCurrencyCode(),
-                record.getMerchantId(), "CONFIRMED", OffsetDateTime.now()));
+                record.getMerchantId().toString(), "CONFIRMED", OffsetDateTime.now()));
 
         return record;
     }
@@ -132,12 +132,12 @@ public class SettlementService {
     }
 
     @Transactional(readOnly = true)
-    public List<SettlementRecord> getSettlementsByMerchant(String merchantId, LocalDate from, LocalDate to) {
+    public List<SettlementRecord> getSettlementsByMerchant(UUID merchantId, LocalDate from, LocalDate to) {
         return settlementRecordRepository.findByMerchantIdAndSettlementDateBetween(merchantId, from, to);
     }
 
     @Transactional(readOnly = true)
-    public NettingResult calculateMerchantNetting(String merchantId, LocalDate date) {
+    public NettingResult calculateMerchantNetting(UUID merchantId, LocalDate date) {
         List<SettlementRecord> settlements = getSettlementsByMerchant(merchantId, date, date);
 
         BigDecimal grossAmount = settlements.stream()

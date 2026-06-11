@@ -11,7 +11,7 @@ Compléter POS / Acquiring (mode d'entrée, cycle transactionnel, vues backoffic
 - Frontend : `const data = await api.xxx()` sans `{ data }` ; réponse paginée `{content:[…]}`.
 - Ne pas `trim()` les lignes fixed‑width SMT (les espaces de fin font partie de la longueur).
 - Figer les données de compensation au moment du traitement (photo instant T), pas à la génération.
-- Les formats réseau propriétaires (Visa BASE II, Mastercard IPM) ne sont PAS disponibles — ne jamais inventer leurs positions. Infrastructure avec stubs `UnsupportedOperationException`.
+- Visa BASE II (TC 05 TCR 0) et Mastercard IPM (Type 1000) sont simulés avec des hypothèses centralisées (VisaBaseIISimConfig, MastercardIpmSimConfig). Les autres TC/TCR/Types (TC06/07/25, TCR1/2/3, Type 1100/1200/1300) sont des stubs vides — nécessitent la vraie spec réseau pour implémenter.
 - Validation après chaque bloc : `curl` direct port 8085, codes 2xx attendus, 401 sans token.
 - Crédit : intérêts = solde d'ouverture × (APR/12). Pas d'intérêts si relevé précédent payé intégralement (grâce). Min payment = max(closing × pct%, floor). Ledger via CREDIT_RECEIVABLE (ASSET) + CREDIT_FUNDING (LIABILITY) en partie double.
 - Crédit frontend : `const data = await api.xxx()` sans destructuring `{ data }`. Les routes GET = ADMIN/OPERATOR/ANALYST, écritures = ADMIN/OPERATOR. `AntPathRequestMatcher` pour `/api/v1/credit/**`.
@@ -87,18 +87,21 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - **A.4 — Tests** : 326 pass, `npm run build` OK.
 
 ### ✅ Done — BLOC B : Clearing / Settlement (V053)
-- **B.1 — Infrastructure réseau** : `NetworkClearingGenerator` (interface + ReconciliationResult), `Iso20022ClearingGenerator` (réutilise Iso20022Engine), `VisaBaseIIGenerator` + `MastercardIpmGenerator` (stubs `UnsupportedOperationException`).
+- **B.1 — Infrastructure réseau** : `NetworkClearingGenerator` (interface + ReconciliationResult), `Iso20022ClearingGenerator` (réutilise Iso20022Engine), `VisaBaseIIGenerator` (TC 05 TCR 0, 168c) + `MastercardIpmGenerator` (Type 1000, 200c) + `VisaBaseIIFormatter`/`MastercardIpmFormatter`.
 - **B.2 — Fichier de règlement net BCT** : `BctSettlementService.generateBctSettlementFile()` agrège les positions nettes par institution domestique (exclut étrangères via `Participant.isDomestic`, migration V053). CSV provisoire en attendant FCOMPSMT.BCT officiel.
 - **B.3 — Endpoints** : `GET /clearing/files/bct?date=`, `GET /clearing/reconciliation`, `GET /clearing/reports/quarterly`. `POST /clearing/files/incoming` accepte `participantId`. Formats génération : CSV, ISO20022, COMPCONF, CP50, VISA, MASTERCARD.
 - **B.4 — Frontend** : BCT download card, Quarterly report card, Reconciliation history table, VISA/MC dans le sélecteur de format.
 - **B.5 — Réconciliation + Rapports** : `SettlementFileService.ingestIncomingClearingFile()` persiste `ReconciliationRecord` (source=SCHEME, statut MATCHED/PARTIALLY_MATCHED). `SchemeReportService.generateQuarterlyReport()` (volumes par type, somme, moyenne).
 - **Tests** : 326 backend pass, `npm run build` frontend OK.
 
-### ✅ Done — Visa BASE II DRAFT phase 1 (commit 21338dc)
-- TC 05 TCR 0 (168 chars) with position-by-position breakdown.
-- ARN (pos 27-49) et Acquirer BID (pos 50-57) marqués TODO : format Visa structuré requis, pas de texte libre.
-- 5 champs placeholder (145, 147, 150, 158, 159-168) en attente Clearing Data Codes manual.
-- **Pause** : attend les 3 specs externes (Clearing Data Codes, ARN spec, fichier référence Visa).
+### ✅ Done — Visa BASE II (TC 05 TCR 0, format réel)
+- `VisaBaseIISimConfig` centralise 24 constantes d'hypothèses simulateur (marquées "Hypothèse simulateur — à remplacer par la spec Visa du client"). Comprend ARN_BIN, ARN_ZONE, BID, pays, etc.
+- `VisaBaseIIFormatter` : `an()` (left-justify, space-padded), `un()` (zero-padded), `amount()` avec map de décimales (TND/KWD/BHD=3).
+- `VisaBaseIIGenerator.generate()` produit des lignes TC 05 TCR 0 de 168 chars exactement : TC (1-4), PAN (5-20), ARN structuré SZ+BIN+MMDD+txnKey+checksum (27-49), BID acquéreur (50-57), montant en millimes (62-73), devise, ville, pays 788, code auth (152-157), etc.
+- `VisaBaseIIGenerator.ingest()` parse les 168c par ARN → `ClearingRecordRepository.findAll()` → match par normalized transactionId.
+- `generateTc06()`, `generateTc07()`, `generateTc25()`, `generateTc05Tcr1/2/3()` : stubs `""` avec log warn (nécessitent vraie spec Visa, pas appelés par le cycle nominal).
+- Cycle REST : `POST /api/v1/simulator/clearing/cycle/visa-baseii` — 10 matchés, 1 écart simulé.
+- **Honest status** : ce simulateur couvre le cas nominal (transaction financière de base) mais PAS l'intégralité du format BASE II (TC06 chargeback, TC07 representment, TC25 fee collection, TCR1/2/3 country-specific manquent).
 
 ### ✅ Done — Module 1/3 : Credit / Revolving (V055)
 - **Bloc 1.1 — Migration V055 + JPA** : `V055__credit_accounts.sql` (4 tables + 2 ledgers). Entités `CreditLine`, `CreditStatement`, `InstallmentPlan`, `InstallmentEntry`. Repos Spring Data JPA. `mvn clean compile` OK.
@@ -109,13 +112,20 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - **Bloc 1.6 — Tests** : 13 tests (CreditLineServiceTest, StatementServiceTest, InstallmentServiceTest) — authorization > limit refuse, purchase+payment→zero balance, ledger équilibré, intérêts 15 TND exacts, min payment floor/pct, 12 échéances de 100.
 - **Total** : 379 tests backend pass, `npm run build` frontend OK. Smoke test 401 (sans token) confirme route enregistrée.
 
+### ✅ Done — Mastercard IPM (Type 1000, format simulé)
+- `MastercardIpmSimConfig` centralise 18 constantes d'hypothèses simulateur (marquées "Hypothèse simulateur — à remplacer par la spec Mastercard"). Comprend RECORD_TYPE_1000, TX_CODE_PURCHASE, ICA acquéreur/émetteur, codes pays/devise, etc.
+- `MastercardIpmFormatter`: `an()` (left-justify), `nn()` (right-justify numeric), `amount()` avec map de décimales.
+- `MastercardIpmGenerator.generate()` produit des lignes Type 1000 de 200 chars exactement : record "1000" (1-4), trans "00" (5-6), clearing "00" (7-8), activity "20" (9-10), sender ref MC+MMDD+txnKey+checksum (34-57), acquiring ICA (58-65), issuing ICA (66-73), settlement sign "C" (74-75), amount 12c en millimes (76-87), currency 788 (88-90), country 788 (106-108), MCC 4c (157-160), auth code 6c (169-174), level indicator "1" (191), etc.
+- `generateType1100()`, `generateType1200()`, `generateType1300()` : stubs `""` avec log warn (nécessitent vraie spec Mastercard, pas appelés par le cycle nominal).
+- Cycle REST : `POST /api/v1/simulator/clearing/cycle/mastercard-ipm` — 10 matchés, 1 écart simulé.
+- **Honest status** : ce simulateur couvre le Type 1000 (présentement financier) mais PAS Type 1100 (frais), 1200 (chargeback), 1300 (representment).
+
 ### ⏸️ Paused / blocked
 - **Type 40 CP50** : layout inconnu, attend spec SMT/BPC.
 - **3e format SMT** : non spécifié.
 - **Nommage fichier** (CPMPAY23.NNNNN vs CP50bbbbb) : contrat banque, déjà configurable.
 - **Source slipNumber** : upstream non disponible, fallback 000001.
 - **Layout FCOMPSMT.BCT** : spec BCT non publique, CSV provisoire.
-- **Formats Visa BASE II / MC IPM** : propriétaires, stubs en place.
 - **Gabarits rapports trimestriels Visa/MC** : structure générique en attendant.
 
 ### ✅ Done — Module 2/3 : Loyalty / Fidélité (V056)
@@ -220,7 +230,7 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - **CP50 = 500c** (prouvé par fichiers de production).
 - **Processing code routing** : DE 3 (2 premiers digits) + MTI dérive transactionType. 0100→PRAU, 0200/00xxxx→PURC, 0200/20xxxx→REFD, 0220/02xxxx→COMP, 0220/autre→REVS, 0400/0420→REVS.
 - **Channel** : DE 22: 01-05→POS, 06/10-19→ATM, 80-99→ECOM, défaut→POS.
-- **Réseau : stubs > format inventé** : UnsupportedOperationException pour Visa/MC.
+- **Visa BASE II / MC IPM : implémentés avec hypothèses simulateur** : les formats sont remplis (TC 05 TCR 0 pour Visa, Type 1000 pour Mastercard) mais avec des valeurs d'hypothèse centralisées dans VisaBaseIISimConfig / MastercardIpmSimConfig — chaque hypothèse est marquée "Hypothèse simulateur — à remplacer par la spec du client". Les autres types (TC06/07/25, TCR1/2/3, Type 1100/1200/1300) sont des stubs vides.
 - **BCT CSV** : format provisoire, en attendant FCOMPSMT.
 - **`Participant.isDomestic`** (V053) : distingue banques domestiques/étrangères pour le fichier BCT.
 - **Crédit calcul intérêts** : implémenté sur `openingBalance × (APR/12/100)`. Le modèle initial proposait le **solde moyen journalier** (qui donne un montant différent selon la date des achats). Ce choix (**openingBalance** vs **average daily balance**) est une décision métier non tranchée — à confirmer par le client avec l'APR, le floor, et la période de grâce avant toute mise en production.
@@ -243,14 +253,14 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 2. **Persistance d'historique des simulations** : enregistrer chaque run batch pour rejeu et comparaison.
 3. **Variations montant/devise** dans le batch.
 4. **Corriger `CardService.createCard()`** : `@GeneratedValue` + setId manuel → `StaleObjectStateException`.
-5. **À l'arrivée des specs** : type 40, 3e format, nommage fichier, slipNumber, Visa BASE II TC 05 TCR 0 (ARN + BID à compléter), Mastercard IPM, layout BCT FCOMPSMT.
+5. **À l'arrivée des specs** : type 40, 3e format, nommage fichier, slipNumber, Visa BASE II TC06/07/25 et TCR1/2/3, Mastercard IPM Type 1100/1200/1300, layout BCT FCOMPSMT.
 
 ## Critical Context
 - **Dernière migration** : V060__add_risk_score_to_acs.sql (ajoute risk_score + risk_decision à acs_authentications).
 - **JAVA_HOME** : /opt/homebrew/Cellar/openjdk@21/21.0.11.
-- **Backend** : 393 tests passent. Frontend : npm run build OK.
+- **Backend** : 393 tests passent (dont VisaBaseIITcr0Test 24 tests, NetworkClearingGeneratorTest 6 tests avec vérification format Mastercard 200c). Frontend : npm run build OK.
 - **Seuils RBA** : `score-low-threshold=30`, `score-high-threshold=70` (application.yml) — score < 30 → AUTHENTICATED, 30-69 → CHALLENGE_REQUIRED, ≥ 70 → DECLINED.
-- **6 endpoints simulator actifs** : `POST /api/v1/simulator/ecommerce/{frictionless,challenge,challenge/verify,app-challenge,app-challenge/respond,batch}` — tous permitAll via AntPathRequestMatcher.
+- **8 endpoints simulator actifs** : `POST /api/v1/simulator/ecommerce/{frictionless,challenge,challenge/verify,app-challenge,app-challenge/respond,batch}` + `POST /api/v1/simulator/clearing/cycle/visa-baseii` + `POST /api/v1/simulator/clearing/cycle/mastercard-ipm` — tous permitAll via AntPathRequestMatcher.
 - **Device fingerprint fix prouvé** : `DeviceFingerprintService.evaluate()` appelle `scoreDevice()` AVANT `registerFingerprint()`. IP connue → 0 pts, IP nouvelle → 30 pts, device inconnu → 90 pts. Prouvé runtime par différence de score entre IP identique et IP différente sur device connu.
 - **Batch distribution approximative** : les % définissent la répartition des profils d'entrée, PAS les statuts de sortie. Le RBA décide réellement.
 - **OTP** stocké en clair dans `acs_challenges.challengeData` (pas de SMS réel).
@@ -258,7 +268,7 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - **Comptes ledger crédit** : CREDIT_RECEIVABLE (ASSET), CREDIT_FUNDING (LIABILITY) — seedés dans V055.
 - **Comptes ledger fees** : TRANSFER_FEE_INCOME (INCOME), SETTLEMENT_MAIN (LIABILITY) — seedés dans V059.
 - **AccountType.CREDIT** : existe déjà dans `CardAccount`, pas de migration enum.
-- **Visa BASE II** : DRAFT phase 1 commit `21338dc` sur `origin/main`, en pause.
+- **Visa BASE II (TC 05 TCR 0) et Mastercard IPM (Type 1000)** : implémentés, validés runtime avec vérification substring position par position. Les hypothèses simulateur sont dans VisaBaseIISimConfig / MastercardIpmSimConfig. TC06/07/25/TCR1/2/3 et Type 1100/1200/1300 sont des stubs vides.
 - **Card creation bug** : `@GeneratedValue` + manual `setId()` → `StaleObjectStateException`. Ne pas créer de cartes via API tant que non corrigé.
 - **Convention signe netting vs BCT** : `NettingRecord.netAmount = totalSent - totalReceived`. Négatif = participant reçoit (créancier net). BCT `net_position = totalReceived - totalSent`, signe inverse. Les deux sont cohérents, juste conventions opposées (comptable vs flux).
 - Kafka UnknownHostException cosmétique — HTTP fonctionne.
@@ -370,3 +380,8 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - `frontend/src/pages/RegulatoryReports.tsx` : help button + periodicity label maps
 - `frontend/src/components/ConfigLiveHelp.tsx` : guide + CATEGORY_LABELS, DATA_TYPE_LABELS
 - `frontend/src/pages/ConfigLive.tsx` : help button + category/data type label maps
+- `service/clearing/network/visa/VisaBaseIISimConfig.java` : centralisation hypothèses Visa BASE II (24 constantes)
+- `service/clearing/network/visa/VisaBaseIIFormatter.java` : formatteurs champs (an/un/amount)
+- `service/clearing/network/mastercard/MastercardIpmSimConfig.java` : centralisation hypothèses Mastercard IPM (18 constantes)
+- `service/clearing/network/mastercard/MastercardIpmFormatter.java` : formatteurs champs (an/nn/amount)
+- `service/simulator/ClearingCycleService.java` : +executeMastercardIpmCycle()

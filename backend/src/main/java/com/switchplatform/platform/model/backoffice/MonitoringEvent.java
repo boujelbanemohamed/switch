@@ -2,6 +2,8 @@ package com.switchplatform.platform.model.backoffice;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -38,6 +40,7 @@ public class MonitoringEvent {
     @Column(name = "threshold_value")
     private Double thresholdValue;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSONB")
     private String details;
 

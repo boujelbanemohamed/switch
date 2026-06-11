@@ -2,6 +2,8 @@ package com.switchplatform.platform.model.backoffice;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.OffsetDateTime;
 
 @Entity(name = "BackofficeAuditLog")
@@ -28,9 +30,11 @@ public class AuditLog {
     @Column(name = "resource_id", length = 64)
     private String resourceId;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "old_value", columnDefinition = "JSONB")
     private String oldValue;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "new_value", columnDefinition = "JSONB")
     private String newValue;
 

@@ -34,7 +34,6 @@ public class AuthRule {
     private Integer priority = 100;
 
     @Column(nullable = false, length = 20)
-    @Enumerated(EnumType.STRING)
     private ActionType action = ActionType.APPROVE;
 
     @Column(name = "response_code", length = 2)
@@ -100,7 +99,7 @@ public class AuthRule {
     }
 
     public enum ActionType {
-        APPROVE, DECLINE, CHALLENGE, REVIEW, TFA, PIN
+        APPROVE, DECLINE, CHALLENGE, REVIEW, TWO_FA, PIN
     }
 
     public enum RuleStatus {

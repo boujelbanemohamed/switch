@@ -2,6 +2,8 @@ package com.switchplatform.platform.model.fraud;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -31,10 +33,10 @@ public class FraudRule {
     private Severity severity = Severity.MEDIUM;
 
     @Column(nullable = false, length = 15)
-    @Enumerated(EnumType.STRING)
     private Action action = Action.FLAG;
 
-    @Column(name = "condition_expression", columnDefinition = "TEXT")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "condition_expression", columnDefinition = "JSONB")
     private String conditionExpression;
 
     @Column(name = "score_weight")
@@ -79,7 +81,7 @@ public class FraudRule {
     }
 
     public enum Action {
-        BLOCK, FLAG, CHALLENGE, MONITOR, TFA, ALLOW
+        BLOCK, FLAG, CHALLENGE, MONITOR, TWO_FA, ALLOW
     }
 
     public enum Status {

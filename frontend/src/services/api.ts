@@ -178,8 +178,12 @@ export const api = {
       listByCard: (cardId: string) => request<import('../types').WalletToken[]>(`/issuing/cards/${cardId}/tokens`),
     },
     pins: {
-      setPin: (cardId: string, rawPin?: string, pinBlock?: string) =>
-        request<{ message: string }>('/issuing/pins', { method: 'POST', body: JSON.stringify({ cardId, rawPin, pinBlock }) }),
+      setPin: (cardId: string, rawPin?: string, pinBlock?: string) => {
+        const body: Record<string, string> = { cardId };
+        if (rawPin) body.rawPin = rawPin;
+        if (pinBlock) body.pinBlock = pinBlock;
+        return request<{ message: string }>('/issuing/pins', { method: 'POST', body: JSON.stringify(body) });
+      },
       verifyPin: (cardId: string, pinBlock: string) =>
         request<{ verified: boolean }>('/issuing/pins/verify', { method: 'POST', body: JSON.stringify({ cardId, pinBlock }) }),
       changePin: (cardId: string, oldPinBlock: string, newPinBlock: string) =>

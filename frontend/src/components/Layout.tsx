@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Repeat, Building2, Network, GitCompare,
   CreditCard, Store, ShieldCheck, Siren, DollarSign, Settings, ShoppingCart,
   LogIn, User, Users as UsersIcon, Briefcase, Scale, Timer, GitMerge, Receipt, Layers, CreditCard as VirtualCardIcon, IdCard,
-  FileText, Sliders, Percent, Radio, Repeat2, ArrowLeftRight, FileBarChart, HandCoins, Send,
+  FileText, Sliders, Percent, Radio, Repeat2, ArrowLeftRight, FileBarChart, HandCoins, Send, Smartphone,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -62,6 +62,7 @@ export function Layout({ children }: LayoutProps) {
     { to: '/backoffice', icon: Settings, label: t('nav.backoffice'), show: canSeeAdmin },
     { to: '/disputes', icon: Scale, label: t('nav.disputes'), show: canSeeAnalyst },
     { to: '/ecommerce', icon: ShoppingCart, label: t('nav.ecommerce'), show: canSeeAdmin },
+    { to: '/pos-simulator', icon: Smartphone, label: t('nav.posSimulator'), show: canSeeAdmin },
     { to: '/profile', icon: User, label: t('nav.auth'), show: true },
     { to: '/users', icon: UsersIcon, label: t('nav.users'), show: role === 'ADMIN' },
     { to: '/reports', icon: FileText, label: t('nav.reports'), show: canSeeAdmin },

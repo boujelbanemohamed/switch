@@ -35,7 +35,8 @@
     "cof": "COF / Recurring",
     "fx": "FX Rates",
     "regulatory": "Regulatory Reports",
-    "transfers": "Transfers"
+    "transfers": "Transfers",
+    "posSimulator": "POS Simulator"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -105,6 +106,8 @@
     "newPin": "New PIN",
     "rawPin": "Raw PIN",
     "pinBlock": "PIN Block",
+    "pinSimple": "Simple (4-12 digits)",
+    "pinAdvanced": "Advanced (16 hex)",
     "pinResult": "Result",
     "pinVerified": "Verified",
     "pinNotVerified": "Not Verified",
@@ -1224,5 +1227,38 @@
     "addBeneficiary": "Add Beneficiary",
     "reasonPlaceholder": "Reason for reversal",
     "pending": "Pending"
+  },
+  "posSimulator": {
+    "title": "POS Simulator",
+    "sectionDescription": "Simulate card-present (POS / TPE) transactions with chip+PIN or contactless. The simulator calls the real AuthorizationEngine and produces a Transaction record visible in Transactions. Clearing/settlement can be triggered via the Clearing page.",
+    "sectionRole": "ADMIN / OPERATOR",
+    "sectionUsage": "Select a cardholder, card, merchant, and terminal. Set the amount, choose CHIP (with PIN verification) or CONTACTLESS, then submit. The result shows the authorization decision and all ISO 8583 context fields.",
+    "formTitle": "Transaction Parameters",
+    "cardholder": "Cardholder",
+    "card": "Card",
+    "merchant": "Merchant",
+    "terminal": "Terminal",
+    "amount": "Amount",
+    "currency": "Currency Code",
+    "countryCode": "Country Code",
+    "entryMode": "Entry Mode",
+    "chip": "Chip + PIN",
+    "contactless": "Contactless",
+    "pinVerified": "PIN Verification",
+    "pinOk": "PIN correct ✓",
+    "pinWrong": "PIN incorrect ✗",
+    "submit": "Execute POS Transaction",
+    "resultTitle": "Authorization Result",
+    "decision": "Decision",
+    "responseCode": "Response Code",
+    "message": "Message",
+    "cardBrand": "Card Brand",
+    "channel": "Channel",
+    "posEntryMode": "POS Entry Mode / Condition Code",
+    "pinStatus": "PIN Status",
+    "riskScore": "Risk Score",
+    "transactionId": "Transaction ID",
+    "stan": "STAN",
+    "processingTime": "Processing Time"
   }
 }

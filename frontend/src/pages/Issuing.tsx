@@ -63,6 +63,7 @@ export function Issuing() {
   const [chForm, setChForm] = useState({ firstName: '', lastName: '', email: '', phone: '', documentNumber: '', dateOfBirth: '', nationality: '' });
   const [cardForm, setCardForm] = useState({ cardholderId: '', cardProduct: 'CREDIT', cardNumber: '', expiryDate: '', cvv: '', status: 'PENDING_ACTIVATION' });
   const [pinCardId, setPinCardId] = useState('');
+  const [pinMode, setPinMode] = useState<'simple' | 'advanced'>('simple');
   const [rawPin, setRawPin] = useState('');
   const [pinBlock, setPinBlock] = useState('');
   const [pinResult, setPinResult] = useState<string | null>(null);
@@ -156,8 +157,15 @@ export function Issuing() {
   };
 
   const handleSetPin = async () => {
+    if (pinMode === 'simple') {
+      if (!rawPin) { setPinResult('Veuillez saisir un PIN (4-12 chiffres)'); return; }
+      if (!/^\d{4,12}$/.test(rawPin)) { setPinResult('Le PIN simple doit contenir 4 à 12 chiffres'); return; }
+    } else {
+      if (!pinBlock) { setPinResult('Veuillez saisir un PIN block (16 hex)'); return; }
+      if (!/^[0-9A-Fa-f]{16}$/.test(pinBlock)) { setPinResult('Le PIN block doit faire exactement 16 caractères hexadécimaux'); return; }
+    }
     try {
-      const res = await api.issuing.pins.setPin(pinCardId, rawPin, pinBlock);
+      const res = await api.issuing.pins.setPin(pinCardId, pinMode === 'simple' ? rawPin : undefined, pinMode === 'advanced' ? pinBlock : undefined);
       setPinResult(res.message);
     } catch (e) { setPinResult(e instanceof Error ? e.message : 'Error'); }
   };
@@ -329,26 +337,40 @@ export function Issuing() {
                 {cards.map(c => <option key={c.id} value={c.id}>****{c.panSuffix} ({c.cardBrand})</option>)}
               </select>
             </Field>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <Field label={t('issuing.setPin')}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+            <Field label={t('issuing.setPin')}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <button onClick={() => setPinMode('simple')} style={{
+                  padding: '4px 12px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                  background: pinMode === 'simple' ? '#3b82f6' : 'var(--bg)',
+                  color: pinMode === 'simple' ? '#fff' : 'var(--text-secondary)',
+                }}>{t('issuing.pinSimple')}</button>
+                <button onClick={() => setPinMode('advanced')} style={{
+                  padding: '4px 12px', borderRadius: 6, border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                  background: pinMode === 'advanced' ? '#3b82f6' : 'var(--bg)',
+                  color: pinMode === 'advanced' ? '#fff' : 'var(--text-secondary)',
+                }}>{t('issuing.pinAdvanced')}</button>
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                {pinMode === 'simple' ? (
                   <input style={styles.input} value={rawPin} onChange={e => setRawPin(e.target.value)} placeholder={t('issuing.rawPin')} />
-                  <button onClick={handleSetPin} style={{
-                    padding: '8px 16px', borderRadius: 8, border: 'none', background: '#3b82f6',
-                    color: 'white', fontWeight: 600, cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap',
-                  }}>{t('issuing.setPin')}</button>
-                </div>
-              </Field>
-              <Field label={t('issuing.verifyPin')}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                ) : (
                   <input style={styles.input} value={pinBlock} onChange={e => setPinBlock(e.target.value)} placeholder={t('issuing.pinBlock')} />
-                  <button onClick={handleVerifyPin} style={{
-                    padding: '8px 16px', borderRadius: 8, border: 'none', background: '#22c55e',
-                    color: 'white', fontWeight: 600, cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap',
-                  }}>{t('issuing.verifyPin')}</button>
-                </div>
-              </Field>
-            </div>
+                )}
+                <button onClick={handleSetPin} style={{
+                  padding: '8px 16px', borderRadius: 8, border: 'none', background: '#3b82f6',
+                  color: 'white', fontWeight: 600, cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap',
+                }}>{t('issuing.setPin')}</button>
+              </div>
+            </Field>
+            <Field label={t('issuing.verifyPin')}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                <input style={styles.input} value={pinBlock} onChange={e => setPinBlock(e.target.value)} placeholder={t('issuing.pinBlock')} />
+                <button onClick={handleVerifyPin} style={{
+                  padding: '8px 16px', borderRadius: 8, border: 'none', background: '#22c55e',
+                  color: 'white', fontWeight: 600, cursor: 'pointer', fontSize: 12, whiteSpace: 'nowrap',
+                }}>{t('issuing.verifyPin')}</button>
+              </div>
+            </Field>
             <Field label={t('issuing.changePin')}>
               <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
                 <input style={{ ...styles.input, width: 140 }} value={oldPinBlock} onChange={e => setOldPinBlock(e.target.value)} placeholder={t('issuing.currentPin')} />

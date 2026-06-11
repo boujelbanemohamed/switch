@@ -35,7 +35,8 @@
     "cof": "COF / Récurrent",
     "fx": "Taux de change",
     "regulatory": "Rapports réglementaires",
-    "transfers": "Virements"
+    "transfers": "Virements",
+    "posSimulator": "Simulateur TPE"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -105,6 +106,8 @@
     "newPin": "Nouveau PIN",
     "rawPin": "PIN Brut",
     "pinBlock": "Bloc PIN",
+    "pinSimple": "Simple (4-12 chiffres)",
+    "pinAdvanced": "Avancé (16 hex)",
     "pinResult": "Résultat",
     "pinVerified": "Vérifié",
     "pinNotVerified": "Non Vérifié",
@@ -1215,5 +1218,38 @@
     "addBeneficiary": "Ajouter",
     "reasonPlaceholder": "Motif d'annulation",
     "pending": "En attente"
+  },
+  "posSimulator": {
+    "title": "Simulateur TPE",
+    "sectionDescription": "Simulez des transactions de proximité (POS / TPE) avec Puce+PIN ou Sans Contact. Le simulateur utilise le vrai AuthorizationEngine et produit un enregistrement Transaction visible dans Transactions. Le clearing/settlement peut être déclenché depuis la page Clearing.",
+    "sectionRole": "ADMIN / OPERATOR",
+    "sectionUsage": "Sélectionnez un porteur, une carte, un marchand et un terminal. Saisissez le montant, choisissez PUCE (avec vérification PIN) ou SANS CONTACT, puis exécutez. Le résultat affiche la décision d'autorisation et tous les champs de contexte ISO 8583.",
+    "formTitle": "Paramètres de la transaction",
+    "cardholder": "Porteur",
+    "card": "Carte",
+    "merchant": "Marchand",
+    "terminal": "Terminal",
+    "amount": "Montant",
+    "currency": "Code devise",
+    "countryCode": "Code pays",
+    "entryMode": "Mode d'entrée",
+    "chip": "Puce + PIN",
+    "contactless": "Sans contact",
+    "pinVerified": "Vérification PIN",
+    "pinOk": "PIN correct ✓",
+    "pinWrong": "PIN incorrect ✗",
+    "submit": "Exécuter la transaction TPE",
+    "resultTitle": "Résultat de l'autorisation",
+    "decision": "Décision",
+    "responseCode": "Code réponse",
+    "message": "Message",
+    "cardBrand": "Réseau",
+    "channel": "Canal",
+    "posEntryMode": "Mode / Condition d'entrée",
+    "pinStatus": "Statut PIN",
+    "riskScore": "Score de risque",
+    "transactionId": "ID transaction",
+    "stan": "STAN",
+    "processingTime": "Temps de traitement"
   }
 }

@@ -35,6 +35,7 @@ import { Loyalty } from './pages/Loyalty';
 import { Transfers } from './pages/Transfers';
 import { FxRates } from './pages/FxRates';
 import { RegulatoryReports } from './pages/RegulatoryReports';
+import { PosSimulator } from './pages/PosSimulator';
 import type { ReactNode } from 'react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -82,6 +83,7 @@ function AppRoutes() {
       <Route path="/cof" element={<ProtectedRoute><Layout><CofPage /></Layout></ProtectedRoute>} />
       <Route path="/fx-rates" element={<ProtectedRoute><Layout><FxRates /></Layout></ProtectedRoute>} />
       <Route path="/regulatory-reports" element={<ProtectedRoute><Layout><RegulatoryReports /></Layout></ProtectedRoute>} />
+      <Route path="/pos-simulator" element={<ProtectedRoute><Layout><PosSimulator /></Layout></ProtectedRoute>} />
     </Routes>
   );
 }

@@ -795,6 +795,24 @@ export interface TransferBeneficiary {
   createdAt: string;
 }
 
+export interface PosResult {
+  decision: string;
+  responseCode: string;
+  message: string;
+  authorizationId: string | null;
+  riskScore: number;
+  riskDecision: string;
+  transactionId: string;
+  stan: string;
+  posEntryMode: string;
+  posConditionCode: string;
+  channel: string;
+  cardBrand: string;
+  cardType: string;
+  pinStatus: string;
+  processingTimeMs: number;
+}
+
 export interface LoyaltyRedemption {
   id: string;
   membershipId: string;

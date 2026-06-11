@@ -27,17 +27,17 @@ public class Terminal {
     @Column(name = "serial_number", length = 64)
     private String serialNumber;
 
-    @Column(name = "terminal_type", nullable = false, length = 20)
+    @Column(name = "terminal_type", nullable = false, length = 30)
     @Enumerated(EnumType.STRING)
     private TerminalType terminalType;
 
-    @Column(length = 50)
+    @Column(length = 100)
     private String manufacturer;
 
-    @Column(length = 50)
+    @Column(length = 100)
     private String model;
 
-    @Column(name = "firmware_version", length = 20)
+    @Column(name = "firmware_version", length = 50)
     private String firmwareVersion;
 
     @Column(name = "installation_date")
@@ -56,7 +56,7 @@ public class Terminal {
     @Column(length = 100)
     private String city;
 
-    @Column(name = "country_code", length = 3)
+    @Column(name = "country_code", length = 2)
     private String countryCode;
 
     @Column(name = "contactless_supported")
@@ -77,7 +77,7 @@ public class Terminal {
     @Column(name = "supported_currencies", columnDefinition = "VARCHAR(3)[]")
     private String[] supportedCurrencies;
 
-    @Column(name = "encryption_key_id", length = 64)
+    @Column(name = "encryption_key_id", length = 100)
     private String encryptionKeyId;
 
     @Column(name = "m_key", length = 64)

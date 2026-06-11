@@ -27,7 +27,7 @@ public class Merchant {
     @Column(name = "merchant_category_code", length = 4)
     private String merchantCategoryCode;
 
-    @Column(name = "legal_name", length = 255)
+    @Column(name = "legal_name", nullable = false, length = 255)
     private String legalName;
 
     @Column(name = "trading_name", length = 255)
@@ -60,7 +60,7 @@ public class Merchant {
     @Column(name = "postal_code", length = 20)
     private String postalCode;
 
-    @Column(name = "country_code", length = 3)
+    @Column(name = "country_code", length = 2)
     private String countryCode;
 
     @Column(nullable = false, length = 30)

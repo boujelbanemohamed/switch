@@ -76,6 +76,7 @@
     "documentNumber": "N° Document",
     "dateOfBirth": "Date de Naissance",
     "nationality": "Nationalité",
+    "countryCode": "Pays",
     "status": "Statut",
     "kycLevel": "Niveau KYC",
     "noCardholders": "Aucun porteur trouvé",

@@ -76,6 +76,7 @@
     "documentNumber": "Document Number",
     "dateOfBirth": "Date of Birth",
     "nationality": "Nationality",
+    "countryCode": "Country",
     "status": "Status",
     "kycLevel": "KYC Level",
     "noCardholders": "No cardholders found",

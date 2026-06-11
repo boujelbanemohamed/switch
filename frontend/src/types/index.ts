@@ -78,6 +78,7 @@ export interface Cardholder {
   kycLevel: number;
   dateOfBirth?: string;
   nationality?: string;
+  countryCode?: string;
   createdAt: string;
 }
 

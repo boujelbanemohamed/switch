@@ -43,6 +43,41 @@ function StatusBadge({ status, label }: { status: string; label?: string }) {
   return <span style={{ background: color + '33', color, padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{label ?? status}</span>;
 }
 
+const COUNTRY_OPTIONS = [
+  { code: 'TN', label: 'Tunisia' },
+  { code: 'DZ', label: 'Algeria' },
+  { code: 'MA', label: 'Morocco' },
+  { code: 'LY', label: 'Libya' },
+  { code: 'MR', label: 'Mauritania' },
+  { code: 'SD', label: 'Sudan' },
+  { code: 'EG', label: 'Egypt' },
+  { code: 'SN', label: 'Senegal' },
+  { code: 'CI', label: 'Côte d\'Ivoire' },
+  { code: 'CM', label: 'Cameroon' },
+  { code: 'ML', label: 'Mali' },
+  { code: 'BF', label: 'Burkina Faso' },
+  { code: 'BJ', label: 'Benin' },
+  { code: 'TG', label: 'Togo' },
+  { code: 'NE', label: 'Niger' },
+  { code: 'TD', label: 'Chad' },
+  { code: 'FR', label: 'France' },
+  { code: 'BE', label: 'Belgium' },
+  { code: 'CH', label: 'Switzerland' },
+  { code: 'IT', label: 'Italy' },
+  { code: 'ES', label: 'Spain' },
+  { code: 'DE', label: 'Germany' },
+  { code: 'GB', label: 'United Kingdom' },
+  { code: 'US', label: 'United States' },
+  { code: 'CA', label: 'Canada' },
+  { code: 'AE', label: 'UAE' },
+  { code: 'SA', label: 'Saudi Arabia' },
+  { code: 'QA', label: 'Qatar' },
+  { code: 'KW', label: 'Kuwait' },
+  { code: 'TR', label: 'Türkiye' },
+  { code: 'CN', label: 'China' },
+  { code: 'IN', label: 'India' },
+];
+
 export function Issuing() {
   const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('cardholders');
@@ -60,7 +95,7 @@ export function Issuing() {
   const [showTokenModal, setShowTokenModal] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [chForm, setChForm] = useState({ firstName: '', lastName: '', email: '', phone: '', documentNumber: '', dateOfBirth: '', nationality: '' });
+  const [chForm, setChForm] = useState({ firstName: '', lastName: '', email: '', phone: '', documentNumber: '', dateOfBirth: '', nationality: '', countryCode: '' });
   const [cardForm, setCardForm] = useState({ cardholderId: '', cardProduct: 'CREDIT', cardNumber: '', expiryDate: '', cvv: '', status: 'PENDING_ACTIVATION' });
   const [pinCardId, setPinCardId] = useState('');
   const [pinMode, setPinMode] = useState<'simple' | 'advanced'>('simple');
@@ -135,7 +170,7 @@ export function Issuing() {
     try {
       await api.issuing.cardholders.create(chForm);
       setShowChModal(false);
-      setChForm({ firstName: '', lastName: '', email: '', phone: '', documentNumber: '', dateOfBirth: '', nationality: '' });
+      setChForm({ firstName: '', lastName: '', email: '', phone: '', documentNumber: '', dateOfBirth: '', nationality: '', countryCode: '' });
       const list = await api.issuing.cardholders.list();
       setCardholders(list);
     } catch (e) { console.error(e); alert(e instanceof Error ? e.message : 'Failed to create cardholder'); }
@@ -562,7 +597,20 @@ export function Issuing() {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <Field label={t('issuing.dateOfBirth')}><input style={styles.input} type="date" value={chForm.dateOfBirth} onChange={e => setChForm({ ...chForm, dateOfBirth: e.target.value })} /></Field>
-                <Field label={t('issuing.nationality')}><input style={styles.input} value={chForm.nationality} onChange={e => setChForm({ ...chForm, nationality: e.target.value })} /></Field>
+                <Field label={t('issuing.nationality')}>
+                  <select style={styles.select} value={chForm.nationality} onChange={e => setChForm({ ...chForm, nationality: e.target.value })}>
+                    <option value="">-- Select --</option>
+                    {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                  </select>
+                </Field>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Field label={t('issuing.countryCode')}>
+                  <select style={styles.select} value={chForm.countryCode} onChange={e => setChForm({ ...chForm, countryCode: e.target.value })}>
+                    <option value="">-- Select --</option>
+                    {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                  </select>
+                </Field>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>

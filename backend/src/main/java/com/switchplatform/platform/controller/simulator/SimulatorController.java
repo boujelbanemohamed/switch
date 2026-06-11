@@ -3,7 +3,7 @@ package com.switchplatform.platform.controller.simulator;
 import com.switchplatform.platform.service.simulator.ClearingBridgeService;
 import com.switchplatform.platform.service.simulator.ClearingCycleService;
 import com.switchplatform.platform.service.simulator.EcommerceFlowSimulator;
-import jakarta.validation.Valid;
+import com.switchplatform.platform.service.simulator.PosFlowSimulator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -22,6 +22,7 @@ import java.util.UUID;
 public class SimulatorController {
 
     private final EcommerceFlowSimulator ecommerceFlowSimulator;
+    private final PosFlowSimulator posFlowSimulator;
     private final ClearingBridgeService clearingBridgeService;
     private final ClearingCycleService clearingCycleService;
 
@@ -75,7 +76,7 @@ public class SimulatorController {
 
     @PostMapping("/ecommerce/app-challenge")
     public ResponseEntity<EcommerceFlowSimulator.SimulationResult> simulateAppChallenge(
-            @Valid @RequestBody Map<String, Object> request) {
+            @RequestBody Map<String, Object> request) {
 
         EcommerceFlowSimulator.SimulationRequest simRequest = EcommerceFlowSimulator.SimulationRequest.builder()
                 .cardId(UUID.fromString((String) request.get("cardId")))
@@ -89,6 +90,25 @@ public class SimulatorController {
                 .build();
 
         EcommerceFlowSimulator.SimulationResult result = ecommerceFlowSimulator.simulateAppChallengeFlow(simRequest);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/pos/transaction")
+    public ResponseEntity<PosFlowSimulator.PosResult> simulatePosTransaction(
+            @RequestBody Map<String, Object> request) {
+
+        PosFlowSimulator.PosRequest simRequest = PosFlowSimulator.PosRequest.builder()
+                .cardId(UUID.fromString((String) request.get("cardId")))
+                .merchantId(UUID.fromString((String) request.get("merchantId")))
+                .terminalId(UUID.fromString((String) request.get("terminalId")))
+                .amount(new BigDecimal(request.get("amount").toString()))
+                .currencyCode((String) request.get("currencyCode"))
+                .countryCode((String) request.get("countryCode"))
+                .entryMode((String) request.get("entryMode"))
+                .pinVerified(Boolean.parseBoolean(request.get("pinVerified").toString()))
+                .build();
+
+        PosFlowSimulator.PosResult result = posFlowSimulator.simulatePosTransaction(simRequest);
         return ResponseEntity.ok(result);
     }
 
@@ -137,14 +157,19 @@ public class SimulatorController {
             @RequestBody Map<String, Object> request) {
 
         @SuppressWarnings("unchecked")
-        List<Map<String, String>> itemsRaw = (List<Map<String, String>>) request.get("items");
+        List<Map<String, Object>> itemsRaw = (List<Map<String, Object>>) request.get("items");
 
         List<ClearingBridgeService.ClearingItem> items = new ArrayList<>();
-        for (Map<String, String> raw : itemsRaw) {
-            items.add(ClearingBridgeService.ClearingItem.builder()
-                    .epgTransactionId(UUID.fromString(raw.get("epgTransactionId")))
-                    .cardId(UUID.fromString(raw.get("cardId")))
-                    .build());
+        for (Map<String, Object> raw : itemsRaw) {
+            ClearingBridgeService.ClearingItem.ClearingItemBuilder builder = ClearingBridgeService.ClearingItem.builder();
+            if (raw.containsKey("epgTransactionId") && raw.get("epgTransactionId") != null) {
+                builder.epgTransactionId(UUID.fromString((String) raw.get("epgTransactionId")));
+            }
+            if (raw.containsKey("transactionId") && raw.get("transactionId") != null) {
+                builder.transactionId(UUID.fromString((String) raw.get("transactionId")));
+            }
+            builder.cardId(UUID.fromString((String) raw.get("cardId")));
+            items.add(builder.build());
         }
 
         ClearingBridgeService.ClearingBatchResult result = clearingBridgeService.clearTransactions(items);

@@ -1,5 +1,7 @@
 package com.switchplatform.platform.controller.simulator;
 
+import com.switchplatform.platform.service.simulator.ClearingBridgeService;
+import com.switchplatform.platform.service.simulator.ClearingCycleService;
 import com.switchplatform.platform.service.simulator.EcommerceFlowSimulator;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,8 @@ import java.util.UUID;
 public class SimulatorController {
 
     private final EcommerceFlowSimulator ecommerceFlowSimulator;
+    private final ClearingBridgeService clearingBridgeService;
+    private final ClearingCycleService clearingCycleService;
 
     @PostMapping("/ecommerce/frictionless")
     public ResponseEntity<EcommerceFlowSimulator.SimulationResult> simulateFrictionless(
@@ -125,6 +129,49 @@ public class SimulatorController {
                 .build();
 
         EcommerceFlowSimulator.BatchResult result = ecommerceFlowSimulator.simulateBatch(batchRequest);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/clearing/from-transactions")
+    public ResponseEntity<ClearingBridgeService.ClearingBatchResult> clearFromTransactions(
+            @Valid @RequestBody Map<String, Object> request) {
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, String>> itemsRaw = (List<Map<String, String>>) request.get("items");
+
+        List<ClearingBridgeService.ClearingItem> items = new ArrayList<>();
+        for (Map<String, String> raw : itemsRaw) {
+            items.add(ClearingBridgeService.ClearingItem.builder()
+                    .epgTransactionId(UUID.fromString(raw.get("epgTransactionId")))
+                    .cardId(UUID.fromString(raw.get("cardId")))
+                    .build());
+        }
+
+        ClearingBridgeService.ClearingBatchResult result = clearingBridgeService.clearTransactions(items);
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/clearing/cycle")
+    public ResponseEntity<ClearingCycleService.ClearingCycleResult> runClearingCycle() {
+        ClearingCycleService.ClearingCycleResult result = clearingCycleService.executeFullCycle();
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/clearing/cycle/visa-baseii")
+    public ResponseEntity<ClearingCycleService.ClearingCycleResult> runVisaBaseIiCycle() {
+        ClearingCycleService.ClearingCycleResult result = clearingCycleService.executeVisaBaseIiCycle();
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/clearing/cycle/mastercard-ipm")
+    public ResponseEntity<ClearingCycleService.ClearingCycleResult> runMastercardIpmCycle() {
+        ClearingCycleService.ClearingCycleResult result = clearingCycleService.executeMastercardIpmCycle();
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/clearing/full-cycle")
+    public ResponseEntity<ClearingCycleService.FullCycleResult> runFullClearingCycle() {
+        ClearingCycleService.FullCycleResult result = clearingCycleService.executeFullNetworkCycle();
         return ResponseEntity.ok(result);
     }
 }

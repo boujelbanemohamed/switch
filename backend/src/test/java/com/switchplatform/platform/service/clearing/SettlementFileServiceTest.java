@@ -55,8 +55,12 @@ class SettlementFileServiceTest {
                 new Iso20022ClearingGenerator(new Iso20022Engine()),
                 new VisaBaseIIGenerator(
                         mock(ParticipantRepository.class),
-                        mock(MerchantRepository.class)),
-                new MastercardIpmGenerator()
+                        mock(MerchantRepository.class),
+                        mock(ClearingRecordRepository.class)),
+                new MastercardIpmGenerator(
+                        mock(ParticipantRepository.class),
+                        mock(MerchantRepository.class),
+                        mock(ClearingRecordRepository.class))
         );
     }
 

@@ -55,6 +55,7 @@ public class ClearingService {
         private String cardNumber;
         private String tradingName;
         private String slipNumber;
+        private String batchNumber;
         private boolean representationFlag;
     }
 
@@ -118,6 +119,7 @@ public class ClearingService {
                 .cardBrand(data.getCardBrand())
                 .tradingName(data.getTradingName())
                 .slipNumber(data.getSlipNumber())
+                .batchNumber(data.getBatchNumber())
                 .representationFlag(data.isRepresentationFlag())
                 .build();
 

@@ -169,6 +169,18 @@ public class SettlementFileService {
             total = rawType40.size();
             log.info("CP50 ingestion: {} type40 lines (raw, waiting for SMT spec)", total);
             unmatched = total;
+        } else if ("VISA".equalsIgnoreCase(format)) {
+            com.switchplatform.platform.service.clearing.network.NetworkClearingGenerator.ReconciliationResult result
+                    = visaBaseIIGenerator.ingest(content);
+            total = result.totalRecords();
+            matched = result.matched();
+            unmatched = result.unmatched();
+        } else if ("MASTERCARD".equalsIgnoreCase(format)) {
+            com.switchplatform.platform.service.clearing.network.NetworkClearingGenerator.ReconciliationResult result
+                    = mastercardIpmGenerator.ingest(content);
+            total = result.totalRecords();
+            matched = result.matched();
+            unmatched = result.unmatched();
         } else {
             throw new IllegalArgumentException("Unsupported format for ingestion: " + format);
         }

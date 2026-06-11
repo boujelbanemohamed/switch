@@ -2,6 +2,8 @@ package com.switchplatform.platform.service.issuing;
 
 import com.switchplatform.platform.model.issuing.PinManagement;
 import com.switchplatform.platform.repository.issuing.PinManagementRepository;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,6 +53,10 @@ public class PinService {
     public String createPin(String cardId, String rawPin, String pinBlock) {
         if (rawPin == null && pinBlock == null) {
             throw new IllegalArgumentException("Either rawPin or pinBlock must be provided");
+        }
+
+        if (pinManagementRepository.findByCardId(UUID.fromString(cardId)).isPresent()) {
+            throw new EntityExistsException("A PIN is already defined for this card");
         }
 
         String pinHash = null;
@@ -109,18 +115,19 @@ public class PinService {
 
     @Transactional
     public boolean changePin(String cardId, String oldPinBlock, String newPinBlock) {
+        PinManagement mgmt = pinManagementRepository.findByCardId(UUID.fromString(cardId))
+                .orElseThrow(() -> new EntityNotFoundException("Aucun PIN défini pour cette carte. Définissez-le d'abord."));
+
         if (!verifyPin(cardId, oldPinBlock)) {
             log.warn("PIN change failed for card {} - old PIN verification failed", cardId);
             return false;
         }
-
-        PinManagement mgmt = pinManagementRepository.findByCardId(UUID.fromString(cardId))
-                .orElseThrow(() -> new RuntimeException("PIN record not found for card " + cardId));
-        String algorithm = mgmt.getPinFormat() != null ? mgmt.getPinFormat() : "ISO9564-1";
-        String pinHash = null;
         String pinBlockHash = encryptAes(newPinBlock.toUpperCase());
+        String pinHash = mgmt.getPinHash();
 
-        if (mgmt.getPinHash() != null) {
+        if (newPinBlock.matches("\\d{4,12}")) {
+            pinHash = hashWithPbkdf2(newPinBlock);
+        } else if (mgmt.getPinHash() != null) {
             String extractedPin = extractPinFromPinBlock(cardId, newPinBlock);
             if (extractedPin != null) {
                 pinHash = hashWithPbkdf2(extractedPin);
@@ -129,7 +136,7 @@ public class PinService {
 
         mgmt.setPinHash(pinHash);
         mgmt.setPinBlock(pinBlockHash);
-        mgmt.setPinFormat(algorithm);
+        mgmt.setPinFormat(mgmt.getPinFormat() != null ? mgmt.getPinFormat() : "ISO9564-1");
         mgmt.setLastChanged(OffsetDateTime.now());
         pinManagementRepository.save(mgmt);
         log.info("PIN changed for card {}", cardId);

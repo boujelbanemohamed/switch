@@ -29,6 +29,7 @@ public class PinManagement {
     @Column(name = "pin_format", length = 20)
     private String pinFormat;
 
+    @Builder.Default
     @Column(name = "pin_type", length = 20)
     @Enumerated(EnumType.STRING)
     private PinType pinType = PinType.TRANSACTION;
@@ -36,9 +37,11 @@ public class PinManagement {
     @Column(name = "pin_block", length = 64)
     private String pinBlock;
 
+    @Builder.Default
     @Column(name = "pin_attempts")
     private Integer pinAttempts = 0;
 
+    @Builder.Default
     @Column(name = "max_attempts")
     private Integer maxAttempts = 3;
 

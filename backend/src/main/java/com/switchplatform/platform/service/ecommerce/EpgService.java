@@ -96,7 +96,7 @@ public class EpgService {
                 .amount(txn.getAmount())
                 .currencyCode(txn.getCurrencyCode())
                 .mti("0100")
-                .stan(txn.getMerchantTransactionId())
+                .stan(txn.getId().toString())
                 .panHash(txn.getPanHash())
                 .cardType(card.getCardType() != null ? card.getCardType().name() : null)
                 .cardBrand(card.getCardBrand() != null ? card.getCardBrand().name() : null)

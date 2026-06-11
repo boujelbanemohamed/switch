@@ -84,11 +84,37 @@ public class AuthorizationEngine {
             decision.setResponseCode("59");
         }
 
-        // 2. Check card account balance
-        if (decision.getDecision() == null && request.getCardholderId() != null) {
-            List<CardAccount> cardAccounts = cardAccountService.getAccountsByCardholderId(request.getCardholderId());
-            if (!cardAccounts.isEmpty()) {
-                CardAccount account = cardAccounts.get(0);
+        // 2. Check balance — card-specific account first, cardholder fallback second
+        if (decision.getDecision() == null) {
+            CardAccount account = null;
+
+            // 2a. Primary: card-specific account (card.getCardAccountId())
+            if (request.getCardId() != null) {
+                Optional<Card> cardOpt = cardService.getCard(request.getCardId());
+                if (cardOpt.isPresent()) {
+                    UUID cardAccountId = cardOpt.get().getCardAccountId();
+                    if (cardAccountId != null) {
+                        account = cardAccountService.getAccount(cardAccountId).orElse(null);
+                    }
+                }
+            }
+
+            // 2b. Fallback: cardholder-level accounts when no cardId or no card-specific account
+            if (account == null && request.getCardholderId() != null) {
+                List<CardAccount> cardAccounts = cardAccountService.getAccountsByCardholderId(request.getCardholderId());
+                if (!cardAccounts.isEmpty()) {
+                    account = cardAccounts.stream()
+                            .filter(ca -> request.getAmount() == null
+                                    || ca.getAvailableBalance().compareTo(request.getAmount()) >= 0)
+                            .findFirst()
+                            .orElseGet(() -> cardAccounts.stream()
+                                    .max(Comparator.comparing(CardAccount::getAvailableBalance))
+                                    .orElse(cardAccounts.get(0)));
+                    log.warn("Fallback to cardholder accounts (no card-specific account): chosenAccount={}", account.getId());
+                }
+            }
+
+            if (account != null) {
                 decision.setCardBalanceBefore(account.getAvailableBalance());
                 if (request.getAmount() != null
                         && account.getAvailableBalance().compareTo(request.getAmount()) < 0) {
@@ -98,27 +124,12 @@ public class AuthorizationEngine {
                     log.warn("Insufficient balance: account={}, available={}, required={}",
                             account.getId(), account.getAvailableBalance(), request.getAmount());
                 }
-            }
-        }
-
-        // 2a. Check card-specific account balance via cardAccountId
-        if (decision.getDecision() == null && request.getCardId() != null) {
-            Optional<Card> cardOpt = cardService.getCard(request.getCardId());
-            if (cardOpt.isPresent()) {
-                UUID cardAccountId = cardOpt.get().getCardAccountId();
-                if (cardAccountId != null) {
-                    cardAccountService.getAccount(cardAccountId).ifPresent(account -> {
-                        decision.setCardBalanceBefore(account.getAvailableBalance());
-                        if (request.getAmount() != null
-                                && account.getAvailableBalance().compareTo(request.getAmount()) < 0) {
-                            decision.setDecision(AuthDecision.Decision.DECLINED);
-                            decision.setResponseReason("Insufficient balance (card account)");
-                            decision.setResponseCode("51");
-                            log.warn("Insufficient balance via cardAccountId: account={}, available={}, required={}",
-                                    account.getId(), account.getAvailableBalance(), request.getAmount());
-                        }
-                    });
-                }
+            } else {
+                decision.setDecision(AuthDecision.Decision.DECLINED);
+                decision.setResponseReason("No account found for balance check");
+                decision.setResponseCode("51");
+                log.warn("No account found for balance check: cardId={}, cardholderId={}",
+                        request.getCardId(), request.getCardholderId());
             }
         }
 
@@ -256,32 +267,50 @@ public class AuthorizationEngine {
     private boolean postApprovalActions(AuthorizationRequest request, AuthDecision decision) {
         if (request.getCardId() == null || request.getAmount() == null) return true;
 
-        // Place hold via HoldService
+        // Place hold via HoldService — use card's account, fallback to cardholder
         if (request.getCardholderId() != null) {
             try {
-                List<CardAccount> cardAccounts = cardAccountService.getAccountsByCardholderId(request.getCardholderId());
-                if (!cardAccounts.isEmpty()) {
-                    CardAccount account = cardAccounts.get(0);
-                    String transactionId = request.getStan() != null ? request.getStan() : UUID.randomUUID().toString();
-                    HoldRecord hold = holdService.placeHold(
-                            transactionId,
-                            request.getCardId(),
-                            account.getId(),
-                            request.getAmount(),
-                            request.getCurrencyCode(),
-                            Duration.ofMinutes(30)
-                    );
-                    decision.setCardBalanceAfter(account.getAvailableBalance());
-                    log.info("Hold placed: id={}, cardholderId={}, amount={}",
-                            hold.getId(), request.getCardholderId(), request.getAmount());
-
-                    String txnRef = request.getStan() != null ? request.getStan() : hold.getId().toString();
-                    try {
-                        ledgerPostingEngine.postAuthorization(txnRef, request.getAmount(),
-                                request.getCurrencyCode(), "Auth hold cardholder=" + request.getCardholderId());
-                    } catch (Exception e2) {
-                        log.warn("Ledger posting failed (non-blocking): {}", e2.getMessage());
+                CardAccount account = null;
+                if (request.getCardId() != null) {
+                    Optional<Card> cardOpt = cardService.getCard(request.getCardId());
+                    if (cardOpt.isPresent()) {
+                        UUID cardAccountId = cardOpt.get().getCardAccountId();
+                        if (cardAccountId != null) {
+                            account = cardAccountService.getAccount(cardAccountId).orElse(null);
+                        }
                     }
+                }
+                if (account == null) {
+                    List<CardAccount> cardAccounts = cardAccountService.getAccountsByCardholderId(request.getCardholderId());
+                    if (!cardAccounts.isEmpty()) {
+                        account = cardAccounts.get(0);
+                    }
+                }
+                if (account == null) {
+                    log.warn("Cannot place hold: no account found for cardId={}, cardholderId={}",
+                            request.getCardId(), request.getCardholderId());
+                    return false;
+                }
+
+                String transactionId = request.getStan() != null ? request.getStan() : UUID.randomUUID().toString();
+                HoldRecord hold = holdService.placeHold(
+                        transactionId,
+                        request.getCardId(),
+                        account.getId(),
+                        request.getAmount(),
+                        request.getCurrencyCode(),
+                        Duration.ofMinutes(30)
+                );
+                decision.setCardBalanceAfter(account.getAvailableBalance());
+                log.info("Hold placed: id={}, cardholderId={}, amount={}",
+                        hold.getId(), request.getCardholderId(), request.getAmount());
+
+                String txnRef = request.getStan() != null ? request.getStan() : hold.getId().toString();
+                try {
+                    ledgerPostingEngine.postAuthorization(txnRef, request.getAmount(),
+                            request.getCurrencyCode(), "Auth hold cardholder=" + request.getCardholderId());
+                } catch (Exception e2) {
+                    log.warn("Ledger posting failed (non-blocking): {}", e2.getMessage());
                 }
             } catch (Exception e) {
                 log.warn("Failed to place hold for cardholderId={}: {}", request.getCardholderId(), e.getMessage());

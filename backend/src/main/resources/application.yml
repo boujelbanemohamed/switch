@@ -7,7 +7,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/switch_db
     username: switch_user
-    password: ${POSTGRES_PASSWORD}
+    password: ${POSTGRES_PASSWORD:switch_pass}
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
@@ -84,7 +84,7 @@ switch:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
   security:
     encryption:
-      key: ${PCI_ENCRYPTION_KEY}
+      key: ${PCI_ENCRYPTION_KEY:cG3k6Zx8Rq2WvY5sN9mA1Bf4Hj7Ld0Tp}
   iso8583:
     header: "ISO015000077"
     max-message-length: 4096
@@ -97,7 +97,7 @@ switch:
     max-pool-size: 50
     queue-capacity: 100
   pan:
-    hash-key: ${PAN_HASH_KEY}
+    hash-key: ${PAN_HASH_KEY:aB1cD2eF3gH4iJ5kL6mN7oP8qR9sT0uV}
   pin:
     encryption-key: ${PIN_ENCRYPTION_KEY:}
 
@@ -117,7 +117,7 @@ switch:
 
   auth:
     jwt:
-      secret: ${JWT_SECRET}
+      secret: ${JWT_SECRET:ZHVtbXktand0LXNlY3JldC1mb3ItdGVzdGluZy1vbmx5LTEyMzQ1Ng==}
       access-token-expiration: 3600000
       refresh-token-expiration: 86400000
 

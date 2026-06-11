@@ -1,0 +1,24 @@
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/switch_db
+    username: switch_user
+    password: switch_pass
+
+  mail:
+    host: dummy
+    port: 25
+    username: dummy
+    password: dummy
+    properties:
+      mail.smtp.starttls.enable: false
+      mail.smtp.auth: false
+
+switch:
+  notification:
+    enabled: false
+  cors:
+    allowed-origins: "*"

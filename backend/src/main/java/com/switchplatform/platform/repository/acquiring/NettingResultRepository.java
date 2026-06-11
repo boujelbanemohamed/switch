@@ -10,6 +10,6 @@ import java.util.UUID;
 
 @Repository
 public interface NettingResultRepository extends JpaRepository<NettingResult, UUID> {
-    List<NettingResult> findByMerchantId(String merchantId);
+    List<NettingResult> findByMerchantId(UUID merchantId);
     List<NettingResult> findByDate(LocalDate date);
 }

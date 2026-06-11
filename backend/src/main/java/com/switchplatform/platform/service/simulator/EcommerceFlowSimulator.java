@@ -359,20 +359,37 @@ public class EcommerceFlowSimulator {
         epgService.setThreeDsStatus(txn.getId(), true, auth.getId());
         EpgTransaction authorized = epgService.authorizeTransaction(txn.getId(), auth.getCardId(), cavv, eci);
 
-        log.info("=== Challenge flow complete: AUTHENTICATED + AUTHORIZED ===");
-
-        return SimulationResult.builder()
-                .status("AUTHENTICATED")
-                .epgTransactionId(txn.getId())
-                .threeDsSessionId(session.getId())
-                .acsAuthenticationId(auth.getId())
-                .challengeId(challengeId)
-                .cavv(cavv)
-                .eci(eci)
-                .riskScore(45)
-                .riskDecision("CHALLENGE_REQUIRED")
-                .message("Challenge verified: AUTHENTICATED + AUTHORIZED")
-                .build();
+        if (authorized.getStatus() == EpgTransaction.Status.AUTHORIZED) {
+            log.info("=== Challenge flow complete: AUTHENTICATED + AUTHORIZED ===");
+            return SimulationResult.builder()
+                    .status("AUTHENTICATED")
+                    .epgTransactionId(txn.getId())
+                    .threeDsSessionId(session.getId())
+                    .acsAuthenticationId(auth.getId())
+                    .challengeId(challengeId)
+                    .cavv(cavv)
+                    .eci(eci)
+                    .riskScore(45)
+                    .riskDecision("APPROVED")
+                    .message("Challenge verified: AUTHENTICATED + AUTHORIZED")
+                    .build();
+        } else {
+            log.warn("=== Challenge flow: 3DS AUTHENTICATED but authorization DECLINED: {} ===",
+                    authorized.getErrorDescription());
+            return SimulationResult.builder()
+                    .status("AUTHENTICATED_BUT_DECLINED")
+                    .epgTransactionId(txn.getId())
+                    .threeDsSessionId(session.getId())
+                    .acsAuthenticationId(auth.getId())
+                    .challengeId(challengeId)
+                    .cavv(cavv)
+                    .eci(eci)
+                    .riskScore(45)
+                    .riskDecision("DECLINED")
+                    .message("3DS authenticated but authorization declined (" + authorized.getErrorCode()
+                            + "): " + authorized.getErrorDescription())
+                    .build();
+        }
     }
 
     public SimulationResult simulateAppChallengeFlow(SimulationRequest request) {

@@ -248,14 +248,23 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - ~~**Settlement creation bug** : MÊME PATTERN que Card — `MerchantSettlement` a `@GeneratedValue(GenerationType.UUID)` sur `id` (MerchantSettlement.java:19) mais `MerchantSettlementService.createSettlement()` (ligne 27) appelle `.id(UUID.randomUUID())` → `StaleObjectStateException` au `save()`. **CORRIGÉ** : retrait de `.id(UUID.randomUUID())` ligne 27 (same pattern as Card fix).~~
 - ~~**Merchant status mismatch** : frontend select `Acquiring.tsx:413` liste `PENDING_APPROVAL` mais le backend `MerchantStatus` enum contient `PENDING_ONBOARDING` (pas PENDING_APPROVAL). **CORRIGÉ** : select aligné sur les 5 valeurs backend (ACTIVE, PENDING_ONBOARDING, SUSPENDED, TERMINATED, UNDER_REVIEW).~~
 
+## ✅ Done — Phase 5 (Full Cycle + Preuves Runtime)
+- **verifyChallengeFlow fix (bug statut mensonger)** : `EpgService.verifyChallengeFlow()` remplacé — avant retournait toujours `"AUTHENTICATED"` même si l'autorisation échouait. Maintenant appelle `authorizeTransaction()` et retourne `AUTHENTICATED` si APPROVED, `AUTHENTICATED_BUT_DECLINED` si FAILED, avec le vrai code erreur (ex: 51) et description (ex: "Insufficient balance"). La transaction EPG en base est FAILED (pas AUTHORIZED). Prouvé runtime : 20 000 TND > 16 300 TND → `AUTHENTICATED_BUT_DECLINED` + `riskDecision=DECLINED` + `message="...declined (51): Insufficient balance"` ; EPG `status=FAILED error_code=51 error_description="Insufficient balance"`. 50 TND → `AUTHENTICATED` + `APPROVED` ; EPG `AUTHORIZED`.
+- **`@Valid` retiré de 6 endpoints `@RequestBody Map<String, Object>`** : les 3 endpoints challenge/verify + 3 endpoints app-challenge — corrigé car `@Valid` sur `Map<String, Object>` ne valide rien (Map passe toujours) mais cause une confusion.
+- **Phase 5 — Cycle complet multi-réseau** : `POST /api/v1/simulator/clearing/full-cycle` → résout la marque (Visa, MC, CB via BinTableService), route chaque ClearingRecord vers son générateur réseau (BASE II/168c, IPM/200c, ISO20022), marque CLEARED, calcule la compensation multilatérale (netting session), génère le fichier BCT (CSV avec positions nettes par institution domestique). Toutes les hypothèses réseau dans VisaBaseIISimConfig/MastercardIpmSimConfig.
+- **BCT JSON fix** : `ClearingCycleService` — ajout de `escapeJsonControlChars()` pour échapper `\n`, `\r`, `\t`, `"` dans les contenus de fichiers (`bctSettlementFile`, `generatedFile`, `networkResponseFile`) avant de les inclure dans la réponse JSON. Avant : `json.decoder.JSONDecodeError: Invalid control character`. Après : JSON valide, parsable par python3 `json.loads()`.
+- **Preuves runtime validées** : (a) VISA→BASE II, MC→IPM, CB→ISO20022 — 3 PENDING → CLEARED ; (b) BCT zéro-sums : `totalDebit=15054.610, totalCredit=15054.610, diff=0.000` (3 institutions domestiques).
+- **Nouveaux endpoints** : `POST /api/v1/simulator/ecommerce/challenge/verify` (vérifie OTP, retourne AUTHENTICATED/AUTHENTICATED_BUT_DECLINED), `POST /api/v1/simulator/clearing/from-transactions` (bridge EPG→clearing), `POST /api/v1/simulator/clearing/full-cycle` (cycle complet). Tous permitAll. <!--
 ## Next Steps
 1. **UI tableau de bord batch** : afficher les résultats du batch dans une page frontend simple (Phase 6).
 2. **Persistance d'historique des simulations** : enregistrer chaque run batch pour rejeu et comparaison.
 3. **Variations montant/devise** dans le batch.
 4. **Corriger `CardService.createCard()`** : `@GeneratedValue` + setId manuel → `StaleObjectStateException`.
 5. **À l'arrivée des specs** : type 40, 3e format, nommage fichier, slipNumber, Visa BASE II TC06/07/25 et TCR1/2/3, Mastercard IPM Type 1100/1200/1300, layout BCT FCOMPSMT.
+6. **Card creation bug** : `@GeneratedValue` + manual setId. -->
 
 ## Critical Context
+- **Standalone profile** : `-Dspring.profiles.active=standalone -jar target/switch-platform-1.0.0-SNAPSHOT.jar` (démarre en ~13s, pas de Kafka, SMTP désactivé, pas d'env vars requises). Application standalone décrite dans `application-standalone.yml` (KafkaAutoConfiguration exclue, mail dummy, switch.notification.enabled=false). `application.yml` a des valeurs par défaut pour toutes les variables d'environnement (PCI_ENCRYPTION_KEY, PAN_HASH_KEY, JWT_SECRET, POSTGRES_PASSWORD).
 - **Dernière migration** : V060__add_risk_score_to_acs.sql (ajoute risk_score + risk_decision à acs_authentications).
 - **JAVA_HOME** : /opt/homebrew/Cellar/openjdk@21/21.0.11.
 - **Backend** : 393 tests passent (dont VisaBaseIITcr0Test 24 tests, NetworkClearingGeneratorTest 6 tests avec vérification format Mastercard 200c). Frontend : npm run build OK.
@@ -271,8 +280,9 @@ COMPCONF 168c + CP50 500c + V050 figeage + V051 représentation. 4 points en att
 - **Visa BASE II (TC 05 TCR 0) et Mastercard IPM (Type 1000)** : implémentés, validés runtime avec vérification substring position par position. Les hypothèses simulateur sont dans VisaBaseIISimConfig / MastercardIpmSimConfig. TC06/07/25/TCR1/2/3 et Type 1100/1200/1300 sont des stubs vides.
 - **Card creation bug** : `@GeneratedValue` + manual `setId()` → `StaleObjectStateException`. Ne pas créer de cartes via API tant que non corrigé.
 - **Convention signe netting vs BCT** : `NettingRecord.netAmount = totalSent - totalReceived`. Négatif = participant reçoit (créancier net). BCT `net_position = totalReceived - totalSent`, signe inverse. Les deux sont cohérents, juste conventions opposées (comptable vs flux).
-- Kafka UnknownHostException cosmétique — HTTP fonctionne.
-- Serveur port 8085 : `mvn spring-boot:run -Dspring-boot.run.profiles=dev` avec env vars `PCI_ENCRYPTION_KEY`, `PAN_HASH_KEY`, `JWT_SECRET`, `PIN_ENCRYPTION_KEY`, `CORS_ALLOWED_ORIGINS`.
+- Projet déplacé de `~/Desktop/tounes/switch-platform/backend` → `~/Desktop/serveur monetique/backend`.
+- Standalone : `mvn clean package -DskipTests && java -Dspring.profiles.active=standalone -jar target/switch-platform-1.0.0-SNAPSHOT.jar` — pas d'env vars requises.
+- Dev : `mvn spring-boot:run -Dspring-boot.run.profiles=dev` avec env vars `PCI_ENCRYPTION_KEY`, `PAN_HASH_KEY`, `JWT_SECRET`, `PIN_ENCRYPTION_KEY`, `CORS_ALLOWED_ORIGINS`.
 
 ## UX à améliorer
 

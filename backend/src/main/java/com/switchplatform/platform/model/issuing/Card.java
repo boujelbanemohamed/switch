@@ -58,7 +58,7 @@ public class Card {
     @Column(name = "cvv_hash", length = 128)
     private String cvvHash;
 
-    @Column(name = "pin_block", length = 64)
+    @Column(name = "pin_block", length = 128)
     private String pinBlock;
 
     @Column(name = "pin_attempts")

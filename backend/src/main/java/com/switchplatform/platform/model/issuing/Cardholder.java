@@ -63,7 +63,7 @@ public class Cardholder {
     @Size(max = 3, message = "nationality must be at most 3 characters")
     private String nationality;
 
-    @Column(name = "id_document_type", length = 30)
+    @Column(name = "id_document_type", length = 20)
     @Enumerated(EnumType.STRING)
     private IdDocumentType idDocumentType;
 

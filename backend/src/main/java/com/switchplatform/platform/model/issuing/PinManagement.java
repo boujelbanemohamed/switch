@@ -30,11 +30,11 @@ public class PinManagement {
     private String pinFormat;
 
     @Builder.Default
-    @Column(name = "pin_type", length = 20)
+    @Column(name = "pin_type", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private PinType pinType = PinType.TRANSACTION;
 
-    @Column(name = "pin_block", length = 64)
+    @Column(name = "pin_block", length = 128)
     private String pinBlock;
 
     @Builder.Default

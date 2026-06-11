@@ -25,10 +25,10 @@ public class CardOperation {
     @Column(name = "operation_type", nullable = false, length = 50)
     private String operationType;
 
-    @Column(name = "old_status", length = 30)
+    @Column(name = "old_status", length = 20)
     private String oldStatus;
 
-    @Column(name = "new_status", length = 30)
+    @Column(name = "new_status", length = 20)
     private String newStatus;
 
     @Column(length = 255)

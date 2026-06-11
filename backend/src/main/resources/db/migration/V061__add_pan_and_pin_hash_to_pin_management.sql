@@ -1,0 +1,2 @@
+ALTER TABLE pin_management ADD COLUMN IF NOT EXISTS pan VARCHAR(64);
+ALTER TABLE pin_management ADD COLUMN IF NOT EXISTS pin_hash TEXT;

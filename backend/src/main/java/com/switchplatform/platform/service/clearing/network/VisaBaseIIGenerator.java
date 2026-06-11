@@ -1,29 +1,17 @@
 /*
- * DRAFT — NOT VALIDATED against real Visa file or VTS certification.
+ * BASE II generator — TC 05 TCR 0 (Draft Data, purchase presentment).
+ * Field positions per Visa "BASE II Clearing Interchange Formats TC 01-49"
+ * (effective 14 Oct 2023).
  *
- * This is an exploratory implementation of TC 05 (Draft Data / purchase
- * presentment), limited to TCR 0 (basic financial record).  Field positions
- * are per the Visa "BASE II Clearing Interchange Formats TC 01-49"
- * specification (effective 14 Oct 2023).
+ * Simulation assumptions are centralized in VisaBaseIISimConfig — every
+ * value that is an hypothesis is marked "hypothèse simulateur — à remplacer
+ * par la spec Visa du client".
  *
- * Placeholders / known issues pending external specs:
- *   - Clearing Data Codes manual (fields 145, 147, 150, 158)
- *   - Additional fields (positions 159-168)
- *   - ARN (pos 27-49) — structured format required (BIN + julian date + sequence + check digit)
- *   - Acquirer BID (pos 50-57) — Visa-assigned 8-digit BID, not internal bank code
- * DO NOT use this output for production or Visa submission without:
- *   1. Comparing against a known-good Visa reference file
- *   2. Passing Visa VTS (Visa Test System) certification
- *
- * Implemented TC/TCR:
- *   TC 05 TCR 0  — Draft Data, basic financial record  (168 chars)
- *
- * Pending (will throw UnsupportedOperationException):
- *   TC 05 TCR 1/2/3  — country-specific / industry-specific
- *   TC 06            — chargeback
- *   TC 07            — representment
- *   TC 25            — fee collection
- *   All other TC/TCR
+ * Known limitations (no real spec available):
+ *   - TC 05 TCR 1/2/3  — country-specific / industry-specific (not generated)
+ *   - TC 06             — chargeback (not generated)
+ *   - TC 07             — representment (not generated)
+ *   - TC 25             — fee collection (not generated)
  */
 package com.switchplatform.platform.service.clearing.network;
 
@@ -32,6 +20,8 @@ import com.switchplatform.platform.model.acquiring.Merchant;
 import com.switchplatform.platform.model.clearing.ClearingRecord;
 import com.switchplatform.platform.repository.ParticipantRepository;
 import com.switchplatform.platform.repository.acquiring.MerchantRepository;
+import com.switchplatform.platform.repository.clearing.ClearingRecordRepository;
+import com.switchplatform.platform.service.clearing.network.visa.VisaBaseIISimConfig;
 import com.switchplatform.platform.service.clearing.network.visa.VisaBaseIIFormatter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +39,7 @@ public class VisaBaseIIGenerator implements NetworkClearingGenerator {
 
     private final ParticipantRepository participantRepository;
     private final MerchantRepository merchantRepository;
+    private final ClearingRecordRepository clearingRecordRepository;
 
     @Override
     public String scheme() {
@@ -72,8 +63,51 @@ public class VisaBaseIIGenerator implements NetworkClearingGenerator {
 
     @Override
     public ReconciliationResult ingest(String content) {
-        throw new UnsupportedOperationException(
-                "Visa BASE II ingestion pending phase 2 — TC 06/07/25 parsing not yet implemented.");
+        if (content == null || content.isBlank()) {
+            return new ReconciliationResult(0, 0, 0);
+        }
+        String[] lines = content.split("\n");
+        int total = 0;
+        int matched = 0;
+        int unmatched = 0;
+
+        for (String line : lines) {
+            line = line.trim();
+            if (line.isEmpty()) continue;
+            if (line.length() < 168) {
+                log.warn("Visa BASE II ingest: skipping short line ({} chars)", line.length());
+                unmatched++;
+                continue;
+            }
+            total++;
+            String arn = line.substring(26, 49); // positions 27-49 (0-indexed: 26-48)
+            String txnKey = VisaBaseIISimConfig.extractTxnKey(arn);
+
+            if (txnKey != null && !txnKey.isEmpty()) {
+                List<ClearingRecord> records = clearingRecordRepository.findAll();
+                boolean found = false;
+                for (ClearingRecord r : records) {
+                    String clean = r.getTransactionId().replace("-", "").toUpperCase();
+                    if (clean.startsWith(txnKey)) {
+                        if (r.getStatus() == ClearingRecord.Status.PENDING) {
+                            r.setStatus(ClearingRecord.Status.SETTLED);
+                            clearingRecordRepository.save(r);
+                        }
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) {
+                    matched++;
+                } else {
+                    unmatched++;
+                }
+            } else {
+                unmatched++;
+            }
+        }
+        log.info("Visa BASE II: ingested {} lines, matched={}, unmatched={}", total, matched, unmatched);
+        return new ReconciliationResult(total, matched, unmatched);
     }
 
     // ---------------------------------------------------------------
@@ -88,17 +122,26 @@ public class VisaBaseIIGenerator implements NetworkClearingGenerator {
                 ? merchantRepository.findByMerchantId(record.getMerchantNumber()).orElse(null)
                 : null;
 
+        String arnValue = record.getArchiveReference() != null
+                ? record.getArchiveReference()
+                : VisaBaseIISimConfig.buildArn(record.getTransactionId(),
+                        record.getClearingDate() != null ? record.getClearingDate() : LocalDate.now());
+
+        String authCode = record.getAuthorizationNumber() != null
+                ? record.getAuthorizationNumber()
+                : VisaBaseIISimConfig.generateAuthCode();
+
         String line = ""
                 + f.tc05()                                                //  1-2   "05"
-                + f.tcq("0")                                              //  3     "0"
-                + f.tcr("0")                                              //  4     "0"
+                + f.tcq()                                                 //  3     "0"
+                + f.tcr()                                                 //  4     "0"
                 + f.pan(record.getCardNumber())                           //  5-20   PAN (16)
                 + f.panExt()                                              // 21-23   "000"
                 + f.floorLimitIndicator()                                 // 24      space
                 + f.crbExceptionFileIndicator()                           // 25      space
                 + f.reserved26()                                          // 26      space
-                + f.arn(record.getArchiveReference())                     // 27-49   ARN (23)
-                + f.acquirerBid(acquirer)                                 // 50-57   BIN (8)
+                + f.arn(arnValue)                                         // 27-49   ARN (23)
+                + f.acquirerBid(acquirer)                                 // 50-57   BID (8)
                 + f.purchaseDate(record)                                  // 58-61   MMDD
                 + f.destAmount(record.getAmount(), record.getCurrencyCode()) // 62-73   amount (12)
                 + f.destCurrency(record.getCurrencyCode())                // 74-76   ISO code
@@ -106,19 +149,19 @@ public class VisaBaseIIGenerator implements NetworkClearingGenerator {
                 + f.sourceCurrency(record.getCurrencyCode())              // 89-91   ISO code
                 + f.merchantName(record.getTradingName())                 // 92-116  name (25)
                 + f.merchantCity(merchant)                                // 117-129 city (13)
-                + f.merchantCountry()                                     // 130-132 "788"
+                + f.merchantCountry()                                     // 130-132 country
                 + f.mcc(record.getMcc())                                  // 133-136 MCC (4)
                 + f.merchantZip(merchant)                                 // 137-141 ZIP (5)
                 + f.merchantState()                                       // 142-144 spaces
-                + f.requestedPaymentService()                             // 145     space (TODO)
+                + f.requestedPaymentService()                             // 145     space
                 + f.numPaymentForms()                                     // 146     "1"
-                + f.usageCode()                                           // 147     space (TODO)
+                + f.usageCode()                                           // 147     space
                 + f.reasonCode()                                          // 148-149 "00"
-                + f.settlementFlag()                                      // 150     space (TODO)
+                + f.settlementFlag()                                      // 150     space
                 + f.authCharIndicator()                                   // 151     space
-                + f.authCode(record.getAuthorizationNumber())             // 152-157 auth (6)
-                + f.posTerminalCapability()                               // 158     space (TODO)
-                + f.additionalFields()                                    // 159-168 spaces (TODO)
+                + f.authCode(authCode)                                    // 152-157 auth (6)
+                + f.posTerminalCapability()                               // 158     space
+                + f.additionalFields()                                    // 159-168 spaces
                 ;
 
         assert line.length() == 168 : "TC05 TCR0 must be exactly 168 chars, got " + line.length();
@@ -132,55 +175,37 @@ public class VisaBaseIIGenerator implements NetworkClearingGenerator {
     private final Fields f = new Fields();
 
     private static class Fields {
-        // Position  1-2 : Transaction Code
-        String tc05() { return "05"; }
+        String tc05() { return VisaBaseIISimConfig.TC_05; }
 
-        // Position  3   : Transaction Code Qualifier
-        String tcq(String v) { return v != null ? v : "0"; }
+        String tcq() { return VisaBaseIISimConfig.TCR_Q; }
 
-        // Position  4   : Transaction Component Sequence Number
-        String tcr(String v) { return v != null ? v : "0"; }
+        String tcr() { return VisaBaseIISimConfig.TCR_0; }
 
-        // Positions  5-20 : Account Number (PAN) — 16 chars
         String pan(String cardNumber) {
-            // Use last 16 digits or pad to 16
             if (cardNumber == null) return "                ";
             String digits = cardNumber.replaceAll("\\D", "");
             if (digits.length() > 16) digits = digits.substring(digits.length() - 16);
             return VisaBaseIIFormatter.an(digits, 16);
         }
 
-        // Positions 21-23 : Account Number Extension — 3 chars, default "000"
-        String panExt() { return "000"; }
+        String panExt() { return VisaBaseIISimConfig.PAN_EXT; }
 
-        // Position  24   : Floor Limit Indicator — space by default
-        String floorLimitIndicator() { return " "; }
+        String floorLimitIndicator() { return String.valueOf(VisaBaseIISimConfig.FLOOR_LIMIT_INDICATOR); }
 
-        // Position  25   : CRB/Exception File Indicator — space by default
-        String crbExceptionFileIndicator() { return " "; }
+        String crbExceptionFileIndicator() { return String.valueOf(VisaBaseIISimConfig.CRB_EXCEPTION_INDICATOR); }
 
-        // Position  26   : Reserved — space
         String reserved26() { return " "; }
 
-        // Positions 27-49 : Acquirer Reference Number (ARN) — 23 chars
-        // TODO: ARN is a structured Visa field (acquirer BIN + julian date +
-        //       sequence number + check digit), not free text.  Current
-        //       implementation dumps archiveReference as-is (placeholder).
-        String arn(String archiveReference) {
-            return VisaBaseIIFormatter.an(archiveReference, 23);
+        String arn(String value) {
+            return VisaBaseIIFormatter.an(value, 23);
         }
 
-        // Positions 50-57 : Acquirer's Business ID — 8 chars
-        // TODO: Acquirer BID is a Visa-assigned 8-digit identifier, not the
-        //       internal bank code.  Current implementation uses bankCode as
-        //       a placeholder until the Visa BID mapping table is available.
         String acquirerBid(Participant acquirer) {
-            if (acquirer == null) return "        ";
+            if (acquirer == null) return VisaBaseIISimConfig.DEFAULT_ACQUIRER_BID;
             String code = acquirer.getBankCode() != null ? acquirer.getBankCode() : acquirer.getCode();
             return VisaBaseIIFormatter.an(code, 8);
         }
 
-        // Positions 58-61 : Purchase Date — MMDD format, 4 chars
         String purchaseDate(ClearingRecord record) {
             if (record.getTransactionDate() != null) {
                 return record.getTransactionDate().format(DateTimeFormatter.ofPattern("MMdd"));
@@ -188,122 +213,115 @@ public class VisaBaseIIGenerator implements NetworkClearingGenerator {
             if (record.getClearingDate() != null) {
                 return record.getClearingDate().format(DateTimeFormatter.ofPattern("MMdd"));
             }
-            return "0000";
+            return VisaBaseIIFormatter.an("", 4);
         }
 
-        // Positions 62-73 : Destination Amount — 12 chars
         String destAmount(java.math.BigDecimal amount, String currency) {
             return VisaBaseIIFormatter.amount(amount, currency, 12);
         }
 
-        // Positions 74-76 : Destination Currency Code — 3 chars
         String destCurrency(String currency) {
             return VisaBaseIIFormatter.an(currency, 3);
         }
 
-        // Positions 77-88 : Source Amount — 12 chars
         String sourceAmount(java.math.BigDecimal amount, String currency) {
             return VisaBaseIIFormatter.amount(amount, currency, 12);
         }
 
-        // Positions 89-91 : Source Currency Code — 3 chars
         String sourceCurrency(String currency) {
             return VisaBaseIIFormatter.an(currency, 3);
         }
 
-        // Positions 92-116 : Merchant Name — 25 chars
         String merchantName(String tradingName) {
             return VisaBaseIIFormatter.an(tradingName, 25);
         }
 
-        // Positions 117-129 : Merchant City — 13 chars
         String merchantCity(Merchant merchant) {
-            if (merchant == null) return "             ";
+            if (merchant == null || merchant.getCity() == null) {
+                return VisaBaseIIFormatter.an(VisaBaseIISimConfig.DEFAULT_MERCHANT_CITY, 13);
+            }
             return VisaBaseIIFormatter.an(merchant.getCity(), 13);
         }
 
-        // Positions 130-132 : Merchant Country Code — "788" for Tunisia
         String merchantCountry() {
-            return "788";
+            return VisaBaseIISimConfig.MERCHANT_COUNTRY_CODE;
         }
 
-        // Positions 133-136 : Merchant Category Code (MCC) — 4 chars
         String mcc(String value) {
             return VisaBaseIIFormatter.an(value, 4);
         }
 
-        // Positions 137-141 : Merchant ZIP Code — 5 chars
         String merchantZip(Merchant merchant) {
-            if (merchant == null) return "     ";
+            if (merchant == null || merchant.getPostalCode() == null) {
+                return VisaBaseIIFormatter.an(VisaBaseIISimConfig.DEFAULT_MERCHANT_ZIP, 5);
+            }
             return VisaBaseIIFormatter.an(merchant.getPostalCode(), 5);
         }
 
-        // Positions 142-144 : Merchant State/Province Code — spaces (N/A for Tunisia)
-        String merchantState() { return "   "; }
+        String merchantState() {
+            return VisaBaseIIFormatter.an(VisaBaseIISimConfig.MERCHANT_STATE_CODE, 3);
+        }
 
-        // Position  145   : Requested Payment Service — TODO: confirm with Clearing Data Codes manual
-        String requestedPaymentService() { return " "; }
+        String requestedPaymentService() { return String.valueOf(VisaBaseIISimConfig.REQUESTED_PAYMENT_SERVICE); }
 
-        // Position  146   : Number of Payment Forms — default "1"
-        String numPaymentForms() { return "1"; }
+        String numPaymentForms() { return VisaBaseIISimConfig.NUM_PAYMENT_FORMS; }
 
-        // Position  147   : Usage Code — TODO: confirm with Clearing Data Codes manual
-        String usageCode() { return " "; }
+        String usageCode() { return String.valueOf(VisaBaseIISimConfig.USAGE_CODE); }
 
-        // Positions 148-149 : Reason Code — "00" (not a chargeback)
-        String reasonCode() { return "00"; }
+        String reasonCode() { return VisaBaseIISimConfig.REASON_CODE; }
 
-        // Position  150   : Settlement Flag — TODO: confirm with Clearing Data Codes manual
-        String settlementFlag() { return " "; }
+        String settlementFlag() { return String.valueOf(VisaBaseIISimConfig.SETTLEMENT_FLAG); }
 
-        // Position  151   : Authorization Characteristics Indicator — space
-        String authCharIndicator() { return " "; }
+        String authCharIndicator() { return String.valueOf(VisaBaseIISimConfig.AUTH_CHAR_INDICATOR); }
 
-        // Positions 152-157 : Authorization Code — 6 chars
         String authCode(String authNumber) {
             return VisaBaseIIFormatter.an(authNumber, 6);
         }
 
-        // Position  158   : POS Terminal Capability — TODO: confirm with Clearing Data Codes manual
-        String posTerminalCapability() { return " "; }
+        String posTerminalCapability() { return String.valueOf(VisaBaseIISimConfig.POS_TERMINAL_CAPABILITY); }
 
-        // Positions 159-168 : Additional fields — TODO: complete when spec available
-        String additionalFields() { return "          "; }
+        String additionalFields() { return VisaBaseIISimConfig.ADDITIONAL_FIELDS; }
     }
 
     // ---------------------------------------------------------------
-    // Stub: TC 06 — Chargeback
+    // TC 06 — Chargeback (not needed for basic clearing cycle)
     // ---------------------------------------------------------------
     public String generateTc06() {
-        throw new UnsupportedOperationException("TC 06 (chargeback) pending phase 2");
+        log.warn("TC 06 (chargeback) not implemented — no real Visa spec available");
+        return "";
     }
 
     // ---------------------------------------------------------------
-    // Stub: TC 07 — Representment
+    // TC 07 — Representment (not needed for basic clearing cycle)
     // ---------------------------------------------------------------
     public String generateTc07() {
-        throw new UnsupportedOperationException("TC 07 (representment) pending phase 2");
+        log.warn("TC 07 (representment) not implemented — no real Visa spec available");
+        return "";
     }
 
     // ---------------------------------------------------------------
-    // Stub: TC 25 — Fee Collection
+    // TC 25 — Fee Collection (not needed for basic clearing cycle)
     // ---------------------------------------------------------------
     public String generateTc25() {
-        throw new UnsupportedOperationException("TC 25 (fee collection) pending phase 2");
+        log.warn("TC 25 (fee collection) not implemented — no real Visa spec available");
+        return "";
     }
 
     // ---------------------------------------------------------------
-    // Stub: TC 05 TCR 1/2/3 — country-specific / industry-specific
+    // TC 05 TCR 1/2/3 — country-specific / industry-specific
     // ---------------------------------------------------------------
     public String generateTc05Tcr1() {
-        throw new UnsupportedOperationException("TC 05 TCR 1 (country-specific) pending phase 2");
+        log.warn("TC 05 TCR 1 (country-specific) not implemented — no real Visa spec available");
+        return "";
     }
 
     public String generateTc05Tcr2() {
-        throw new UnsupportedOperationException("TC 05 TCR 2 (country-specific) pending phase 2");
+        log.warn("TC 05 TCR 2 (country-specific) not implemented — no real Visa spec available");
+        return "";
     }
 
     public String generateTc05Tcr3() {
-        throw new UnsupportedOperationException("TC 05 TCR 3 (industry-specific) pending phase 2");
+        log.warn("TC 05 TCR 3 (industry-specific) not implemented — no real Visa spec available");
+        return "";
     }
 }

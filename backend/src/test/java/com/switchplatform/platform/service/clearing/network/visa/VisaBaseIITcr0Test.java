@@ -5,6 +5,7 @@ import com.switchplatform.platform.model.acquiring.Merchant;
 import com.switchplatform.platform.model.clearing.ClearingRecord;
 import com.switchplatform.platform.repository.ParticipantRepository;
 import com.switchplatform.platform.repository.acquiring.MerchantRepository;
+import com.switchplatform.platform.repository.clearing.ClearingRecordRepository;
 import com.switchplatform.platform.service.clearing.network.VisaBaseIIGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,7 @@ class VisaBaseIITcr0Test {
     private VisaBaseIIGenerator generator;
     private ParticipantRepository participantRepository;
     private MerchantRepository merchantRepository;
+    private ClearingRecordRepository clearingRecordRepository;
 
     private final UUID ACQ_ID = UUID.randomUUID();
     private final UUID ISS_ID = UUID.randomUUID();
@@ -36,7 +38,8 @@ class VisaBaseIITcr0Test {
     void setUp() {
         participantRepository = mock(ParticipantRepository.class);
         merchantRepository = mock(MerchantRepository.class);
-        generator = new VisaBaseIIGenerator(participantRepository, merchantRepository);
+        clearingRecordRepository = mock(ClearingRecordRepository.class);
+        generator = new VisaBaseIIGenerator(participantRepository, merchantRepository, clearingRecordRepository);
 
         Participant acquirer = Participant.builder()
                 .id(ACQ_ID)
@@ -231,6 +234,7 @@ class VisaBaseIITcr0Test {
     void tcr0_panNotTrimmed_keepsPosition5to20() {
         ClearingRecord recordWithShortPan = ClearingRecord.builder()
                 .id(UUID.randomUUID())
+                .transactionId("TXN-SHORT-PAN")
                 .clearingDate(CLEARING_DATE)
                 .transactionDate(OffsetDateTime.now())
                 .acquiringParticipantId(ACQ_ID)
@@ -253,19 +257,13 @@ class VisaBaseIITcr0Test {
     }
 
     @Test
-    void tcr0_unsupportedTc_stillThrows() {
-        assertThrows(UnsupportedOperationException.class, () -> generator.generateTc06(),
-                "TC 06 should throw UnsupportedOperationException");
-        assertThrows(UnsupportedOperationException.class, () -> generator.generateTc07(),
-                "TC 07 should throw UnsupportedOperationException");
-        assertThrows(UnsupportedOperationException.class, () -> generator.generateTc25(),
-                "TC 25 should throw UnsupportedOperationException");
-        assertThrows(UnsupportedOperationException.class, () -> generator.generateTc05Tcr1(),
-                "TC 05 TCR 1 should throw UnsupportedOperationException");
-        assertThrows(UnsupportedOperationException.class, () -> generator.generateTc05Tcr2(),
-                "TC 05 TCR 2 should throw UnsupportedOperationException");
-        assertThrows(UnsupportedOperationException.class, () -> generator.generateTc05Tcr3(),
-                "TC 05 TCR 3 should throw UnsupportedOperationException");
+    void tcr0_unsupportedTc_returnsEmpty() {
+        assertEquals("", generator.generateTc06(), "TC 06 should return empty string");
+        assertEquals("", generator.generateTc07(), "TC 07 should return empty string");
+        assertEquals("", generator.generateTc25(), "TC 25 should return empty string");
+        assertEquals("", generator.generateTc05Tcr1(), "TC 05 TCR 1 should return empty string");
+        assertEquals("", generator.generateTc05Tcr2(), "TC 05 TCR 2 should return empty string");
+        assertEquals("", generator.generateTc05Tcr3(), "TC 05 TCR 3 should return empty string");
     }
 
     @Test
@@ -275,6 +273,7 @@ class VisaBaseIITcr0Test {
 
         ClearingRecord noMerchantRecord = ClearingRecord.builder()
                 .id(UUID.randomUUID())
+                .transactionId("TXN-NO-MERCHANT")
                 .clearingDate(CLEARING_DATE)
                 .transactionDate(OffsetDateTime.now())
                 .acquiringParticipantId(ACQ_ID)
@@ -289,9 +288,9 @@ class VisaBaseIITcr0Test {
 
         String line = generator.generateTc05Tcr0(noMerchantRecord);
         assertEquals(168, line.length(), "Length should still be 168 with defaults");
-        // Merchant city should be spaces
-        assertEquals("             ", line.substring(116, 129), "City should be spaces when no merchant");
-        // ZIP should be spaces
-        assertEquals("     ", line.substring(136, 141), "ZIP should be spaces when no merchant");
+        // Merchant city should be VisaBaseIISimConfig.DEFAULT_MERCHANT_CITY (13 chars)
+        assertEquals("TUNIS        ", line.substring(116, 129), "City should be default TUNIS when no merchant");
+        // ZIP should be VisaBaseIISimConfig.DEFAULT_MERCHANT_ZIP (5 chars)
+        assertEquals("1000 ", line.substring(136, 141), "ZIP should be default 1000 when no merchant");
     }
 }

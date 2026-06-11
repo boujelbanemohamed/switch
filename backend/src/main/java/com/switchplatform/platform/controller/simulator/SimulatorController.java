@@ -27,7 +27,7 @@ public class SimulatorController {
 
     @PostMapping("/ecommerce/frictionless")
     public ResponseEntity<EcommerceFlowSimulator.SimulationResult> simulateFrictionless(
-            @Valid @RequestBody Map<String, Object> request) {
+            @RequestBody Map<String, Object> request) {
 
         EcommerceFlowSimulator.SimulationRequest simRequest = EcommerceFlowSimulator.SimulationRequest.builder()
                 .cardId(UUID.fromString((String) request.get("cardId")))
@@ -46,7 +46,7 @@ public class SimulatorController {
 
     @PostMapping("/ecommerce/challenge")
     public ResponseEntity<EcommerceFlowSimulator.SimulationResult> simulateChallenge(
-            @Valid @RequestBody Map<String, Object> request) {
+            @RequestBody Map<String, Object> request) {
 
         EcommerceFlowSimulator.SimulationRequest simRequest = EcommerceFlowSimulator.SimulationRequest.builder()
                 .cardId(UUID.fromString((String) request.get("cardId")))
@@ -65,7 +65,7 @@ public class SimulatorController {
 
     @PostMapping("/ecommerce/challenge/verify")
     public ResponseEntity<EcommerceFlowSimulator.SimulationResult> verifyChallenge(
-            @Valid @RequestBody Map<String, Object> request) {
+            @RequestBody Map<String, Object> request) {
 
         UUID challengeId = UUID.fromString((String) request.get("challengeId"));
         String otp = (String) request.get("otp");
@@ -94,7 +94,7 @@ public class SimulatorController {
 
     @PostMapping("/ecommerce/app-challenge/respond")
     public ResponseEntity<EcommerceFlowSimulator.SimulationResult> respondAppChallenge(
-            @Valid @RequestBody Map<String, Object> request) {
+            @RequestBody Map<String, Object> request) {
 
         UUID challengeId = UUID.fromString((String) request.get("challengeId"));
         String action = (String) request.get("action");
@@ -104,7 +104,7 @@ public class SimulatorController {
 
     @PostMapping("/ecommerce/batch")
     public ResponseEntity<EcommerceFlowSimulator.BatchResult> simulateBatch(
-            @Valid @RequestBody Map<String, Object> request) {
+            @RequestBody Map<String, Object> request) {
 
         List<UUID> cardIds = new ArrayList<>();
         if (request.containsKey("cardIds")) {
@@ -134,7 +134,7 @@ public class SimulatorController {
 
     @PostMapping("/clearing/from-transactions")
     public ResponseEntity<ClearingBridgeService.ClearingBatchResult> clearFromTransactions(
-            @Valid @RequestBody Map<String, Object> request) {
+            @RequestBody Map<String, Object> request) {
 
         @SuppressWarnings("unchecked")
         List<Map<String, String>> itemsRaw = (List<Map<String, String>>) request.get("items");

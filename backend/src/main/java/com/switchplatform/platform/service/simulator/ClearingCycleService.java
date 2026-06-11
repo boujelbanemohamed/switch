@@ -521,6 +521,8 @@ public class ClearingCycleService {
         if (record.getCardBrand() != null && !record.getCardBrand().isBlank()) {
             String b = record.getCardBrand().toUpperCase();
             if (List.of("VISA", "MASTERCARD", "CB").contains(b)) return b;
+            log.warn("resolveCardBrand: marque '{}' non reconnue pour record {}, routage par défaut vers CB/domestique",
+                    b, record.getTransactionId());
             return "CB";
         }
         if (record.getCardNumber() != null && record.getCardNumber().length() >= 6) {
@@ -528,6 +530,8 @@ public class ClearingCycleService {
             if ("VISA".equals(resolved)) return "VISA";
             if ("MASTERCARD".equals(resolved)) return "MASTERCARD";
         }
+        log.warn("resolveCardBrand: marque non résolue pour record {} (cardBrand vide, PAN/BIN non trouvé), routage par défaut vers CB/domestique",
+                record.getTransactionId());
         return "CB";
     }
 

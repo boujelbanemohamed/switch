@@ -18,6 +18,8 @@ import com.switchplatform.platform.service.clearing.network.mastercard.Mastercar
 import com.switchplatform.platform.service.clearing.network.visa.VisaBaseIISimConfig;
 import com.switchplatform.platform.service.routing.BinTableService;
 import lombok.AllArgsConstructor;
+
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -502,8 +504,17 @@ public class ClearingCycleService {
                 .nettingEfficiency(netting != null ? netting.getNettingEfficiency() : null)
                 .nettingTotalGross(netting != null ? netting.getTotalGrossAmount() : null)
                 .nettingTotalNet(netting != null ? netting.getTotalNetAmount() : null)
-                .bctSettlementFile(bctFile)
+                .bctSettlementFile(escapeJsonControlChars(bctFile))
                 .build();
+    }
+
+    private static String escapeJsonControlChars(String s) {
+        if (s == null) return null;
+        return s.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
     }
 
     private String resolveCardBrand(ClearingRecord record) {
@@ -576,8 +587,8 @@ public class ClearingCycleService {
                 .network(networkName)
                 .sentCount(records.size()).matchedCount(matched)
                 .discrepancyCount(discrepancy).unmatchedCount(unmatched)
-                .generatedFile(networkFile)
-                .networkResponseFile(responseFile)
+                .generatedFile(escapeJsonControlChars(networkFile))
+                .networkResponseFile(escapeJsonControlChars(responseFile))
                 .details(details)
                 .build();
     }

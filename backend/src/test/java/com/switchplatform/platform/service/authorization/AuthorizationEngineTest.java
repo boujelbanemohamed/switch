@@ -6,6 +6,8 @@ import com.switchplatform.platform.model.authorization.AuthRule.ActionType;
 import com.switchplatform.platform.model.authorization.AuthRule.RuleStatus;
 import com.switchplatform.platform.model.authorization.CardLimitUsage;
 import com.switchplatform.platform.model.authorization.VelocityCheck;
+import com.switchplatform.platform.model.issuing.Card;
+import com.switchplatform.platform.model.issuing.CardAccount;
 import com.switchplatform.platform.repository.authorization.CardLimitUsageRepository;
 import com.switchplatform.platform.repository.authorization.AuthRuleRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class AuthorizationEngineTest {
@@ -39,17 +42,37 @@ class AuthorizationEngineTest {
     private AuthorizationEngine authEngine;
     private CardLimitUsageRepository cardLimitUsageRepository;
     private AuthRuleRepository authRuleRepository;
+    private CardService cardService;
+    private CardAccountRepository cardAccountRepository;
+    private CardAccount defaultAccount;
     private final Map<UUID, AuthRule> ruleStore = new ConcurrentHashMap<>();
 
     @BeforeEach
     void setUp() {
         ruleStore.clear();
         cardLimitUsageRepository = mock(CardLimitUsageRepository.class);
-        CardAccountService cardAccountService = new CardAccountService(mock(CardAccountRepository.class));
+        cardAccountRepository = mock(CardAccountRepository.class);
+        cardService = mock(CardService.class);
         LedgerPostingEngine ledgerPostingEngine = mock(LedgerPostingEngine.class);
         EventPublisher eventPublisher = mock(EventPublisher.class);
         authRuleRepository = mock(AuthRuleRepository.class);
         ObjectMapper objectMapper = new ObjectMapper();
+
+        UUID defaultCardAccountId = UUID.randomUUID();
+        defaultAccount = CardAccount.builder()
+                .id(defaultCardAccountId)
+                .availableBalance(BigDecimal.valueOf(10000))
+                .currencyCode("TND")
+                .build();
+        UUID defaultCardId = UUID.randomUUID();
+        Card defaultCard = Card.builder()
+                .id(defaultCardId)
+                .cardAccountId(defaultCardAccountId)
+                .build();
+        when(cardService.getCard(any())).thenReturn(Optional.of(defaultCard));
+        when(cardAccountRepository.findById(any())).thenReturn(Optional.of(defaultAccount));
+
+        CardAccountService cardAccountService = new CardAccountService(cardAccountRepository);
 
         when(authRuleRepository.save(any())).thenAnswer(inv -> {
             AuthRule r = inv.getArgument(0);
@@ -80,7 +103,7 @@ class AuthorizationEngineTest {
                         new DeviceFingerprintService(mock(DeviceFingerprintRecordRepository.class)),
                         mock(FraudRuleRepository.class), mock(FraudAlertRepository.class)),
                 cardAccountService,
-                mock(CardService.class),
+                cardService,
                 new HoldService(mock(HoldRecordRepository.class), cardAccountService, ledgerPostingEngine, eventPublisher),
                 cardLimitUsageRepository,
                 ledgerPostingEngine,

@@ -5,6 +5,7 @@ import com.switchplatform.platform.model.Participant;
 import com.switchplatform.platform.model.clearing.ClearingRecord;
 import com.switchplatform.platform.repository.ParticipantRepository;
 import com.switchplatform.platform.repository.acquiring.MerchantRepository;
+import com.switchplatform.platform.repository.clearing.ClearingRecordRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,12 +38,13 @@ class NetworkClearingGeneratorTest {
 
         ParticipantRepository participantRepository = mock(ParticipantRepository.class);
         MerchantRepository merchantRepository = mock(MerchantRepository.class);
+        ClearingRecordRepository clearingRecordRepository = mock(ClearingRecordRepository.class);
         when(participantRepository.findById(any())).thenReturn(Optional.of(
                 Participant.builder().id(UUID.randomUUID()).code("BNT").bankCode("BNT01").name("Test").build()));
         when(merchantRepository.findByMerchantId(any())).thenReturn(Optional.empty());
-        visaGenerator = new VisaBaseIIGenerator(participantRepository, merchantRepository);
+        visaGenerator = new VisaBaseIIGenerator(participantRepository, merchantRepository, clearingRecordRepository);
 
-        mastercardGenerator = new MastercardIpmGenerator();
+        mastercardGenerator = new MastercardIpmGenerator(participantRepository, merchantRepository, clearingRecordRepository);
 
         records = List.of(
                 ClearingRecord.builder()
@@ -90,21 +92,25 @@ class NetworkClearingGeneratorTest {
     }
 
     @Test
-    void visaBaseIIGenerator_ingest_throwsUnsupportedOperationException() {
-        UnsupportedOperationException ex = assertThrows(UnsupportedOperationException.class,
-                () -> visaGenerator.ingest("dummy"));
-        assertTrue(ex.getMessage().contains("ingestion"),
-                "Error message should mention ingestion");
+    void visaBaseIIGenerator_ingest_returnsReconciliationResult() {
+        var result = visaGenerator.ingest("dummy");
+        assertNotNull(result);
+        assertEquals(0, result.totalRecords());
+        assertEquals(0, result.matched());
+        assertEquals(1, result.unmatched());
     }
 
     @Test
-    void mastercardIpmGenerator_throwsUnsupportedOperationException() {
-        UnsupportedOperationException ex = assertThrows(UnsupportedOperationException.class,
-                () -> mastercardGenerator.generate(DATE, records));
-        assertTrue(ex.getMessage().contains("Mastercard IPM"),
-                "Error message should mention Mastercard IPM");
-        assertTrue(ex.getMessage().contains("proprietary"),
-                "Error message should indicate format is proprietary");
+    void mastercardIpmGenerator_producesType1000Lines() {
+        String result = mastercardGenerator.generate(DATE, records);
+        assertNotNull(result);
+        assertFalse(result.isEmpty(), "Mastercard generator should produce output");
+        String[] lines = result.split("\n");
+        assertEquals(1, lines.length, "Should produce one line per record");
+        assertEquals(200, lines[0].length(), "Each line should be exactly 200 characters");
+        assertTrue(lines[0].startsWith("1000"), "Line should start with record type 1000");
+        String mcc = lines[0].substring(156, 160);
+        assertEquals("5411", mcc.trim(), "MCC should be present at positions 157-160");
     }
 
     @Test

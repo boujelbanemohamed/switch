@@ -1,6 +1,7 @@
 package com.switchplatform.platform.model.issuing;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -55,9 +56,11 @@ public class Cardholder {
     private String postalCode;
 
     @Column(name = "country_code", length = 3)
+    @Size(max = 3, message = "countryCode must be at most 3 characters")
     private String countryCode;
 
     @Column(length = 3)
+    @Size(max = 3, message = "nationality must be at most 3 characters")
     private String nationality;
 
     @Column(name = "id_document_type", length = 30)

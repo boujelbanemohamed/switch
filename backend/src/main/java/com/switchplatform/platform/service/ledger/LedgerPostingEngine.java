@@ -2,6 +2,7 @@ package com.switchplatform.platform.service.ledger;
 
 import com.switchplatform.platform.model.ledger.*;
 import com.switchplatform.platform.repository.ledger.*;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -183,7 +184,7 @@ public class LedgerPostingEngine {
 
         for (LedgerEntry e : originalEntries) {
             LedgerAccount account = ledgerAccountRepository.findById(e.getAccountId())
-                    .orElseThrow();
+                    .orElseThrow(() -> new EntityNotFoundException("Ledger account not found: " + e.getAccountId()));
             BigDecimal reverseDebit = e.getCreditAmount() != null ? e.getCreditAmount() : BigDecimal.ZERO;
             BigDecimal reverseCredit = e.getDebitAmount() != null ? e.getDebitAmount() : BigDecimal.ZERO;
 

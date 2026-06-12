@@ -92,13 +92,13 @@ public class InstallmentService {
     public InstallmentEntry markEntryPaid(UUID entryId, UUID statementId) {
         InstallmentEntry entry = installmentEntryRepository.findById(entryId)
                 .orElseThrow(() -> new IllegalArgumentException("Installment entry not found: " + entryId));
+        UUID planId = entry.getInstallmentPlanId();
         entry.setPaid(true);
         entry.setStatementId(statementId);
         entry = installmentEntryRepository.save(entry);
 
-        // Check if plan is complete
-        InstallmentPlan plan = installmentPlanRepository.findById(entry.getInstallmentPlanId())
-                .orElseThrow();
+        InstallmentPlan plan = installmentPlanRepository.findById(planId)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Installment plan not found: " + planId));
         plan.setRemainingCount(plan.getRemainingCount() - 1);
         if (plan.getRemainingCount() <= 0) {
             plan.setStatus(InstallmentPlan.InstallmentStatus.COMPLETED);

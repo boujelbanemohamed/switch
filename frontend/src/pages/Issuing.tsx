@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
-import type { Cardholder, Card, CardAccount as CardAccountType, Notification as NotificationType } from '../types';
+import type { Cardholder, Card, CardCreateResponse, CardAccount as CardAccountType, Notification as NotificationType } from '../types';
 import { IssuingHelp, CARD_STATUS_LABELS, ACCOUNT_STATUS_LABELS, CARDHOLDER_STATUS_LABELS, TOKEN_STATUS_LABELS, CARD_PRODUCT_LABELS, WALLET_PROVIDER_LABELS, CARD_ACTION_LABELS, getNotificationLabel } from '../components/IssuingHelp';
 import { SectionHeader } from '../components/SectionHeader';
 
@@ -109,6 +109,9 @@ export function Issuing() {
   const [tokenForm, setTokenForm] = useState({ cardId: '', walletProvider: 'APPLE_PAY', deviceId: '', fpan: '' });
   const [tokenResult, setTokenResult] = useState<string | null>(null);
 
+  const [showCardDetail, setShowCardDetail] = useState(false);
+  const [detailCard, setDetailCard] = useState<CardCreateResponse | Card | null>(null);
+
   useEffect(() => {
     api.issuing.cardholders.list()
       .then(setCardholders)
@@ -180,9 +183,11 @@ export function Issuing() {
   const createCard = async () => {
     setSaving(true);
     try {
-      await api.issuing.cards.create(cardForm);
+      const result = await api.issuing.cards.create(cardForm);
       setShowCardModal(false);
       setCardForm({ cardholderId: '', cardProduct: 'CREDIT' });
+      setDetailCard(result);
+      setShowCardDetail(true);
       if (selectedCh) {
         const list = await api.issuing.cards.listByCardholder(selectedCh.id);
         setCards(list);
@@ -347,6 +352,7 @@ export function Issuing() {
                     <td style={{ padding: '10px 12px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{card.panSuffix}</td>
                     <td style={{ padding: '10px 12px', fontFamily: 'monospace' }}>{card.dailyLimit}</td>
                     <td style={{ padding: '10px 12px', display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      <MiniBtn label="Voir" color="#3b82f6" onClick={() => { setDetailCard(card); setShowCardDetail(true); }} />
                       <MiniBtn label={CARD_ACTION_LABELS['activate'] ?? 'Activer'} color="#22c55e" onClick={() => handleCardAction('activate', card.id)} />
                       <MiniBtn label={CARD_ACTION_LABELS['block'] ?? 'Bloquer'} color="#ef4444" onClick={() => handleCardAction('block', card.id, 'MANUAL_BLOCK')} />
                       <MiniBtn label={CARD_ACTION_LABELS['unblock'] ?? 'Débloquer'} color="#22c55e" onClick={() => handleCardAction('unblock', card.id)} />
@@ -656,6 +662,89 @@ export function Issuing() {
                 background: saving || !cardForm.cardholderId ? '#64748b' : '#3b82f6',
                 color: 'white', cursor: saving ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600,
               }}>{saving ? t('common.loading') : t('issuing.create')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCardDetail && detailCard && (
+        <div style={styles.overlay} onClick={() => setShowCardDetail(false)}>
+          <div style={styles.modal} onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>
+              {'cardNumber' in detailCard ? 'Carte créée avec succès' : 'Détails de la carte'}
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div>
+                <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2 }}>ID</p>
+                <p style={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace' }}>{detailCard.id}</p>
+              </div>
+              {'cardNumber' in detailCard && detailCard.cardNumber && (
+                <>
+                  <div>
+                    <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2 }}>Numéro de carte</p>
+                    <p style={{ fontSize: 18, fontWeight: 700, fontFamily: 'monospace', letterSpacing: 2 }}>{detailCard.cardNumber}</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2 }}>CVV</p>
+                    <p style={{ fontSize: 18, fontWeight: 700, fontFamily: 'monospace' }}>{detailCard.cvv}</p>
+                  </div>
+                </>
+              )}
+              {'cardNumber' in detailCard && detailCard.cardAccountId && (
+                <div>
+                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2 }}>Compte lié</p>
+                  <p style={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace' }}>{detailCard.cardAccountId}</p>
+                </div>
+              )}
+              <div>
+                <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2 }}>Suffixe</p>
+                <p style={{ fontSize: 13, fontWeight: 600 }}>{'panSuffix' in detailCard ? detailCard.panSuffix : 'cardNumberSuffix' in detailCard ? detailCard.cardNumberSuffix : '-'}</p>
+              </div>
+              {'cardNumber' in detailCard && detailCard.expiryDate && (
+                <div>
+                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2 }}>Expiration</p>
+                  <p style={{ fontSize: 13, fontWeight: 600 }}>{detailCard.expiryDate}</p>
+                </div>
+              )}
+              {!(('cardNumber' in detailCard) && detailCard.expiryDate) && 'expiresAt' in detailCard && (
+                <div>
+                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2 }}>Expiration</p>
+                  <p style={{ fontSize: 13, fontWeight: 600 }}>{detailCard.expiresAt ? new Date(detailCard.expiresAt).toLocaleDateString() : '-'}</p>
+                </div>
+              )}
+              {'cardBrand' in detailCard && (
+                <div>
+                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2 }}>Marque</p>
+                  <p style={{ fontSize: 13, fontWeight: 600 }}>{detailCard.cardBrand}</p>
+                </div>
+              )}
+              {'cardType' in detailCard && (
+                <div>
+                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2 }}>Type</p>
+                  <p style={{ fontSize: 13, fontWeight: 600 }}>{detailCard.cardType}</p>
+                </div>
+              )}
+              <div>
+                <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2 }}>Statut</p>
+                <p style={{ fontSize: 13, fontWeight: 600 }}><StatusBadge status={detailCard.status} label={CARD_STATUS_LABELS[detailCard.status] ?? detailCard.status} /></p>
+              </div>
+              {'dailyLimit' in detailCard && (
+                <div>
+                  <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2 }}>Limite journalière</p>
+                  <p style={{ fontSize: 13, fontWeight: 600 }}>{detailCard.dailyLimit}</p>
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
+              {'cardNumber' in detailCard && detailCard.cardNumber && (
+                <div style={{ fontSize: 11, color: '#f59e0b', marginRight: 'auto', alignSelf: 'center' }}>
+                  ⚠ Le numéro et le CVV ne seront plus affichés après fermeture
+                </div>
+              )}
+              <button onClick={() => setShowCardDetail(false)} style={{
+                padding: '10px 20px', borderRadius: 8, border: 'none',
+                background: '#3b82f6', color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+              }}>Fermer</button>
             </div>
           </div>
         </div>

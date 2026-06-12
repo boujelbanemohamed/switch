@@ -97,6 +97,17 @@ export interface Card {
   expiresAt?: string;
 }
 
+export interface CardCreateResponse {
+  id: string;
+  cardholderId: string;
+  cardAccountId: string;
+  cardNumber: string;
+  cvv: string;
+  expiryDate: string;
+  cardNumberSuffix: string;
+  status: string;
+}
+
 export interface WalletToken {
   id: string;
   cardId: string;

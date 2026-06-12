@@ -147,8 +147,8 @@ export const api = {
     cards: {
       get: (id: string) => request<import('../types').Card>(`/issuing/cards/${id}`),
       getBySuffix: (suffix: string) => request<import('../types').Card>(`/issuing/cards/by-suffix/${suffix}`),
-      create: (data: Partial<import('../types').Card>) =>
-        request<import('../types').Card>('/issuing/cards', { method: 'POST', body: JSON.stringify(data) }),
+      create: (data: { cardholderId: string; cardProduct: string }) =>
+        request<import('../types').CardCreateResponse>('/issuing/cards', { method: 'POST', body: JSON.stringify(data) }),
       activate: (id: string) =>
         request<import('../types').Card>(`/issuing/cards/${id}/activate`, { method: 'POST' }),
       block: (id: string, reason: string) =>

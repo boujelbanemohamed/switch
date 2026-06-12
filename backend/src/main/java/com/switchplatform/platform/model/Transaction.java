@@ -23,10 +23,10 @@ public class Transaction {
     @Column(name = "transaction_id", nullable = false, unique = true, length = 64)
     private String transactionId;
 
-    @Column(name = "message_type", length = 10)
+    @Column(name = "message_type", nullable = false, length = 10)
     private String messageType;
 
-    @Column(length = 10)
+    @Column(nullable = false, length = 10)
     @Enumerated(EnumType.STRING)
     private Protocol protocol;
 
@@ -36,7 +36,7 @@ public class Transaction {
     @Column(length = 12)
     private String rrn;
 
-    @Column(length = 64)
+    @Column(nullable = false, length = 64)
     private String panHash;
 
     @Column(precision = 18, scale = 3)

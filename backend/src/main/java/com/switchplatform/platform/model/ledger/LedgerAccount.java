@@ -32,7 +32,7 @@ public class LedgerAccount {
     @Enumerated(EnumType.STRING)
     private AccountStatus status;
 
-    @Column(name = "balance", precision = 18, scale = 3)
+    @Column(name = "balance", nullable = false, precision = 18, scale = 3)
     private BigDecimal balance;
 
     @Column(name = "label", length = 255)

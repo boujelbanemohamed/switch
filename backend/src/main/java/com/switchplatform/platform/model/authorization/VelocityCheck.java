@@ -25,10 +25,10 @@ public class VelocityCheck {
     @Enumerated(EnumType.STRING)
     private VelocityType velocityType;
 
-    @Column(name = "window_start")
+    @Column(name = "window_start", nullable = false)
     private OffsetDateTime windowStart;
 
-    @Column(name = "window_end")
+    @Column(name = "window_end", nullable = false)
     private OffsetDateTime windowEnd;
 
     @Column(name = "current_count")

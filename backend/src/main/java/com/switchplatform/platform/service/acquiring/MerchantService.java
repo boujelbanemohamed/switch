@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,7 +36,7 @@ public class MerchantService {
         }
         merchant.setStatus(Merchant.MerchantStatus.PENDING_ONBOARDING);
         if (merchant.getOnboardingDate() == null) {
-            merchant.setOnboardingDate(LocalDate.now());
+            merchant.setOnboardingDate(OffsetDateTime.now());
         }
         merchant.setCreatedAt(OffsetDateTime.now());
         merchant.setUpdatedAt(OffsetDateTime.now());
@@ -54,7 +53,7 @@ public class MerchantService {
             log.warn("Merchant {} is not in PENDING_ONBOARDING state", merchantId);
         }
         merchant.setStatus(Merchant.MerchantStatus.ACTIVE);
-        merchant.setActivationDate(LocalDate.now());
+        merchant.setActivationDate(OffsetDateTime.now());
         merchant.setUpdatedAt(OffsetDateTime.now());
         merchant = merchantRepository.save(merchant);
         log.info("Approved merchant {}", merchantId);
@@ -75,7 +74,7 @@ public class MerchantService {
     public Merchant terminateMerchant(UUID merchantId) {
         Merchant merchant = getMerchantOrThrow(merchantId);
         merchant.setStatus(Merchant.MerchantStatus.TERMINATED);
-        merchant.setTerminationDate(LocalDate.now());
+        merchant.setTerminationDate(OffsetDateTime.now());
         merchant.setUpdatedAt(OffsetDateTime.now());
         merchant = merchantRepository.save(merchant);
         log.info("Terminated merchant {}", merchantId);

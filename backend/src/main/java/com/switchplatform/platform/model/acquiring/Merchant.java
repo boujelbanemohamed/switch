@@ -5,7 +5,6 @@ import com.switchplatform.platform.model.Participant;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -72,13 +71,13 @@ public class Merchant {
     private RiskLevel riskLevel = RiskLevel.STANDARD;
 
     @Column(name = "onboarding_date")
-    private LocalDate onboardingDate;
+    private OffsetDateTime onboardingDate;
 
     @Column(name = "activation_date")
-    private LocalDate activationDate;
+    private OffsetDateTime activationDate;
 
     @Column(name = "termination_date")
-    private LocalDate terminationDate;
+    private OffsetDateTime terminationDate;
 
     @Column(name = "settlement_method", length = 20)
     @Enumerated(EnumType.STRING)
@@ -118,7 +117,7 @@ public class Merchant {
     protected void onCreate() {
         createdAt = OffsetDateTime.now();
         updatedAt = OffsetDateTime.now();
-        if (onboardingDate == null) onboardingDate = LocalDate.now();
+        if (onboardingDate == null) onboardingDate = OffsetDateTime.now();
     }
 
     @PreUpdate

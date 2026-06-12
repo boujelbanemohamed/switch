@@ -78,10 +78,11 @@ public class IssuingController {
     // ─── Card endpoints ─────────────────────────────────────────────────────
 
     @PostMapping("/cards")
-    public ResponseEntity<Card> createCard(@Valid @RequestBody CreateCardRequest req) {
+    public ResponseEntity<CreateCardResponse> createCard(@Valid @RequestBody CreateCardRequest req) {
         Card card = new Card();
         card.setCardholderId(req.getCardholderId());
-        return ResponseEntity.ok(cardService.createCard(card));
+        CardService.CreateCardResult result = cardService.createCardWithRawValues(card);
+        return ResponseEntity.ok(CreateCardResponse.from(result.card(), result.rawCardNumber(), result.rawCvv()));
     }
 
     @GetMapping("/cards/{id}")

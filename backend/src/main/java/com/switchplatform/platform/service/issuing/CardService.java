@@ -35,8 +35,24 @@ public class CardService {
     @Transactional
     public Card createCard(Card card) {
         String cardNumber = generateCardNumber();
+        String cvv = generateCvv();
+        return doCreateCard(card, cardNumber, cvv);
+    }
+
+    public record CreateCardResult(Card card, String rawCardNumber, String rawCvv) {}
+
+    @Transactional
+    public CreateCardResult createCardWithRawValues(Card card) {
+        String cardNumber = generateCardNumber();
+        String cvv = generateCvv();
+        Card saved = doCreateCard(card, cardNumber, cvv);
+        return new CreateCardResult(saved, cardNumber, cvv);
+    }
+
+    private Card doCreateCard(Card card, String cardNumber, String cvv) {
         card.setCardNumberHash(hashCardNumber(cardNumber));
         card.setCardNumberSuffix(cardNumber.substring(cardNumber.length() - 4));
+        card.setCvvHash(hashCardNumber(cvv));
         card.setStatus(Card.CardStatus.PENDING_ACTIVATION);
         card.setExpiryDate(LocalDate.now().plusYears(3));
         card.setPinAttempts(0);
@@ -321,6 +337,11 @@ public class CardService {
             sb.append(random.nextInt(10));
         }
         return sb.toString();
+    }
+
+    private String generateCvv() {
+        Random random = new Random();
+        return String.format("%03d", random.nextInt(1000));
     }
 
     private String hashCardNumber(String cardNumber) {

@@ -347,8 +347,8 @@ export function Issuing() {
                 {cards.map(card => (
                   <tr key={card.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '10px 12px', fontFamily: 'monospace' }}>****{card.panSuffix}</td>
-                    <td style={{ padding: '10px 12px' }}>{card.cardBrand}</td>
-                    <td style={{ padding: '10px 12px' }}>{card.cardType}</td>
+                    <td style={{ padding: '10px 12px' }}>{card.cardBrand || '-'}</td>
+                    <td style={{ padding: '10px 12px' }}>{card.cardType || '-'}</td>
                     <td style={{ padding: '10px 12px' }}><StatusBadge status={card.status} label={CARD_STATUS_LABELS[card.status] ?? card.status} /></td>
                     <td style={{ padding: '10px 12px', fontSize: 12 }}>{card.expiresAt ? new Date(card.expiresAt).toLocaleDateString() : '-'}</td>
                     <td style={{ padding: '10px 12px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{card.panSuffix}</td>
@@ -386,7 +386,7 @@ export function Issuing() {
             <Field label={t('issuing.cardholder')}>
               <select style={styles.select} value={pinCardId} onChange={e => setPinCardId(e.target.value)}>
                 <option value="">-- Select card ID --</option>
-                {cards.map(c => <option key={c.id} value={c.id}>****{c.panSuffix} ({c.cardBrand})</option>)}
+                {cards.map(c => <option key={c.id} value={c.id}>****{c.panSuffix}{c.cardBrand ? ` (${c.cardBrand})` : ''}</option>)}
               </select>
             </Field>
             <Field label={t('issuing.setPin')}>
@@ -449,7 +449,7 @@ export function Issuing() {
             <Field label={t('issuing.cardholder')}>
               <select style={styles.select} value={tokenForm.cardId} onChange={e => setTokenForm({ ...tokenForm, cardId: e.target.value })}>
                 <option value="">-- Select card --</option>
-                {cards.map(c => <option key={c.id} value={c.id}>****{c.panSuffix} ({c.cardBrand})</option>)}
+                {cards.map(c => <option key={c.id} value={c.id}>****{c.panSuffix}{c.cardBrand ? ` (${c.cardBrand})` : ''}</option>)}
               </select>
             </Field>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -724,13 +724,13 @@ export function Issuing() {
                   <p style={{ fontSize: 13, fontWeight: 600 }}>{new Date(detailCard.expiresAt).toLocaleDateString()}</p>
                 </div>
               ) : null}
-              {'cardType' in detailCard ? (
+              {'cardType' in detailCard && detailCard.cardType ? (
                 <div>
                   <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2 }}>Type</p>
                   <p style={{ fontSize: 13, fontWeight: 600 }}>{detailCard.cardType}</p>
                 </div>
               ) : null}
-              {'cardBrand' in detailCard ? (
+              {'cardBrand' in detailCard && detailCard.cardBrand ? (
                 <div>
                   <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2 }}>Marque</p>
                   <p style={{ fontSize: 13, fontWeight: 600 }}>{detailCard.cardBrand}</p>

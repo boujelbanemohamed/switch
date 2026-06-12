@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
-import type { ClearingRecord, NettingRecord, ReconciliationResult, ReconciliationRecord } from '../types';
+import type { ClearingRecord, NettingRecord, ReconciliationResult, ReconciliationRecord, Participant } from '../types';
 import { SectionHeader } from '../components/SectionHeader';
 import { ClearingHelp, RECORD_LABELS, RECON_LABELS, SRC_LABELS } from '../components/ClearingHelp';
 
@@ -17,6 +17,7 @@ export function Clearing() {
   const [fileDate, setFileDate] = useState(new Date().toISOString().split('T')[0]);
   const [participantId, setParticipantId] = useState('');
   const [fileFormat, setFileFormat] = useState('CSV');
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [uploadContent, setUploadContent] = useState('');
   const [bctDate, setBctDate] = useState(new Date().toISOString().split('T')[0]);
   const [reportYear, setReportYear] = useState(new Date().getFullYear());
@@ -30,11 +31,13 @@ export function Clearing() {
       api.clearing.getByDate(today),
       api.clearing.netting.calculate(today),
       api.clearing.reconciliation.list(),
+      api.participants.list(),
     ])
-      .then(([clearingData, nettingData, reconData]) => {
+      .then(([clearingData, nettingData, reconData, parts]) => {
         setRecords(clearingData);
         setNetting(nettingData);
         setReconciliationHistory(reconData);
+        setParticipants(Array.isArray(parts) ? parts : []);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -151,8 +154,11 @@ export function Clearing() {
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('clearing.files.participantId')}</label>
-              <input type="text" value={participantId} onChange={e => setParticipantId(e.target.value)} placeholder="UUID"
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
+              <select value={participantId} onChange={e => setParticipantId(e.target.value)}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }}>
+                <option value="">-- Select participant --</option>
+                {participants.map(p => <option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
+              </select>
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginBottom: 4 }}>{t('clearing.files.format')}</label>

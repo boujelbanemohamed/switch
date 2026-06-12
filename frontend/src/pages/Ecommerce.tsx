@@ -109,7 +109,7 @@ function AcsPanel({ loading, setLoading, onResult }: {
             <input value={cardId} onChange={e => setCardId(e.target.value)} placeholder={t('ecommerce.optional')} />
           </Field>
           <Field label={t('ecommerce.amount')}>
-            <input value={amount} onChange={e => setAmount(e.target.value)} />
+            <input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} />
           </Field>
           <Field label={t('ecommerce.currency')}>
             <select value={currency} onChange={e => setCurrency(e.target.value)}>
@@ -197,7 +197,7 @@ function EpgPanel({ loading, setLoading, onResult }: {
             <input value={merchantTxnId} onChange={e => setMerchantTxnId(e.target.value)} />
           </Field>
           <Field label={t('ecommerce.amount')}>
-            <input value={amount} onChange={e => setAmount(e.target.value)} />
+            <input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} />
           </Field>
           <Field label={t('ecommerce.currency')}>
             <select value={currency} onChange={e => setCurrency(e.target.value)}>

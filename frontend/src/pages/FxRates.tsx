@@ -5,6 +5,8 @@ import type { FxRate } from '../types';
 import { SectionHeader } from '../components/SectionHeader';
 import { FxRatesHelp } from '../components/FxRatesHelp';
 
+const CURRENCY_OPTIONS = ['TND', 'EUR', 'USD', 'GBP', 'CHF', 'JPY', 'CAD', 'AUD', 'CNY', 'AED', 'SAR', 'QAR', 'KWD', 'BHD', 'OMR', 'MAD', 'DZD', 'LYD', 'EGP'];
+
 export function FxRates() {
   const { t } = useTranslation();
   const [rates, setRates] = useState<FxRate[]>([]);
@@ -57,10 +59,16 @@ export function FxRates() {
           {showForm && (
             <div style={{ marginBottom: 16, padding: 12, borderRadius: 8, background: 'var(--bg)', display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', gap: 8 }}>
-                <input placeholder="TND" value={newRate.sourceCurrency} onChange={e => setNewRate({ ...newRate, sourceCurrency: e.target.value })}
-                  style={{ flex: 1, padding: '8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
-                <input placeholder="EUR" value={newRate.targetCurrency} onChange={e => setNewRate({ ...newRate, targetCurrency: e.target.value })}
-                  style={{ flex: 1, padding: '8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
+                <select value={newRate.sourceCurrency} onChange={e => setNewRate({ ...newRate, sourceCurrency: e.target.value })}
+                  style={{ flex: 1, padding: '8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}>
+                  <option value="">-- From --</option>
+                  {CURRENCY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <select value={newRate.targetCurrency} onChange={e => setNewRate({ ...newRate, targetCurrency: e.target.value })}
+                  style={{ flex: 1, padding: '8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}>
+                  <option value="">-- To --</option>
+                  {CURRENCY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
               </div>
               <input type="number" step="0.0001" placeholder={t('fx.rate')} value={newRate.rate || ''} onChange={e => setNewRate({ ...newRate, rate: parseFloat(e.target.value) || 0 })}
                 style={{ padding: '8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} />
@@ -105,10 +113,14 @@ export function FxRates() {
             <input type="number" placeholder={t('fx.amount')} value={convert.amount || ''} onChange={e => setConvert({ ...convert, amount: parseFloat(e.target.value) || 0 })}
               style={{ padding: '8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
             <div style={{ display: 'flex', gap: 8 }}>
-              <input placeholder={t('fx.from')} value={convert.sourceCurrency} onChange={e => setConvert({ ...convert, sourceCurrency: e.target.value.toUpperCase() })}
-                style={{ flex: 1, padding: '8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
-              <input placeholder={t('fx.to')} value={convert.targetCurrency} onChange={e => setConvert({ ...convert, targetCurrency: e.target.value.toUpperCase() })}
-                style={{ flex: 1, padding: '8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
+              <select value={convert.sourceCurrency} onChange={e => setConvert({ ...convert, sourceCurrency: e.target.value })}
+                style={{ flex: 1, padding: '8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }}>
+                {CURRENCY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <select value={convert.targetCurrency} onChange={e => setConvert({ ...convert, targetCurrency: e.target.value })}
+                style={{ flex: 1, padding: '8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)' }}>
+                {CURRENCY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
             </div>
             <button onClick={doConvert}
               style={{ padding: '10px', borderRadius: 8, border: 'none', background: 'var(--accent)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>{t('fx.convert')}</button>

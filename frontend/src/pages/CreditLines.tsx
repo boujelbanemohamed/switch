@@ -354,15 +354,15 @@ export function CreditLines() {
                 </select>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <Field label={t('credit.creditLimit')}><input style={styles.input} value={openForm.creditLimit} onChange={e => setOpenForm({ ...openForm, creditLimit: e.target.value })} /></Field>
-                <Field label="APR %"><input style={styles.input} value={openForm.apr} onChange={e => setOpenForm({ ...openForm, apr: e.target.value })} /></Field>
+                <Field label={t('credit.creditLimit')}><input type="number" style={styles.input} value={openForm.creditLimit} onChange={e => setOpenForm({ ...openForm, creditLimit: e.target.value })} /></Field>
+                <Field label="APR %"><input type="number" step="0.1" style={styles.input} value={openForm.apr} onChange={e => setOpenForm({ ...openForm, apr: e.target.value })} /></Field>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-                <Field label={t('credit.statementDay')}><input style={styles.input} value={openForm.statementDay} onChange={e => setOpenForm({ ...openForm, statementDay: e.target.value })} /></Field>
-                <Field label={t('credit.paymentDueDays')}><input style={styles.input} value={openForm.paymentDueDays} onChange={e => setOpenForm({ ...openForm, paymentDueDays: e.target.value })} /></Field>
-                <Field label={t('credit.minPct')}><input style={styles.input} value={openForm.minPaymentPct} onChange={e => setOpenForm({ ...openForm, minPaymentPct: e.target.value })} /></Field>
+                <Field label={t('credit.statementDay')}><input type="number" style={styles.input} value={openForm.statementDay} onChange={e => setOpenForm({ ...openForm, statementDay: e.target.value })} /></Field>
+                <Field label={t('credit.paymentDueDays')}><input type="number" style={styles.input} value={openForm.paymentDueDays} onChange={e => setOpenForm({ ...openForm, paymentDueDays: e.target.value })} /></Field>
+                <Field label={t('credit.minPct')}><input type="number" step="0.1" style={styles.input} value={openForm.minPaymentPct} onChange={e => setOpenForm({ ...openForm, minPaymentPct: e.target.value })} /></Field>
               </div>
-              <Field label={t('credit.floor')}><input style={styles.input} value={openForm.minPaymentFloor} onChange={e => setOpenForm({ ...openForm, minPaymentFloor: e.target.value })} /></Field>
+              <Field label={t('credit.floor')}><input type="number" step="0.01" style={styles.input} value={openForm.minPaymentFloor} onChange={e => setOpenForm({ ...openForm, minPaymentFloor: e.target.value })} /></Field>
             </div>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
               <button onClick={() => setShowOpenModal(false)} style={{

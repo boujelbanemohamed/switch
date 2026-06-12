@@ -105,16 +105,25 @@ export function InterchangeFees() {
                 {editId === fee.id ? (
                   <>
                     <td className="p-2">
-                      <input value={editForm.brand || ''} onChange={e => setEditForm(p => ({ ...p, brand: e.target.value }))}
-                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm" />
+                      <select value={editForm.brand || ''} onChange={e => setEditForm(p => ({ ...p, brand: e.target.value }))}
+                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm">
+                        <option value="">-- Brand --</option>
+                        {Object.entries(CARD_BRAND_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                      </select>
                     </td>
                     <td className="p-2">
-                      <input value={editForm.cardType || ''} onChange={e => setEditForm(p => ({ ...p, cardType: e.target.value }))}
-                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm" />
+                      <select value={editForm.cardType || ''} onChange={e => setEditForm(p => ({ ...p, cardType: e.target.value }))}
+                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm">
+                        <option value="">-- Type --</option>
+                        {Object.entries(CARD_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                      </select>
                     </td>
                     <td className="p-2">
-                      <input value={editForm.region || ''} onChange={e => setEditForm(p => ({ ...p, region: e.target.value }))}
-                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm" />
+                      <select value={editForm.region || ''} onChange={e => setEditForm(p => ({ ...p, region: e.target.value }))}
+                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm">
+                        <option value="">-- Region --</option>
+                        {Object.entries(REGION_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                      </select>
                     </td>
                     <td className="p-2">
                       <input value={editForm.mcc || ''} onChange={e => setEditForm(p => ({ ...p, mcc: e.target.value }))}
@@ -206,20 +215,29 @@ function CreateModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-400 mb-1">{t('interchange.brand')}</label>
-              <input required value={form.brand} onChange={e => setForm(p => ({ ...p, brand: e.target.value }))}
-                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm" />
+              <select required value={form.brand} onChange={e => setForm(p => ({ ...p, brand: e.target.value }))}
+                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm">
+                <option value="">-- Brand --</option>
+                {Object.entries(CARD_BRAND_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1">{t('interchange.cardType')}</label>
-              <input required value={form.cardType} onChange={e => setForm(p => ({ ...p, cardType: e.target.value }))}
-                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm" />
+              <select required value={form.cardType} onChange={e => setForm(p => ({ ...p, cardType: e.target.value }))}
+                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm">
+                <option value="">-- Type --</option>
+                {Object.entries(CARD_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-400 mb-1">{t('interchange.region')}</label>
-              <input required value={form.region} onChange={e => setForm(p => ({ ...p, region: e.target.value }))}
-                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm" />
+              <select required value={form.region} onChange={e => setForm(p => ({ ...p, region: e.target.value }))}
+                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm">
+                <option value="">-- Region --</option>
+                {Object.entries(REGION_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1">{t('interchange.mcc')}</label>

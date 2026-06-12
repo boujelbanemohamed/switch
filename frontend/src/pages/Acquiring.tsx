@@ -4,6 +4,20 @@ import { api } from '../services/api';
 import type { Merchant, Terminal, MerchantSettlement, NettingRecord as NettingResult, Participant } from '../types';
 import { SectionHeader } from '../components/SectionHeader';
 import { AcquiringHelp, MERCHANT_STATUS_LABELS, TERMINAL_STATUS_LABELS, SETTLEMENT_STATUS_LABELS } from '../components/AcquiringHelp';
+const TERMINAL_TYPE_OPTIONS = ['PHYSICAL_TPE', 'SOFT_POS', 'ECOMMERCE', 'MOTO', 'ATM', 'KIOSK', 'MOBILE'];
+const COUNTRY_OPTIONS = [
+  { code: 'TN', label: 'Tunisia' }, { code: 'DZ', label: 'Algeria' }, { code: 'MA', label: 'Morocco' },
+  { code: 'LY', label: 'Libya' }, { code: 'MR', label: 'Mauritania' }, { code: 'SD', label: 'Sudan' },
+  { code: 'EG', label: 'Egypt' }, { code: 'SN', label: 'Senegal' }, { code: 'CI', label: "Côte d'Ivoire" },
+  { code: 'CM', label: 'Cameroon' }, { code: 'ML', label: 'Mali' }, { code: 'BF', label: 'Burkina Faso' },
+  { code: 'BJ', label: 'Benin' }, { code: 'TG', label: 'Togo' }, { code: 'NE', label: 'Niger' },
+  { code: 'TD', label: 'Chad' }, { code: 'FR', label: 'France' }, { code: 'BE', label: 'Belgium' },
+  { code: 'CH', label: 'Switzerland' }, { code: 'IT', label: 'Italy' }, { code: 'ES', label: 'Spain' },
+  { code: 'DE', label: 'Germany' }, { code: 'GB', label: 'United Kingdom' }, { code: 'US', label: 'United States' },
+  { code: 'CA', label: 'Canada' }, { code: 'AE', label: 'UAE' }, { code: 'SA', label: 'Saudi Arabia' },
+  { code: 'QA', label: 'Qatar' }, { code: 'KW', label: 'Kuwait' }, { code: 'TR', label: 'Türkiye' },
+  { code: 'CN', label: 'China' }, { code: 'IN', label: 'India' },
+];
 
 type Tab = 'merchants' | 'terminals' | 'settlement';
 
@@ -64,7 +78,7 @@ export function Acquiring() {
   const [participants, setParticipants] = useState<Participant[]>([]);
 
   const [terminalForm, setTerminalForm] = useState({
-    merchantId: '', terminalId: '', serialNumber: '', model: '', location: '', status: 'ACTIVE',
+    merchantId: '', terminalId: '', serialNumber: '', terminalType: 'PHYSICAL_TPE', model: '', location: '', status: 'ACTIVE',
   });
   const [keyForm, setKeyForm] = useState({ tid: '', mKey: '', pik: '', mak: '' });
 
@@ -116,7 +130,7 @@ export function Acquiring() {
     try {
       await api.acquiring.terminals.register(terminalForm);
       setShowTerminalModal(false);
-      setTerminalForm({ merchantId: '', terminalId: '', serialNumber: '', model: '', location: '', status: 'ACTIVE' });
+      setTerminalForm({ merchantId: '', terminalId: '', serialNumber: '', terminalType: 'PHYSICAL_TPE', model: '', location: '', status: 'ACTIVE' });
       if (selectedMerchant) {
         const list = await api.acquiring.terminals.listByMerchant(selectedMerchant.id);
         setTerminals(list);
@@ -405,7 +419,11 @@ export function Acquiring() {
               <Field label={t('acquiring.name')}><input style={styles.input} value={merchantForm.name} onChange={e => setMerchantForm({ ...merchantForm, name: e.target.value })} /></Field>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <Field label={t('acquiring.mcc')}><input style={styles.input} value={merchantForm.mcc} onChange={e => setMerchantForm({ ...merchantForm, mcc: e.target.value })} /></Field>
-                <Field label={t('acquiring.country')}><input style={styles.input} value={merchantForm.country} onChange={e => setMerchantForm({ ...merchantForm, country: e.target.value })} /></Field>
+                <Field label={t('acquiring.country')}>
+                  <select style={styles.select} value={merchantForm.country} onChange={e => setMerchantForm({ ...merchantForm, country: e.target.value })}>
+                    {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                  </select>
+                </Field>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <Field label={t('acquiring.contactEmail')}><input style={styles.input} type="email" value={merchantForm.contactEmail} onChange={e => setMerchantForm({ ...merchantForm, contactEmail: e.target.value })} /></Field>
@@ -458,6 +476,11 @@ export function Acquiring() {
                 <Field label={t('acquiring.model')}><input style={styles.input} value={terminalForm.model} onChange={e => setTerminalForm({ ...terminalForm, model: e.target.value })} /></Field>
                 <Field label={t('acquiring.location')}><input style={styles.input} value={terminalForm.location} onChange={e => setTerminalForm({ ...terminalForm, location: e.target.value })} /></Field>
               </div>
+              <Field label={t('acquiring.terminalType')}>
+                <select style={styles.select} value={terminalForm.terminalType} onChange={e => setTerminalForm({ ...terminalForm, terminalType: e.target.value })}>
+                  {TERMINAL_TYPE_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </Field>
               <Field label={t('acquiring.status')}>
                 <select style={styles.select} value={terminalForm.status} onChange={e => setTerminalForm({ ...terminalForm, status: e.target.value })}>
                   {['ACTIVE', 'INACTIVE', 'SUSPENDED'].map(s => <option key={s} value={s}>{TERMINAL_STATUS_LABELS[s] ?? s}</option>)}

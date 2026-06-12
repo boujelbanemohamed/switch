@@ -4,6 +4,7 @@ import com.switchplatform.platform.model.loyalty.LoyaltyMembership;
 import com.switchplatform.platform.model.loyalty.LoyaltyTransaction;
 import com.switchplatform.platform.repository.loyalty.LoyaltyMembershipRepository;
 import com.switchplatform.platform.repository.loyalty.LoyaltyTransactionRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@ActiveProfiles("dev")
+@ActiveProfiles("standalone")
 @Transactional
 class ExpiryTriggerTest {
 
@@ -33,14 +34,34 @@ class ExpiryTriggerTest {
     @Autowired
     private LoyaltyMembershipRepository membershipRepository;
 
-    private final UUID membershipId = UUID.fromString("0305e4ec-709f-40fc-9dda-277add3a2dc4");
+    private static final UUID cardholderId = UUID.fromString("cc000000-0000-0000-0000-000000000001");
+    private static final UUID programId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+    private static final UUID silverTierId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private UUID membershipId;
 
     @BeforeEach
     void setUp() {
+        if (membershipId == null) {
+            LoyaltyMembership newMem = LoyaltyMembership.builder()
+                    .cardholderId(cardholderId)
+                    .programId(programId)
+                    .tierId(silverTierId)
+                    .pointsBalance(BigDecimal.ZERO)
+                    .lifetimePoints(BigDecimal.ZERO)
+                    .status(LoyaltyMembership.MembershipStatus.ACTIVE)
+                    .build();
+            newMem = membershipRepository.save(newMem);
+            membershipId = newMem.getId();
+        }
         txRepository.deleteAll(txRepository.findByMembershipIdOrderByCreatedAtDesc(membershipId));
         LoyaltyMembership mem = membershipRepository.findById(membershipId).orElseThrow();
         mem.setPointsBalance(BigDecimal.ZERO);
         membershipRepository.save(mem);
+    }
+
+    @AfterEach
+    void tearDown() {
+        membershipId = null;
     }
 
     @Test

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
+import type { Participant } from '../types';
 import { SectionHeader } from '../components/SectionHeader';
 import { StandInHelp, STANDIN_DECISION_LABELS, STANDIN_REASON_LABELS } from '../components/StandInHelp';
+import { CARD_BRAND_LABELS } from '../components/BinTablesHelp';
 import { Plus, Pencil, Trash2, RefreshCw } from 'lucide-react';
 
 interface StandInRuleItem {
@@ -40,18 +42,21 @@ export function StandIn() {
   const [editForm, setEditForm] = useState<Partial<StandInRuleItem>>({});
   const [showCreate, setShowCreate] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [participants, setParticipants] = useState<Participant[]>([]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [rulesData, authsData, countData] = await Promise.all([
+      const [rulesData, authsData, countData, parts] = await Promise.all([
         api.standin.rules.list(),
         api.standin.authorizations.list(),
         api.standin.pendingCount(),
+        api.participants.list(),
       ]);
       setRules(Array.isArray(rulesData) ? rulesData : []);
       setAuths(Array.isArray(authsData) ? authsData : []);
       setPendingCount(countData?.count ?? 0);
+      setParticipants(Array.isArray(parts) ? parts : []);
     } catch {
       setRules([]);
       setAuths([]);
@@ -139,14 +144,20 @@ export function StandIn() {
                 {editId === rule.id ? (
                   <>
                     <td className="p-2">
-                      <input value={editForm.issuerParticipantId || ''}
+                      <select value={editForm.issuerParticipantId || ''}
                         onChange={e => setEditForm(p => ({ ...p, issuerParticipantId: e.target.value || null }))}
-                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm" />
+                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm">
+                        <option value="">-- Global --</option>
+                        {participants.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
                     </td>
                     <td className="p-2">
-                      <input value={editForm.cardBrand || ''}
+                      <select value={editForm.cardBrand || ''}
                         onChange={e => setEditForm(p => ({ ...p, cardBrand: e.target.value }))}
-                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm" />
+                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm">
+                        <option value="">-- Select brand --</option>
+                        {Object.entries(CARD_BRAND_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                      </select>
                     </td>
                     <td className="p-2 text-center">
                       <input type="checkbox" checked={editForm.enabled ?? true}
@@ -258,13 +269,13 @@ export function StandIn() {
       </div>
 
       {showCreate && (
-        <CreateModal onClose={() => setShowCreate(false)} onSaved={() => { setShowCreate(false); fetchData(); }} />
+        <CreateModal participants={participants} onClose={() => setShowCreate(false)} onSaved={() => { setShowCreate(false); fetchData(); }} />
       )}
     </div>
   );
 }
 
-function CreateModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+function CreateModal({ participants, onClose, onSaved }: { participants: Participant[]; onClose: () => void; onSaved: () => void }) {
   const { t } = useTranslation();
   const [form, setForm] = useState({
     issuerParticipantId: '',
@@ -300,15 +311,20 @@ function CreateModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-400 mb-1">{t('standIn.issuer')}</label>
-              <input value={form.issuerParticipantId}
+              <select value={form.issuerParticipantId}
                 onChange={e => setForm(p => ({ ...p, issuerParticipantId: e.target.value }))}
-                placeholder="UUID (vide = global)"
-                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm" />
+                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm">
+                <option value="">-- Global (tous les émetteurs) --</option>
+                {participants.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1">{t('standIn.cardBrand')}</label>
-              <input value={form.cardBrand} onChange={e => setForm(p => ({ ...p, cardBrand: e.target.value }))}
-                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm" />
+              <select value={form.cardBrand} onChange={e => setForm(p => ({ ...p, cardBrand: e.target.value }))}
+                className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm">
+                <option value="">-- Select brand --</option>
+                {Object.entries(CARD_BRAND_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">

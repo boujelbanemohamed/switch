@@ -11,4 +11,6 @@ public class CreateCardRequest {
     private UUID cardholderId;
 
     private String cardProduct;
+
+    private UUID binId;
 }

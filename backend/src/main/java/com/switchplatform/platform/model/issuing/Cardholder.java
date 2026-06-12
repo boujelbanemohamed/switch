@@ -1,5 +1,6 @@
 package com.switchplatform.platform.model.issuing;
 
+import com.switchplatform.platform.model.Participant;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -62,6 +63,13 @@ public class Cardholder {
     @Column(length = 3)
     @Size(max = 3, message = "nationality must be at most 3 characters")
     private String nationality;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "participant_id")
+    private Participant participant;
+
+    @Transient
+    private UUID participantId;
 
     @Column(name = "id_document_type", length = 20)
     @Enumerated(EnumType.STRING)

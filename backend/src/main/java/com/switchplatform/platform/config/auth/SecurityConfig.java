@@ -138,6 +138,10 @@ public class SecurityConfig {
                         new AntPathRequestMatcher("/api/v1/issuing/tokens/**")).hasAnyRole(
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name())
+                .requestMatchers(new AntPathRequestMatcher("/api/v1/issuing/cardholders/*/bins")).hasAnyRole(
+                        AuthUser.Role.ADMIN.name(),
+                        AuthUser.Role.OPERATOR.name(),
+                        AuthUser.Role.ANALYST.name())
                 .requestMatchers(new AntPathRequestMatcher("/api/v1/issuing/**")).hasAnyRole(
                         AuthUser.Role.ADMIN.name(),
                         AuthUser.Role.OPERATOR.name())

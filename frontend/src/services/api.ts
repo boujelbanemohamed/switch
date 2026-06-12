@@ -148,8 +148,10 @@ export const api = {
       get: (id: string) => request<import('../types').Card>(`/issuing/cards/${id}`),
       getBySuffix: (suffix: string) => request<import('../types').Card>(`/issuing/cards/by-suffix/${suffix}`),
       getDetails: (id: string) => request<import('../types').CardCreateResponse>(`/issuing/cards/${id}/details`),
-      create: (data: { cardholderId: string; cardProduct: string }) =>
+      create: (data: { cardholderId: string; cardProduct?: string; binId?: string }) =>
         request<import('../types').CardCreateResponse>('/issuing/cards', { method: 'POST', body: JSON.stringify(data) }),
+      listBinsByCardholder: (cardholderId: string) =>
+        request<import('../types').BinTable[]>(`/issuing/cardholders/${cardholderId}/bins`),
       activate: (id: string) =>
         request<import('../types').Card>(`/issuing/cards/${id}/activate`, { method: 'POST' }),
       block: (id: string, reason: string) =>

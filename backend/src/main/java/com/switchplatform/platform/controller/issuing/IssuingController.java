@@ -1,9 +1,11 @@
 package com.switchplatform.platform.controller.issuing;
 
+import com.switchplatform.platform.model.BinTable;
 import com.switchplatform.platform.model.issuing.Card;
 import com.switchplatform.platform.model.issuing.CardAccount;
 import com.switchplatform.platform.model.issuing.Cardholder;
 import com.switchplatform.platform.model.issuing.WalletToken;
+import com.switchplatform.platform.repository.BinTableRepository;
 import com.switchplatform.platform.service.issuing.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -81,10 +83,15 @@ public class IssuingController {
     public ResponseEntity<CreateCardResponse> createCard(@Valid @RequestBody CreateCardRequest req) {
         Card card = new Card();
         card.setCardholderId(req.getCardholderId());
-        if (req.getCardProduct() != null) {
-            card.setCardType(Card.CardType.valueOf(req.getCardProduct()));
+        CardService.CreateCardResult result;
+        if (req.getBinId() != null) {
+            result = cardService.createCardWithBin(card, req.getBinId());
+        } else {
+            if (req.getCardProduct() != null) {
+                card.setCardType(Card.CardType.valueOf(req.getCardProduct()));
+            }
+            result = cardService.createCardWithRawValues(card);
         }
-        CardService.CreateCardResult result = cardService.createCardWithRawValues(card);
         return ResponseEntity.ok(CreateCardResponse.from(result.card(), result.rawCardNumber(), result.rawCvv()));
     }
 
@@ -165,6 +172,11 @@ public class IssuingController {
     @GetMapping("/cardholders/{cardholderId}/cards")
     public ResponseEntity<List<Card>> getCardsForCardholder(@PathVariable UUID cardholderId) {
         return ResponseEntity.ok(cardService.getCardsByCardholderId(cardholderId));
+    }
+
+    @GetMapping("/cardholders/{cardholderId}/bins")
+    public ResponseEntity<List<BinTable>> getBinsForCardholder(@PathVariable UUID cardholderId) {
+        return ResponseEntity.ok(cardholderService.getBinsForCardholder(cardholderId));
     }
 
     // ─── Wallet token endpoints ─────────────────────────────────────────────

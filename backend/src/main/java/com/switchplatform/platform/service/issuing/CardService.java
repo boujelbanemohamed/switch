@@ -2,9 +2,11 @@ package com.switchplatform.platform.service.issuing;
 
 import com.switchplatform.platform.config.security.PciEncryptionService;
 import com.switchplatform.platform.controller.issuing.CreateCardResponse;
+import com.switchplatform.platform.model.BinTable;
 import com.switchplatform.platform.model.issuing.Card;
 import com.switchplatform.platform.model.issuing.CardAccount;
 import com.switchplatform.platform.model.issuing.CardOperation;
+import com.switchplatform.platform.repository.BinTableRepository;
 import com.switchplatform.platform.repository.issuing.CardAccountRepository;
 import com.switchplatform.platform.repository.issuing.CardRepository;
 import com.switchplatform.platform.repository.issuing.CardOperationRepository;
@@ -31,13 +33,14 @@ public class CardService {
     private final CardAccountRepository cardAccountRepository;
     private final IssuingNotificationService notificationService;
     private final PciEncryptionService encryptionService;
+    private final BinTableRepository binTableRepository;
 
     @Value("${switch.pan.hash-key:}")
     private String panHashKey = "test-key-not-for-production";
 
     @Transactional
     public Card createCard(Card card) {
-        String cardNumber = generateCardNumber();
+        String cardNumber = generateCardNumber("400000");
         String cvv = generateCvv();
         return doCreateCard(card, cardNumber, cvv);
     }
@@ -46,8 +49,20 @@ public class CardService {
 
     @Transactional
     public CreateCardResult createCardWithRawValues(Card card) {
-        String cardNumber = generateCardNumber();
+        String cardNumber = generateCardNumber("400000");
         String cvv = generateCvv();
+        Card saved = doCreateCard(card, cardNumber, cvv);
+        return new CreateCardResult(saved, cardNumber, cvv);
+    }
+
+    @Transactional
+    public CreateCardResult createCardWithBin(Card card, UUID binId) {
+        BinTable bin = binTableRepository.findById(binId)
+                .orElseThrow(() -> new IllegalArgumentException("BIN not found: " + binId));
+        String cardNumber = generateCardNumber(bin.getBin());
+        String cvv = generateCvv();
+        card.setCardType(Card.CardType.valueOf(bin.getCardType().name()));
+        card.setCardBrand(Card.CardBrand.valueOf(bin.getCardBrand().name()));
         Card saved = doCreateCard(card, cardNumber, cvv);
         return new CreateCardResult(saved, cardNumber, cvv);
     }
@@ -206,7 +221,7 @@ public class CardService {
                 .updatedAt(OffsetDateTime.now())
                 .build();
 
-        String newCardNumber = generateCardNumber();
+        String newCardNumber = generateCardNumber("400000");
         renewed.setCardNumberHash(hashCardNumber(newCardNumber));
         renewed.setCardNumberSuffix(newCardNumber.substring(newCardNumber.length() - 4));
         renewed.setCardNumberEncrypted(encryptionService.encrypt(newCardNumber));
@@ -347,10 +362,11 @@ public class CardService {
         cardOperationRepository.save(op);
     }
 
-    private String generateCardNumber() {
-        StringBuilder sb = new StringBuilder("400000");
+    private String generateCardNumber(String binPrefix) {
+        StringBuilder sb = new StringBuilder(binPrefix);
         Random random = new Random();
-        for (int i = 0; i < 10; i++) {
+        int remaining = 16 - binPrefix.length();
+        for (int i = 0; i < remaining; i++) {
             sb.append(random.nextInt(10));
         }
         return sb.toString();

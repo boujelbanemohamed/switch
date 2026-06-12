@@ -2,9 +2,12 @@ package com.switchplatform.platform.service.issuing;
 
 import com.switchplatform.platform.config.security.PciEncryptionService;
 import com.switchplatform.platform.model.issuing.Card;
+import com.switchplatform.platform.model.issuing.CardAccount;
 import com.switchplatform.platform.model.issuing.CardOperation;
 import com.switchplatform.platform.model.issuing.Cardholder;
 import com.switchplatform.platform.model.issuing.WalletToken;
+import com.switchplatform.platform.repository.BinTableRepository;
+import com.switchplatform.platform.repository.ParticipantRepository;
 import com.switchplatform.platform.repository.issuing.CardAccountRepository;
 import com.switchplatform.platform.repository.issuing.CardOperationRepository;
 import com.switchplatform.platform.repository.issuing.CardRepository;
@@ -126,9 +129,11 @@ class IssuingServiceTest {
             String val = inv.getArgument(0);
             return val.startsWith("enc_") ? val.substring(4) : val;
         });
+        BinTableRepository binTableRepository = mock(BinTableRepository.class);
+        ParticipantRepository participantRepository = mock(ParticipantRepository.class);
 
-        cardService = new CardService(cardRepository, cardOperationRepository, cardAccountRepository, notificationService, encryptionService);
-        cardholderService = new CardholderService(cardholderRepository, cardService);
+        cardService = new CardService(cardRepository, cardOperationRepository, cardAccountRepository, notificationService, encryptionService, binTableRepository);
+        cardholderService = new CardholderService(cardholderRepository, cardService, participantRepository, binTableRepository);
         walletTokenService = new WalletTokenService(walletTokenRepository);
     }
 

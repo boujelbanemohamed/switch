@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
-import type { Cardholder, Card, CardCreateResponse, CardAccount as CardAccountType, Notification as NotificationType } from '../types';
+import type { Cardholder, Card, CardCreateResponse, CardAccount as CardAccountType, Notification as NotificationType, Participant, BinTable } from '../types';
 import { IssuingHelp, CARD_STATUS_LABELS, ACCOUNT_STATUS_LABELS, CARDHOLDER_STATUS_LABELS, TOKEN_STATUS_LABELS, CARD_PRODUCT_LABELS, WALLET_PROVIDER_LABELS, CARD_ACTION_LABELS, getNotificationLabel } from '../components/IssuingHelp';
 import { SectionHeader } from '../components/SectionHeader';
 
@@ -95,7 +95,7 @@ export function Issuing() {
   const [showTokenModal, setShowTokenModal] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [chForm, setChForm] = useState({ firstName: '', lastName: '', email: '', phone: '', documentNumber: '', dateOfBirth: '', nationality: '', countryCode: '' });
+  const [chForm, setChForm] = useState({ firstName: '', lastName: '', email: '', phone: '', documentNumber: '', dateOfBirth: '', nationality: '', countryCode: '', participantId: '' });
   const [cardForm, setCardForm] = useState({ cardholderId: '', cardProduct: 'CREDIT' });
   const [pinCardId, setPinCardId] = useState('');
   const [pinMode, setPinMode] = useState<'simple' | 'advanced'>('simple');
@@ -113,9 +113,19 @@ export function Issuing() {
   const [detailCard, setDetailCard] = useState<CardCreateResponse | Card | null>(null);
   const [cardJustCreated, setCardJustCreated] = useState(false);
 
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [availableBins, setAvailableBins] = useState<BinTable[]>([]);
+  const [selectedBinId, setSelectedBinId] = useState('');
+
   useEffect(() => {
-    api.issuing.cardholders.list()
-      .then(setCardholders)
+    Promise.all([
+      api.issuing.cardholders.list(),
+      api.participants.list(),
+    ])
+      .then(([chs, parts]) => {
+        setCardholders(chs);
+        setParticipants(parts);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -174,7 +184,7 @@ export function Issuing() {
     try {
       await api.issuing.cardholders.create(chForm);
       setShowChModal(false);
-      setChForm({ firstName: '', lastName: '', email: '', phone: '', documentNumber: '', dateOfBirth: '', nationality: '', countryCode: '' });
+      setChForm({ firstName: '', lastName: '', email: '', phone: '', documentNumber: '', dateOfBirth: '', nationality: '', countryCode: '', participantId: '' });
       const list = await api.issuing.cardholders.list();
       setCardholders(list);
     } catch (e) { console.error(e); alert(e instanceof Error ? e.message : 'Failed to create cardholder'); }
@@ -184,9 +194,17 @@ export function Issuing() {
   const createCard = async () => {
     setSaving(true);
     try {
-      const result = await api.issuing.cards.create(cardForm);
+      const payload: { cardholderId: string; cardProduct?: string; binId?: string } = { cardholderId: cardForm.cardholderId };
+      if (selectedBinId) {
+        payload.binId = selectedBinId;
+      } else {
+        payload.cardProduct = cardForm.cardProduct;
+      }
+      const result = await api.issuing.cards.create(payload);
       setShowCardModal(false);
       setCardForm({ cardholderId: '', cardProduct: 'CREDIT' });
+      setSelectedBinId('');
+      setAvailableBins([]);
       setDetailCard(result);
       setCardJustCreated(true);
       setShowCardDetail(true);
@@ -287,6 +305,7 @@ export function Issuing() {
               <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
                 <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('issuing.name')}</th>
                 <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('issuing.email')}</th>
+                <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Institution</th>
                 <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('issuing.phone')}</th>
                 <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('issuing.status')}</th>
                 <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontWeight: 600 }}>{t('issuing.kycLevel')}</th>
@@ -300,6 +319,7 @@ export function Issuing() {
                     background: selectedCh?.id === ch.id ? 'rgba(59,130,246,0.1)' : undefined }}>
                   <td style={{ padding: '10px 12px', fontWeight: 600 }}>{ch.firstName} {ch.lastName}</td>
                   <td style={{ padding: '10px 12px' }}>{ch.email}</td>
+                  <td style={{ padding: '10px 12px' }}>{ch.participant?.name || '-'}</td>
                   <td style={{ padding: '10px 12px', color: 'var(--text-secondary)' }}>{ch.phone || '-'}</td>
                    <td style={{ padding: '10px 12px' }}><StatusBadge status={ch.status} label={CARDHOLDER_STATUS_LABELS[ch.status] ?? ch.status} /></td>
                   <td style={{ padding: '10px 12px', fontFamily: 'monospace' }}>{ch.kycLevel}</td>
@@ -307,7 +327,7 @@ export function Issuing() {
                 </tr>
               ))}
               {cardholders.length === 0 && (
-                <tr><td colSpan={6} style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>{t('issuing.noCardholders')}</td></tr>
+                <tr><td colSpan={7} style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>{t('issuing.noCardholders')}</td></tr>
               )}
             </tbody>
           </table>
@@ -628,6 +648,12 @@ export function Issuing() {
                     {COUNTRY_OPTIONS.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
                   </select>
                 </Field>
+                <Field label="Institution">
+                  <select style={styles.select} value={chForm.participantId} onChange={e => setChForm({ ...chForm, participantId: e.target.value })}>
+                    <option value="">-- Aucune --</option>
+                    {participants.filter(p => p.status === 'ACTIVE').map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </Field>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
@@ -651,17 +677,37 @@ export function Issuing() {
             <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>{t('issuing.createCard')}</h3>
             <div style={{ display: 'grid', gap: 14 }}>
               <Field label={t('issuing.cardholder')}>
-                <select style={styles.select} value={cardForm.cardholderId} onChange={e => setCardForm({ ...cardForm, cardholderId: e.target.value })}>
+                <select style={styles.select} value={cardForm.cardholderId} onChange={async e => {
+                  const chId = e.target.value;
+                  setCardForm({ ...cardForm, cardholderId: chId });
+                  setSelectedBinId('');
+                  if (chId) {
+                    try {
+                      const bins = await api.issuing.cards.listBinsByCardholder(chId);
+                      setAvailableBins(bins);
+                    } catch { setAvailableBins([]); }
+                  } else {
+                    setAvailableBins([]);
+                  }
+                }}>
                   <option value="">-- Select --</option>
                   {cardholders.map(ch => <option key={ch.id} value={ch.id}>{ch.firstName} {ch.lastName}</option>)}
                 </select>
               </Field>
-              <Field label={t('issuing.cardProduct')}>
-                <select style={styles.select} value={cardForm.cardProduct} onChange={e => setCardForm({ ...cardForm, cardProduct: e.target.value })}>
-                  {['CREDIT', 'DEBIT', 'PREPAID', 'CHARGE'].map(p => <option key={p} value={p}>{CARD_PRODUCT_LABELS[p] ?? p}</option>)}
-                </select>
-              </Field>
-
+              {availableBins.length > 0 ? (
+                <Field label="BIN">
+                  <select style={styles.select} value={selectedBinId} onChange={e => setSelectedBinId(e.target.value)}>
+                    <option value="">-- Sélectionner un BIN --</option>
+                    {availableBins.map(b => <option key={b.id} value={b.id}>{b.bin} - {b.cardBrand} ({b.cardType})</option>)}
+                  </select>
+                </Field>
+              ) : (
+                <Field label={t('issuing.cardProduct')}>
+                  <select style={styles.select} value={cardForm.cardProduct} onChange={e => setCardForm({ ...cardForm, cardProduct: e.target.value })}>
+                    {['CREDIT', 'DEBIT', 'PREPAID', 'CHARGE'].map(p => <option key={p} value={p}>{CARD_PRODUCT_LABELS[p] ?? p}</option>)}
+                  </select>
+                </Field>
+              )}
             </div>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
               <button onClick={() => setShowCardModal(false)} style={{

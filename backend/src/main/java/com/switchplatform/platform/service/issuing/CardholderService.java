@@ -1,7 +1,11 @@
 package com.switchplatform.platform.service.issuing;
 
+import com.switchplatform.platform.model.BinTable;
+import com.switchplatform.platform.model.Participant;
 import com.switchplatform.platform.model.issuing.Card;
 import com.switchplatform.platform.model.issuing.Cardholder;
+import com.switchplatform.platform.repository.BinTableRepository;
+import com.switchplatform.platform.repository.ParticipantRepository;
 import com.switchplatform.platform.repository.issuing.CardholderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,11 +26,18 @@ public class CardholderService {
 
     private final CardholderRepository cardholderRepository;
     private final CardService cardService;
+    private final ParticipantRepository participantRepository;
+    private final BinTableRepository binTableRepository;
 
     @Transactional
     public Cardholder createCardholder(Cardholder cardholder) {
         if (cardholder.getEmail() != null && cardholderRepository.existsByEmail(cardholder.getEmail())) {
             throw new IllegalArgumentException("Email already exists: " + cardholder.getEmail());
+        }
+        if (cardholder.getParticipantId() != null) {
+            Participant participant = participantRepository.findById(cardholder.getParticipantId())
+                    .orElseThrow(() -> new IllegalArgumentException("Participant not found: " + cardholder.getParticipantId()));
+            cardholder.setParticipant(participant);
         }
         cardholder.setStatus(Cardholder.CardholderStatus.ACTIVE);
         cardholder.setKycLevel(1);
@@ -34,7 +45,9 @@ public class CardholderService {
         cardholder.setUpdatedAt(OffsetDateTime.now());
 
         Cardholder saved = cardholderRepository.save(cardholder);
-        log.info("Created cardholder {} {} {}", saved.getId(), saved.getFirstName(), saved.getLastName());
+        log.info("Created cardholder {} {} {} (participant: {})",
+                saved.getId(), saved.getFirstName(), saved.getLastName(),
+                saved.getParticipant() != null ? saved.getParticipant().getName() : "none");
         return saved;
     }
 
@@ -77,6 +90,11 @@ public class CardholderService {
         if (update.getNationality() != null) existing.setNationality(update.getNationality());
         if (update.getIdDocumentType() != null) existing.setIdDocumentType(update.getIdDocumentType());
         if (update.getIdDocumentNumber() != null) existing.setIdDocumentNumber(update.getIdDocumentNumber());
+        if (update.getParticipantId() != null) {
+            Participant participant = participantRepository.findById(update.getParticipantId())
+                    .orElseThrow(() -> new IllegalArgumentException("Participant not found: " + update.getParticipantId()));
+            existing.setParticipant(participant);
+        }
 
         if (update.getEmail() != null && !update.getEmail().equals(existing.getEmail())) {
             if (cardholderRepository.existsByEmail(update.getEmail())) {
@@ -116,6 +134,17 @@ public class CardholderService {
                 cardService.blockCard(cardId, "CARDHOLDER_BLOCKED"));
         log.info("Blocked all cards for cardholder {}", id);
         return saved;
+    }
+
+    @Transactional(readOnly = true)
+    public List<BinTable> getBinsForCardholder(UUID cardholderId) {
+        Cardholder cardholder = cardholderRepository.findById(cardholderId)
+                .orElseThrow(() -> new IllegalArgumentException("Cardholder not found: " + cardholderId));
+        Participant participant = cardholder.getParticipant();
+        if (participant == null) {
+            return List.of();
+        }
+        return binTableRepository.findByParticipantId(participant.getId());
     }
 
     @Transactional(readOnly = true)

@@ -79,6 +79,8 @@ export interface Cardholder {
   dateOfBirth?: string;
   nationality?: string;
   countryCode?: string;
+  participantId?: string;
+  participant?: Participant;
   createdAt: string;
 }
 

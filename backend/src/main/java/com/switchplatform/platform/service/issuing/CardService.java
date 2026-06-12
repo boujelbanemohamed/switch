@@ -47,6 +47,18 @@ public class CardService {
             List<CardAccount> accounts = cardAccountRepository.findByCardholderId(card.getCardholderId());
             if (!accounts.isEmpty()) {
                 card.setCardAccountId(accounts.getFirst().getId());
+            } else {
+                CardAccount newAccount = new CardAccount();
+                newAccount.setCardholderId(card.getCardholderId());
+                newAccount.setAccountNumber("TN" + System.currentTimeMillis());
+                newAccount.setCurrencyCode("TND");
+                newAccount.setBalance(BigDecimal.ZERO);
+                newAccount.setLedgerBalance(BigDecimal.ZERO);
+                newAccount.setAvailableBalance(BigDecimal.ZERO);
+                newAccount.setAccountType(CardAccount.AccountType.CHECKING);
+                newAccount.setStatus(CardAccount.AccountStatus.ACTIVE);
+                newAccount = cardAccountRepository.save(newAccount);
+                card.setCardAccountId(newAccount.getId());
             }
         }
         card.setCreatedAt(OffsetDateTime.now());

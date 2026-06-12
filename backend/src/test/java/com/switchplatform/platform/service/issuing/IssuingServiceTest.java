@@ -4,6 +4,7 @@ import com.switchplatform.platform.model.issuing.Card;
 import com.switchplatform.platform.model.issuing.CardOperation;
 import com.switchplatform.platform.model.issuing.Cardholder;
 import com.switchplatform.platform.model.issuing.WalletToken;
+import com.switchplatform.platform.repository.issuing.CardAccountRepository;
 import com.switchplatform.platform.repository.issuing.CardOperationRepository;
 import com.switchplatform.platform.repository.issuing.CardRepository;
 import com.switchplatform.platform.repository.issuing.CardholderRepository;
@@ -29,6 +30,7 @@ class IssuingServiceTest {
     private IssuingNotificationService notificationService;
     private CardRepository cardRepository;
     private CardOperationRepository cardOperationRepository;
+    private CardAccountRepository cardAccountRepository;
     private final java.util.Map<java.util.UUID, Card> cardStore = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<Long, CardOperation> cardOpStore = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.Map<java.util.UUID, Cardholder> cardholderStore = new java.util.concurrent.ConcurrentHashMap<>();
@@ -116,8 +118,9 @@ class IssuingServiceTest {
                     .sorted((a,b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
                     .toList();
         });
+        cardAccountRepository = mock(CardAccountRepository.class);
 
-        cardService = new CardService(cardRepository, cardOperationRepository, notificationService);
+        cardService = new CardService(cardRepository, cardOperationRepository, cardAccountRepository, notificationService);
         cardholderService = new CardholderService(cardholderRepository, cardService);
         walletTokenService = new WalletTokenService(walletTokenRepository);
     }

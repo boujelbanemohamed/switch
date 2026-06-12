@@ -96,7 +96,7 @@ export function Issuing() {
   const [saving, setSaving] = useState(false);
 
   const [chForm, setChForm] = useState({ firstName: '', lastName: '', email: '', phone: '', documentNumber: '', dateOfBirth: '', nationality: '', countryCode: '' });
-  const [cardForm, setCardForm] = useState({ cardholderId: '', cardProduct: 'CREDIT', cardNumber: '', expiryDate: '', cvv: '', status: 'PENDING_ACTIVATION' });
+  const [cardForm, setCardForm] = useState({ cardholderId: '', cardProduct: 'CREDIT' });
   const [pinCardId, setPinCardId] = useState('');
   const [pinMode, setPinMode] = useState<'simple' | 'advanced'>('simple');
   const [rawPin, setRawPin] = useState('');
@@ -182,7 +182,7 @@ export function Issuing() {
     try {
       await api.issuing.cards.create(cardForm);
       setShowCardModal(false);
-      setCardForm({ cardholderId: '', cardProduct: 'CREDIT', cardNumber: '', expiryDate: '', cvv: '', status: 'PENDING_ACTIVATION' });
+      setCardForm({ cardholderId: '', cardProduct: 'CREDIT' });
       if (selectedCh) {
         const list = await api.issuing.cards.listByCardholder(selectedCh.id);
         setCards(list);
@@ -644,25 +644,16 @@ export function Issuing() {
                   {['CREDIT', 'DEBIT', 'PREPAID', 'CHARGE'].map(p => <option key={p} value={p}>{CARD_PRODUCT_LABELS[p] ?? p}</option>)}
                 </select>
               </Field>
-              <Field label={t('issuing.cardNumber')}><input style={styles.input} value={cardForm.cardNumber} onChange={e => setCardForm({ ...cardForm, cardNumber: e.target.value })} /></Field>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-                <Field label={t('issuing.expiryDate')}><input style={styles.input} value={cardForm.expiryDate} onChange={e => setCardForm({ ...cardForm, expiryDate: e.target.value })} placeholder="MM/YY" /></Field>
-                <Field label={t('issuing.cvv')}><input style={styles.input} value={cardForm.cvv} onChange={e => setCardForm({ ...cardForm, cvv: e.target.value })} /></Field>
-                <Field label={t('issuing.status')}>
-                  <select style={styles.select} value={cardForm.status} onChange={e => setCardForm({ ...cardForm, status: e.target.value })}>
-                    {['PENDING_ACTIVATION', 'ACTIVE', 'BLOCKED'].map(s => <option key={s} value={s}>{CARD_STATUS_LABELS[s] ?? s}</option>)}
-                  </select>
-                </Field>
-              </div>
+
             </div>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 24 }}>
               <button onClick={() => setShowCardModal(false)} style={{
                 padding: '10px 20px', borderRadius: 8, border: '1px solid var(--border)',
                 background: 'transparent', color: 'var(--text)', cursor: 'pointer', fontSize: 13, fontWeight: 600,
               }}>{t('fraud.cancel')}</button>
-              <button onClick={createCard} disabled={saving || !cardForm.cardholderId || !cardForm.cardNumber} style={{
+              <button onClick={createCard} disabled={saving || !cardForm.cardholderId} style={{
                 padding: '10px 20px', borderRadius: 8, border: 'none',
-                background: saving || !cardForm.cardholderId || !cardForm.cardNumber ? '#64748b' : '#3b82f6',
+                background: saving || !cardForm.cardholderId ? '#64748b' : '#3b82f6',
                 color: 'white', cursor: saving ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 600,
               }}>{saving ? t('common.loading') : t('issuing.create')}</button>
             </div>

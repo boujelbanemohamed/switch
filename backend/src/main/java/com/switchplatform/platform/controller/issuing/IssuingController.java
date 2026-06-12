@@ -78,7 +78,9 @@ public class IssuingController {
     // ─── Card endpoints ─────────────────────────────────────────────────────
 
     @PostMapping("/cards")
-    public ResponseEntity<Card> createCard(@Valid @RequestBody Card card) {
+    public ResponseEntity<Card> createCard(@Valid @RequestBody CreateCardRequest req) {
+        Card card = new Card();
+        card.setCardholderId(req.getCardholderId());
         return ResponseEntity.ok(cardService.createCard(card));
     }
 

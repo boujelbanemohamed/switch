@@ -1,7 +1,9 @@
 package com.switchplatform.platform.service.issuing;
 
 import com.switchplatform.platform.model.issuing.Card;
+import com.switchplatform.platform.model.issuing.CardAccount;
 import com.switchplatform.platform.model.issuing.CardOperation;
+import com.switchplatform.platform.repository.issuing.CardAccountRepository;
 import com.switchplatform.platform.repository.issuing.CardRepository;
 import com.switchplatform.platform.repository.issuing.CardOperationRepository;
 import com.switchplatform.platform.service.issuing.IssuingNotificationService;
@@ -24,6 +26,7 @@ public class CardService {
 
     private final CardRepository cardRepository;
     private final CardOperationRepository cardOperationRepository;
+    private final CardAccountRepository cardAccountRepository;
     private final IssuingNotificationService notificationService;
 
     @Value("${switch.pan.hash-key:}")
@@ -39,6 +42,12 @@ public class CardService {
         card.setPinAttempts(0);
         if (card.getPinMaxAttempts() == null) {
             card.setPinMaxAttempts(3);
+        }
+        if (card.getCardAccountId() == null) {
+            List<CardAccount> accounts = cardAccountRepository.findByCardholderId(card.getCardholderId());
+            if (!accounts.isEmpty()) {
+                card.setCardAccountId(accounts.getFirst().getId());
+            }
         }
         card.setCreatedAt(OffsetDateTime.now());
         card.setUpdatedAt(OffsetDateTime.now());

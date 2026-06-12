@@ -1,5 +1,6 @@
 package com.switchplatform.platform.service.issuing;
 
+import com.switchplatform.platform.config.security.PciEncryptionService;
 import com.switchplatform.platform.model.issuing.Card;
 import com.switchplatform.platform.model.issuing.CardOperation;
 import com.switchplatform.platform.model.issuing.Cardholder;
@@ -119,8 +120,14 @@ class IssuingServiceTest {
                     .toList();
         });
         cardAccountRepository = mock(CardAccountRepository.class);
+        PciEncryptionService encryptionService = mock(PciEncryptionService.class);
+        when(encryptionService.encrypt(any())).thenAnswer(inv -> "enc_" + inv.getArgument(0));
+        when(encryptionService.decrypt(any())).thenAnswer(inv -> {
+            String val = inv.getArgument(0);
+            return val.startsWith("enc_") ? val.substring(4) : val;
+        });
 
-        cardService = new CardService(cardRepository, cardOperationRepository, cardAccountRepository, notificationService);
+        cardService = new CardService(cardRepository, cardOperationRepository, cardAccountRepository, notificationService, encryptionService);
         cardholderService = new CardholderService(cardholderRepository, cardService);
         walletTokenService = new WalletTokenService(walletTokenRepository);
     }

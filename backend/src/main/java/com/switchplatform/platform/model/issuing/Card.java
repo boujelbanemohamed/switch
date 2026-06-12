@@ -55,6 +55,12 @@ public class Card {
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
 
+    @Column(name = "card_number_encrypted", length = 512)
+    private String cardNumberEncrypted;
+
+    @Column(name = "cvv_encrypted", length = 128)
+    private String cvvEncrypted;
+
     @Column(name = "cvv_hash", length = 128)
     private String cvvHash;
 

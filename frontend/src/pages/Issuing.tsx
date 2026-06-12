@@ -352,7 +352,15 @@ export function Issuing() {
                     <td style={{ padding: '10px 12px', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>{card.panSuffix}</td>
                     <td style={{ padding: '10px 12px', fontFamily: 'monospace' }}>{card.dailyLimit}</td>
                     <td style={{ padding: '10px 12px', display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      <MiniBtn label="Voir" color="#3b82f6" onClick={() => { setDetailCard(card); setShowCardDetail(true); }} />
+                      <MiniBtn label="Voir" color="#3b82f6" onClick={async () => {
+                        try {
+                          const details = await api.issuing.cards.getDetails(card.id);
+                          setDetailCard(details);
+                        } catch {
+                          setDetailCard(card);
+                        }
+                        setShowCardDetail(true);
+                      }} />
                       <MiniBtn label={CARD_ACTION_LABELS['activate'] ?? 'Activer'} color="#22c55e" onClick={() => handleCardAction('activate', card.id)} />
                       <MiniBtn label={CARD_ACTION_LABELS['block'] ?? 'Bloquer'} color="#ef4444" onClick={() => handleCardAction('block', card.id, 'MANUAL_BLOCK')} />
                       <MiniBtn label={CARD_ACTION_LABELS['unblock'] ?? 'Débloquer'} color="#22c55e" onClick={() => handleCardAction('unblock', card.id)} />

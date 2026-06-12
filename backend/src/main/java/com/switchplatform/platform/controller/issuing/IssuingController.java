@@ -92,6 +92,13 @@ public class IssuingController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/cards/{id}/details")
+    public ResponseEntity<CreateCardResponse> getCardDetails(@PathVariable UUID id) {
+        return cardService.getCardDetails(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/cards/by-suffix/{suffix}")
     public ResponseEntity<Card> findCardBySuffix(@PathVariable String suffix) {
         return cardService.getCardBySuffix(suffix)

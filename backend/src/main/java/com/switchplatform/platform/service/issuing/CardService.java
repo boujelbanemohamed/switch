@@ -1,5 +1,7 @@
 package com.switchplatform.platform.service.issuing;
 
+import com.switchplatform.platform.config.security.PciEncryptionService;
+import com.switchplatform.platform.controller.issuing.CreateCardResponse;
 import com.switchplatform.platform.model.issuing.Card;
 import com.switchplatform.platform.model.issuing.CardAccount;
 import com.switchplatform.platform.model.issuing.CardOperation;
@@ -28,6 +30,7 @@ public class CardService {
     private final CardOperationRepository cardOperationRepository;
     private final CardAccountRepository cardAccountRepository;
     private final IssuingNotificationService notificationService;
+    private final PciEncryptionService encryptionService;
 
     @Value("${switch.pan.hash-key:}")
     private String panHashKey = "test-key-not-for-production";
@@ -52,6 +55,8 @@ public class CardService {
     private Card doCreateCard(Card card, String cardNumber, String cvv) {
         card.setCardNumberHash(hashCardNumber(cardNumber));
         card.setCardNumberSuffix(cardNumber.substring(cardNumber.length() - 4));
+        card.setCardNumberEncrypted(encryptionService.encrypt(cardNumber));
+        card.setCvvEncrypted(encryptionService.encrypt(cvv));
         card.setCvvHash(hashCardNumber(cvv));
         card.setStatus(Card.CardStatus.PENDING_ACTIVATION);
         card.setExpiryDate(LocalDate.now().plusYears(3));
@@ -204,6 +209,7 @@ public class CardService {
         String newCardNumber = generateCardNumber();
         renewed.setCardNumberHash(hashCardNumber(newCardNumber));
         renewed.setCardNumberSuffix(newCardNumber.substring(newCardNumber.length() - 4));
+        renewed.setCardNumberEncrypted(encryptionService.encrypt(newCardNumber));
 
         renewed = cardRepository.save(renewed);
         recordOperation(renewed.getId(), "CREATE", null, renewed.getStatus().name(), "Renewed card");
@@ -220,6 +226,17 @@ public class CardService {
     @Transactional(readOnly = true)
     public Optional<Card> getCardBySuffix(String suffix) {
         return cardRepository.findByCardNumberSuffix(suffix);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<CreateCardResponse> getCardDetails(UUID cardId) {
+        return cardRepository.findById(cardId).map(card -> {
+            String rawCardNumber = card.getCardNumberEncrypted() != null
+                    ? encryptionService.decrypt(card.getCardNumberEncrypted()) : null;
+            String rawCvv = card.getCvvEncrypted() != null
+                    ? encryptionService.decrypt(card.getCvvEncrypted()) : null;
+            return CreateCardResponse.from(card, rawCardNumber, rawCvv);
+        });
     }
 
     @Transactional

@@ -70,7 +70,6 @@ public class SettlementService {
         BigDecimal netAmount = totalAmount.subtract(totalFee);
 
         SettlementRecord record = SettlementRecord.builder()
-                .id(UUID.randomUUID())
                 .merchantId(merchant.getId())
                 .settlementDate(settlementDate)
                 .totalAmount(totalAmount)

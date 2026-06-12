@@ -98,6 +98,7 @@ class IssuingServiceTest {
         WalletTokenRepository walletTokenRepository = mock(WalletTokenRepository.class);
         when(walletTokenRepository.save(any())).thenAnswer(inv -> {
             WalletToken t = inv.getArgument(0);
+            if (t.getId() == null) t.setId(UUID.randomUUID());
             tokenStore.put(t.getId(), t);
             return t;
         });

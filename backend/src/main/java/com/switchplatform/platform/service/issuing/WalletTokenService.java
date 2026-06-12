@@ -30,7 +30,6 @@ public class WalletTokenService {
         }
 
         WalletToken token = WalletToken.builder()
-                .id(UUID.randomUUID())
                 .cardId(cardId)
                 .token(generateTokenValue())
                 .tokenType(WalletToken.TokenType.DEVICE)

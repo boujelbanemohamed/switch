@@ -28,7 +28,6 @@ public class TerminalManagementService {
         }
 
         Terminal terminal = Terminal.builder()
-                .id(UUID.randomUUID())
                 .merchantId(UUID.fromString(merchantId))
                 .terminalId(terminalId)
                 .terminalType(Terminal.TerminalType.valueOf(type))

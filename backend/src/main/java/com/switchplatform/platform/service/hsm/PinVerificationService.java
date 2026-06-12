@@ -92,7 +92,6 @@ public class PinVerificationService {
     public PinManagement setPin(UUID cardId, String pin) {
         PinManagement mgmt = pinManagementRepository.findByCardId(cardId)
                 .orElse(PinManagement.builder()
-                        .id(UUID.randomUUID())
                         .cardId(cardId)
                         .build());
 

@@ -101,11 +101,13 @@ export interface CardCreateResponse {
   id: string;
   cardholderId: string;
   cardAccountId: string;
-  cardNumber: string;
-  cvv: string;
-  expiryDate: string;
+  cardNumber: string | null;
+  cvv: string | null;
+  expiryDate: string | null;
   cardNumberSuffix: string;
   status: string;
+  cardType: string | null;
+  cardBrand: string | null;
 }
 
 export interface WalletToken {

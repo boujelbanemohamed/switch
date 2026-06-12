@@ -81,6 +81,9 @@ public class IssuingController {
     public ResponseEntity<CreateCardResponse> createCard(@Valid @RequestBody CreateCardRequest req) {
         Card card = new Card();
         card.setCardholderId(req.getCardholderId());
+        if (req.getCardProduct() != null) {
+            card.setCardType(Card.CardType.valueOf(req.getCardProduct()));
+        }
         CardService.CreateCardResult result = cardService.createCardWithRawValues(card);
         return ResponseEntity.ok(CreateCardResponse.from(result.card(), result.rawCardNumber(), result.rawCvv()));
     }

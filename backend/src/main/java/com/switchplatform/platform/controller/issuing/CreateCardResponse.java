@@ -13,7 +13,9 @@ public record CreateCardResponse(
         String cvv,
         LocalDate expiryDate,
         String cardNumberSuffix,
-        Card.CardStatus status
+        Card.CardStatus status,
+        String cardType,
+        String cardBrand
 ) {
     public static CreateCardResponse from(Card card, String rawCardNumber, String rawCvv) {
         return new CreateCardResponse(
@@ -24,7 +26,9 @@ public record CreateCardResponse(
                 rawCvv,
                 card.getExpiryDate(),
                 card.getCardNumberSuffix(),
-                card.getStatus()
+                card.getStatus(),
+                card.getCardType() != null ? card.getCardType().name() : null,
+                card.getCardBrand() != null ? card.getCardBrand().name() : null
         );
     }
 }
